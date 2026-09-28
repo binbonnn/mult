@@ -152,9 +152,15 @@ body::before {
 }
 
 .dashboard-heading,
-.dashboard-header > .icon-button {
+.dashboard-header-actions {
     position: relative;
     z-index: 2;
+}
+
+.dashboard-header-actions {
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
 }
 
 .deco-moon {
@@ -362,9 +368,23 @@ body::before {
     font-size: 16px;
 }
 
+.podium-mistakes {
+    font-size: 10px;
+    font-weight: 600;
+    color: #c3b8ff;
+    margin-top: 1px;
+}
+
 .podium-second,
 .podium-third {
     padding-bottom: 10px;
+}
+
+.leaderboard-loading {
+    text-align: center;
+    font-size: 13px;
+    color: #c3b8ff;
+    padding: 40px 8px;
 }
 
 /* ---- Daftar peringkat 4 ke bawah ---- */
@@ -1084,5 +1104,45 @@ body::before {
         width: 56px;
         height: 56px;
         font-size: 26px;
+    }
+}
+
+
+/* ============ CONFETTI (efek saat game selesai) ============ */
+.confetti-container {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 1400;
+    overflow: hidden;
+}
+
+.confetti-piece {
+    position: absolute;
+    top: -12px;
+    width: 8px;
+    height: 14px;
+    opacity: 0.9;
+    border-radius: 2px;
+    animation-name: confettiFall;
+    animation-timing-function: cubic-bezier(0.35, 0, 0.65, 1);
+    animation-fill-mode: forwards;
+}
+
+@keyframes confettiFall {
+    0% {
+        transform: translate(0, 0) rotate(0deg);
+        opacity: 1;
+    }
+
+    100% {
+        transform: translate(var(--drift), 112vh) rotate(var(--rotate));
+        opacity: 0.85;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .confetti-container {
+        display: none;
     }
 }
