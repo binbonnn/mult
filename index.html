@@ -99,29 +99,9 @@
                     aria-label="Lihat tabel perkalian">?</button>
             </div>
 
-            <!-- INI HINT MODAL -->
-            <div class="modal fade" id="hintModal" tabindex="-1" aria-labelledby="hintModalLabel" aria-hidden="true">
-                <div class="modal-dialog modal-dialog-centered modal-xl">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h5 class="modal-title" id="hintModalLabel">📖 Tabel Perkalian 1-10</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                        </div>
-                        <div class="modal-body">
-                            <div class="row" id="multiplicationRow">
-                                <!-- Isikan data perkalian dengan JavaScript untuk 1-10 -->
-                            </div>
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn-playful btn-playful-outline" data-bs-dismiss="modal">Tutup</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <!-- INI HINT MODAL END -->
 
             <div class="keypad-wrapper">
-                <input class="answer-input" type="text" inputmode="numeric" autocomplete="off"
+                <input class="answer-input" type="text" inputmode="none" autocomplete="off"
                     placeholder="Jawabanmu..." aria-label="Jawaban" disabled>
 
                 <div class="keypad">
@@ -143,6 +123,27 @@
         <!-- ================= GAME VIEW END ================= -->
 
     </div>
+
+    <!-- INI HINT MODAL (diletakkan di luar #app supaya tidak tertutup backdrop) -->
+    <div class="modal fade" id="hintModal" tabindex="-1" aria-labelledby="hintModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-xl">
+            <div class="modal-content playful-modal">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="hintModalLabel">📖 Tabel Perkalian 1-10</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="multiplication-grid" id="multiplicationRow">
+                        <!-- Diisi oleh JavaScript untuk tabel 1-10 -->
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-playful btn-playful-primary" data-bs-dismiss="modal">Tutup</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- INI HINT MODAL END -->
 
     <!-- INI MODAL PILIH JUMLAH SOAL -->
     <div class="modal fade" id="chooseCountModal" tabindex="-1" aria-labelledby="chooseCountModalLabel" aria-hidden="true">
@@ -225,17 +226,6 @@
     </div>
     <!-- INI MODAL BANTUAN END -->
 
-    <!-- INI MODAL INPUT KOSONG -->
-    <div class="modal fade" id="emptyInputModal" tabindex="-1" aria-labelledby="emptyInputLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content playful-modal">
-                <div class="modal-body text-center">
-                    😉 Isi dulu jawabannya ya!
-                </div>
-            </div>
-        </div>
-    </div>
-    <!-- INI MODAL INPUT KOSONG END -->
 
     <!-- INI MODAL GAME SELESAI -->
     <div class="modal fade" id="endGameModal" aria-hidden="true" aria-labelledby="endGameModalLabel" tabindex="-1">
@@ -248,7 +238,10 @@
                 <div class="modal-body text-center">
                     <div class="end-game-stat">⏱️ Waktu: <span id="finalTime">00:00</span></div>
                     <div class="end-game-stat">❌ Kesalahan: <span id="mistakesCount">0</span></div>
-                    <p id="timeDifferenceInfo" style="display:none;"><span id="timeDifference"></span></p>
+                    <div class="rank-insight" id="rankInsight" style="display:none;" aria-live="polite">
+                        <div class="rank-insight-headline" id="rankInsightHeadline"></div>
+                        <ul class="rank-insight-details" id="rankInsightDetails"></ul>
+                    </div>
                 </div>
 
                 <div class="modal-footer flex-wrap justify-content-center gap-2">
