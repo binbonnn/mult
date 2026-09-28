@@ -87,14 +87,30 @@ let soundEnabled = safeGetLocalStorage('soundEnabled', 'true') !== 'false';
 let firestoreDb = null;
 let firebaseReady = false;
 
+// Indikator status di bawah papan peringkat, supaya jelas skor disimpan di mana
+function setLeaderboardStatus(mode, detail) {
+    const el = document.getElementById('leaderboardStatus');
+    if (!el) return;
+    el.className = `leaderboard-status is-${mode}`;
+    if (mode === 'online') {
+        el.textContent = '🌐 Papan peringkat online: dilihat semua pemain';
+    } else if (mode === 'local') {
+        el.textContent = `📴 Mode lokal: skor hanya tersimpan di perangkat ini${detail ? ` (${detail})` : ''}`;
+    } else {
+        el.textContent = `⚠️ Gagal terhubung ke server${detail ? ` (${detail})` : ''}. Memakai data lokal.`;
+    }
+}
+
 function initFirebase() {
     try {
         if (typeof firebaseConfig === 'undefined' || !firebaseConfig.apiKey || firebaseConfig.apiKey.indexOf('ISI_') === 0) {
             console.warn('[Papan Peringkat] Firebase belum dikonfigurasi (lihat firebase-config.js). Memakai localStorage sebagai cadangan di perangkat ini saja.');
+            setLeaderboardStatus('local', 'firebase-config.js belum diisi');
             return;
         }
         if (typeof firebase === 'undefined') {
             console.warn('[Papan Peringkat] SDK Firebase gagal dimuat. Memakai localStorage sebagai cadangan.');
+            setLeaderboardStatus('local', 'SDK Firebase gagal dimuat');
             return;
         }
         firebase.initializeApp(firebaseConfig);
@@ -102,6 +118,7 @@ function initFirebase() {
         firebaseReady = true;
     } catch (e) {
         console.warn('[Papan Peringkat] Gagal menyambung ke Firebase, memakai localStorage sebagai cadangan.', e);
+        setLeaderboardStatus('error', e.code || e.message);
     }
 }
 initFirebase();
@@ -122,21 +139,27 @@ async function getRecordsForCount(count) {
                 .orderBy('time', 'asc')
                 .limit(MAX_LEADERBOARD_RECORDS)
                 .get();
+            setLeaderboardStatus('online');
             return snapshot.docs.map(doc => doc.data());
         } catch (e) {
             console.warn('[Papan Peringkat] Gagal memuat dari Firebase, memakai localStorage.', e);
+            setLeaderboardStatus('error', e.code || e.message);
         }
     }
     return getRecordsFromLocalStorage(count);
 }
 
 async function saveRecord(count, record) {
+    let onlineError = null;
     if (firebaseReady) {
         try {
             await firestoreDb.collection(getRecordsKey(count)).add(record);
-            return;
+            setLeaderboardStatus('online');
+            return { online: true, error: null };
         } catch (e) {
             console.warn('[Papan Peringkat] Gagal menyimpan ke Firebase, menyimpan ke localStorage saja.', e);
+            onlineError = e.code || e.message || 'unknown';
+            setLeaderboardStatus('error', onlineError);
         }
     }
     let records = getRecordsFromLocalStorage(count);
@@ -144,6 +167,7 @@ async function saveRecord(count, record) {
     records.sort((a, b) => (a.time === b.time ? a.mistakes - b.mistakes : a.time - b.time));
     records = records.slice(0, MAX_LEADERBOARD_RECORDS);
     safeSetLocalStorage(getRecordsKey(count), JSON.stringify(records));
+    return { online: false, error: onlineError };
 }
 
 /* =====================================================================
@@ -692,8 +716,9 @@ async function savePlayerRecord() {
 
     const savedBackgroundColor = safeGetLocalStorage('lastGameBackgroundColor');
 
+    let saveResult = null;
     try {
-        await saveRecord(currentQuestionCount, {
+        saveResult = await saveRecord(currentQuestionCount, {
             name: playerName,
             time: elapsedTime,
             mistakes: mistakes,
@@ -707,6 +732,10 @@ async function savePlayerRecord() {
 
     bootstrap.Modal.getInstance(document.getElementById('saveRecordModal'))?.hide();
     playerNameInput.value = '';
+
+    if (saveResult && saveResult.error) {
+        showToast('danger', `Gagal simpan online: ${saveResult.error}`, 6000);
+    }
 
     goToDashboard(currentQuestionCount);
 }
@@ -794,12 +823,12 @@ answerInput.addEventListener('keydown', (e) => {
 /* =====================================================================
    TOAST NOTIFIKASI (Benar / Salah)
 ===================================================================== */
-function showToast(type, message) {
+function showToast(type, message, duration = 1400) {
     const toast = document.createElement('div');
     toast.className = `toast-alert toast-${type}`;
     toast.textContent = message;
     document.body.appendChild(toast);
-    setTimeout(() => toast.remove(), 1400);
+    setTimeout(() => toast.remove(), duration);
 }
 
 /* =====================================================================
