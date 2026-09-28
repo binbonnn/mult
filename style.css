@@ -1146,3 +1146,29 @@ body::before {
         display: none;
     }
 }
+
+/* ============ STATUS KONEKSI PAPAN PERINGKAT ============ */
+.leaderboard-status {
+    margin: 14px 0 0;
+    text-align: center;
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1.4;
+    color: #c3b8ff;
+}
+
+.leaderboard-status:empty {
+    display: none;
+}
+
+.leaderboard-status.is-online {
+    color: #6ee7b7;
+}
+
+.leaderboard-status.is-local {
+    color: var(--color-accent);
+}
+
+.leaderboard-status.is-error {
+    color: #ff9b9b;
+}
