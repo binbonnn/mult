@@ -3,7 +3,7 @@
 ===================================================================== */
 const QUESTION_COUNT_OPTIONS = [10, 20, 30];
 const WARNING_TIME_SECONDS = 180; // 3 menit sebelum stopwatch full merah
-const MAX_LEADERBOARD_RECORDS = 10;
+const MAX_LEADERBOARD_RECORDS = 7; // papan peringkat dibatasi 7 besar
 const AVATAR_OPTIONS = ['😀', '😎', '🥳', '🤠', '🐱', '🐶', '🦊', '🐼', '🦁', '🐸', '🐵', '🤖'];
 
 let currentQuestionCount = QUESTION_COUNT_OPTIONS[1]; // default 20 soal saat main
@@ -11,7 +11,9 @@ let currentQuestionIndex = 0;
 let correctAnswers = 0;
 let startTime;
 let stopwatchInterval;
-let elapsedTime = 0; // dalam detik
+let elapsedTime = 0; // dalam detik (untuk tampilan stopwatch)
+let finalTimeSeconds = 0; // waktu akhir resmi saat game selesai (dipakai untuk peringkat & simpan skor)
+let lastSavedRecord = null; // untuk menandai skor milik pemain di papan peringkat
 let mistakes = 0;
 let previousQuestions = [];
 let questions = [];
@@ -59,6 +61,15 @@ function escapeHtml(str) {
     const div = document.createElement('div');
     div.textContent = str;
     return div.innerHTML;
+}
+
+// Selalu pakai satu instance modal per elemen (mencegah listener/backdrop ganda)
+function showModal(id) {
+    bootstrap.Modal.getOrCreateInstance(document.getElementById(id)).show();
+}
+
+function hideModal(id) {
+    bootstrap.Modal.getInstance(document.getElementById(id))?.hide();
 }
 
 function generateRandomNumber(max) {
@@ -123,9 +134,14 @@ function initFirebase() {
 }
 initFirebase();
 
+// Urutan resmi: waktu tercepat dulu, jika sama maka kesalahan paling sedikit
+function sortRecords(records) {
+    return [...records].sort((a, b) => (a.time === b.time ? a.mistakes - b.mistakes : a.time - b.time));
+}
+
 function getRecordsFromLocalStorage(count) {
     try {
-        return JSON.parse(safeGetLocalStorage(getRecordsKey(count), '[]'));
+        return sortRecords(JSON.parse(safeGetLocalStorage(getRecordsKey(count), '[]'))).slice(0, MAX_LEADERBOARD_RECORDS);
     } catch (e) {
         return [];
     }
@@ -140,7 +156,7 @@ async function getRecordsForCount(count) {
                 .limit(MAX_LEADERBOARD_RECORDS)
                 .get();
             setLeaderboardStatus('online');
-            return snapshot.docs.map(doc => doc.data());
+            return sortRecords(snapshot.docs.map(doc => doc.data())).slice(0, MAX_LEADERBOARD_RECORDS);
         } catch (e) {
             console.warn('[Papan Peringkat] Gagal memuat dari Firebase, memakai localStorage.', e);
             setLeaderboardStatus('error', e.code || e.message);
@@ -164,8 +180,7 @@ async function saveRecord(count, record) {
     }
     let records = getRecordsFromLocalStorage(count);
     records.push(record);
-    records.sort((a, b) => (a.time === b.time ? a.mistakes - b.mistakes : a.time - b.time));
-    records = records.slice(0, MAX_LEADERBOARD_RECORDS);
+    records = sortRecords(records).slice(0, MAX_LEADERBOARD_RECORDS);
     safeSetLocalStorage(getRecordsKey(count), JSON.stringify(records));
     return { online: false, error: onlineError };
 }
@@ -372,6 +387,16 @@ async function renderLeaderboardPanel(count) {
     renderRankList(records);
 }
 
+const PODIUM_MEDALS = { 1: '👑', 2: '🥈', 3: '🥉' };
+
+function isLastSavedRecord(record) {
+    return !!lastSavedRecord
+        && lastSavedRecord.count === activeLeaderboardCount
+        && lastSavedRecord.name === record.name
+        && lastSavedRecord.time === record.time
+        && lastSavedRecord.mistakes === record.mistakes;
+}
+
 function renderPodium(records) {
     const podiumEl = document.getElementById('podium');
     const displayOrder = [1, 0, 2]; // tampil dari kiri ke kanan: peringkat 2, 1, 3
@@ -380,31 +405,33 @@ function renderPodium(records) {
         const place = rankIndex + 1;
         const spotClass = place === 1 ? 'podium-first' : place === 2 ? 'podium-second' : 'podium-third';
         const record = records[rankIndex];
+        const medal = `<div class="podium-medal" aria-hidden="true">${PODIUM_MEDALS[place]}</div>`;
+        const base = `<div class="podium-base" aria-hidden="true"><span>${place}</span></div>`;
 
         if (!record) {
             return `
-                <div class="podium-spot ${spotClass} is-empty">
-                    <div class="podium-avatar-wrap">
-                        <div class="podium-avatar">👤</div>
-                        <span class="podium-rank-badge">${place}</span>
-                    </div>
+                <div class="podium-spot ${spotClass} is-empty" role="group" aria-label="Peringkat ${place}: masih kosong">
+                    ${medal}
+                    <div class="podium-avatar-wrap"><div class="podium-avatar">👤</div></div>
                     <div class="podium-name">—</div>
                     <div class="podium-score">--:--</div>
                     <div class="podium-mistakes">&nbsp;</div>
+                    ${base}
                 </div>
             `;
         }
 
+        const isYou = isLastSavedRecord(record);
         return `
-            <div class="podium-spot ${spotClass}">
-                ${place === 1 ? '<div class="podium-crown">👑</div>' : ''}
-                <div class="podium-avatar-wrap">
-                    <div class="podium-avatar">${avatarGlyph(record.avatar)}</div>
-                    <span class="podium-rank-badge">${place}</span>
-                </div>
-                <div class="podium-name">${escapeHtml(record.name)}</div>
+            <div class="podium-spot ${spotClass}${isYou ? ' is-you' : ''}" role="group"
+                 aria-label="Peringkat ${place}: ${escapeHtml(record.name)}, ${formatTime(record.time)}, ${formatMistakes(record.mistakes)}">
+                ${medal}
+                <div class="podium-avatar-wrap"><div class="podium-avatar">${avatarGlyph(record.avatar)}</div></div>
+                <div class="podium-name" title="${escapeHtml(record.name)}">${escapeHtml(record.name)}</div>
                 <div class="podium-score">${formatTime(record.time)}</div>
                 <div class="podium-mistakes">${formatMistakes(record.mistakes)}</div>
+                ${isYou ? '<div class="you-chip">⭐ Kamu</div>' : ''}
+                ${base}
             </div>
         `;
     }).join('');
@@ -418,7 +445,7 @@ function renderRankList(records) {
         return;
     }
 
-    const rest = records.slice(3);
+    const rest = records.slice(3, MAX_LEADERBOARD_RECORDS);
     if (rest.length === 0) {
         listEl.innerHTML = '';
         return;
@@ -426,11 +453,12 @@ function renderRankList(records) {
 
     listEl.innerHTML = rest.map((record, i) => {
         const rank = i + 4;
+        const isYou = isLastSavedRecord(record);
         return `
-            <li class="rank-list-row">
+            <li class="rank-list-row${isYou ? ' is-you' : ''}">
                 <span class="rank-list-position">${rank}</span>
                 <span class="rank-list-avatar">${avatarGlyph(record.avatar)}</span>
-                <span class="rank-list-name">${escapeHtml(record.name)}</span>
+                <span class="rank-list-name">${escapeHtml(record.name)}${isYou ? ' <span class="you-chip">⭐ Kamu</span>' : ''}</span>
                 <span class="rank-list-dots" aria-hidden="true"></span>
                 <span class="rank-list-score">${formatTime(record.time)}<small>${formatMistakes(record.mistakes)}</small></span>
             </li>
@@ -467,17 +495,17 @@ function buildAvatarPicker() {
    MODAL: BANTUAN & PILIH JUMLAH SOAL
 ===================================================================== */
 document.getElementById('helpButton').addEventListener('click', () => {
-    new bootstrap.Modal(document.getElementById('helpModal')).show();
+    showModal('helpModal');
 });
 
 document.getElementById('openStartModalButton').addEventListener('click', () => {
-    new bootstrap.Modal(document.getElementById('chooseCountModal')).show();
+    showModal('chooseCountModal');
 });
 
 document.querySelectorAll('.count-option-button').forEach(btn => {
     btn.addEventListener('click', () => {
         const count = parseInt(btn.dataset.count, 10);
-        bootstrap.Modal.getInstance(document.getElementById('chooseCountModal'))?.hide();
+        hideModal('chooseCountModal');
         startGameWithCount(count);
     });
 });
@@ -499,6 +527,7 @@ function startGameWithCount(count) {
     mistakes = 0;
     elapsedTime = 0;
     gameInProgress = true;
+    lastSavedRecord = null;
     questions = generateUniqueQuestions(count);
 
     const stopwatchEl = document.getElementById('stopwatch');
@@ -584,31 +613,28 @@ function displayQuestion() {
 }
 
 document.getElementById('buttonHint').addEventListener('click', function () {
-    const fillMultiplicationData = (parentElementId) => {
-        const parentElement = document.getElementById(parentElementId);
-        parentElement.innerHTML = ''; // bersihkan konten sebelumnya
+    const grid = document.getElementById('multiplicationRow');
+    grid.innerHTML = '';
 
-        for (let i = 1; i <= 10; i++) {
-            const col = document.createElement('div');
-            col.className = 'col-6 col-md';
+    for (let i = 1; i <= 10; i++) {
+        const cell = document.createElement('div');
+        cell.className = 'multiplication-cell';
 
-            let multiplicationData = '';
-            for (let j = 1; j <= 10; j++) {
-                multiplicationData += `${i} x ${j} = ${i * j}<br>`;
-            }
-
-            col.innerHTML = multiplicationData;
-            parentElement.appendChild(col);
+        let lines = `<div class="multiplication-title">Tabel ${i}</div>`;
+        for (let j = 1; j <= 10; j++) {
+            lines += `<div class="multiplication-line">${i} x ${j} = <strong>${i * j}</strong></div>`;
         }
-    };
+        cell.innerHTML = lines;
+        grid.appendChild(cell);
+    }
 
-    fillMultiplicationData('multiplicationRow');
-    new bootstrap.Modal(document.getElementById('hintModal')).show();
+    showModal('hintModal');
 });
 
 function checkAnswer() {
     if (!answerInput.value.trim()) { // jika input kosong
-        new bootstrap.Modal(document.getElementById('emptyInputModal')).show();
+        showToast('danger', 'Isi dulu jawabannya ya! 😉');
+        answerInput.focus();
         return;
     }
 
@@ -641,18 +667,95 @@ function checkAnswer() {
     }
 }
 
+// Selisih detik yang dibutuhkan untuk MENGALAHKAN rekor tertentu (minimal 1 detik lebih cepat)
+function secondsToBeat(timeTaken, record) {
+    return Math.max(1, timeTaken - record.time + 1);
+}
+
+function buildRankInsight(timeTaken, mistakeCount, records) {
+    const sorted = sortRecords(records);
+    const beatenBy = sorted.filter(r => r.time < timeTaken || (r.time === timeTaken && r.mistakes <= mistakeCount)).length;
+    const rank = beatenBy + 1;
+    const qualifies = rank <= MAX_LEADERBOARD_RECORDS;
+    const details = [];
+    const top = sorted[0];
+    const third = sorted[2];
+    const lastPlace = sorted[MAX_LEADERBOARD_RECORDS - 1];
+
+    if (sorted.length === 0) {
+        return {
+            rank: 1, qualifies: true, tone: 'top',
+            headline: '🏆 Kamu pemain pertama di level ini!',
+            details: [{ icon: '💾', text: 'Simpan skormu untuk jadi peringkat 1 di papan peringkat.' }]
+        };
+    }
+
+    if (rank === 1) {
+        const gap = top.time - timeTaken;
+        if (gap > 0) {
+            details.push({ icon: '⚡', text: `${gap} detik lebih cepat dari rekor sebelumnya (${top.name}).` });
+        } else {
+            details.push({ icon: '🎯', text: `Waktu sama dengan rekor sebelumnya, tapi kesalahanmu lebih sedikit.` });
+        }
+        return { rank, qualifies, tone: 'top', headline: '👑 Rekor baru! Kamu peringkat 1', details };
+    }
+
+    const gapToTop = timeTaken - top.time;
+
+    if (rank <= 3) {
+        const above = sorted[rank - 2];
+        let topText;
+        if (gapToTop > 0) {
+            topText = `${gapToTop} detik lebih lambat dari peringkat 1.`;
+        } else if (top.mistakes < mistakeCount) {
+            topText = 'Waktu sama dengan peringkat 1, tapi kalah di jumlah kesalahan.';
+        } else {
+            topText = 'Seri dengan peringkat 1. Rekor yang lebih dulu tercatat tetap di atas.';
+        }
+        details.push({ icon: '🐢', text: topText });
+        details.push({ icon: '🚀', text: `${secondsToBeat(timeTaken, above)} detik lagi untuk naik ke peringkat ${rank - 1}.` });
+        return { rank, qualifies, tone: 'top', headline: `${PODIUM_MEDALS[rank]} Kamu masuk 3 besar! Peringkat ${rank}`, details };
+    }
+
+    if (qualifies) {
+        details.push({ icon: '🥉', text: `${secondsToBeat(timeTaken, third)} detik lagi untuk masuk 3 besar.` });
+        details.push({ icon: '🐢', text: `${gapToTop} detik lebih lambat dari peringkat 1.` });
+        return { rank, qualifies, tone: 'ok', headline: `🎯 Kamu masuk papan peringkat! Peringkat ${rank}`, details };
+    }
+
+    details.push({ icon: '📉', text: `${timeTaken - lastPlace.time} detik lebih lambat dari peringkat ${MAX_LEADERBOARD_RECORDS}.` });
+    details.push({ icon: '🎯', text: `${secondsToBeat(timeTaken, lastPlace)} detik lagi untuk masuk papan peringkat.` });
+    details.push({ icon: '🥉', text: `${secondsToBeat(timeTaken, third)} detik lagi untuk masuk 3 besar.` });
+    return { rank, qualifies, tone: 'miss', headline: '💪 Belum masuk papan peringkat, ayo coba lagi!', details };
+}
+
+function renderRankInsight(insight) {
+    const box = document.getElementById('rankInsight');
+    box.className = `rank-insight is-${insight.tone}`;
+    document.getElementById('rankInsightHeadline').textContent = insight.headline;
+
+    const list = document.getElementById('rankInsightDetails');
+    list.innerHTML = '';
+    insight.details.forEach(detail => {
+        const li = document.createElement('li');
+        li.dataset.icon = detail.icon;
+        li.textContent = detail.text; // textContent: aman dari XSS (nama pemain lain ikut tampil)
+        list.appendChild(li);
+    });
+    box.style.display = 'block';
+}
+
 async function endGame() {
     gameInProgress = false;
     stopStopwatch();
     updateProgress();
 
-    const endTime = new Date().getTime();
-    const timeTaken = Math.round((endTime - startTime) / 1000);
+    finalTimeSeconds = Math.floor((Date.now() - startTime) / 1000);
 
     const currentBackgroundColor = document.getElementById('stopwatch').style.backgroundColor;
     safeSetLocalStorage('lastGameBackgroundColor', currentBackgroundColor);
 
-    document.getElementById('finalTime').textContent = formatTime(timeTaken);
+    document.getElementById('finalTime').textContent = formatTime(finalTimeSeconds);
     document.getElementById('mistakesCount').textContent = mistakes.toString();
 
     // Nonaktifkan keypad
@@ -664,40 +767,23 @@ async function endGame() {
     document.getElementById('buttonHint').style.display = 'none';
 
     const playerRecords = await getRecordsForCount(currentQuestionCount);
-    const saveScoreButton = document.getElementById('saveScoreButton');
-    const timeDifferenceInfo = document.getElementById('timeDifferenceInfo');
-    const worstRecord = playerRecords[MAX_LEADERBOARD_RECORDS - 1];
-    let qualifiesForLeaderboard = true;
+    const insight = buildRankInsight(finalTimeSeconds, mistakes, playerRecords);
+    renderRankInsight(insight);
 
-    // Jika papan peringkat sudah penuh dan waktu pemain lebih lambat/sama dengan
-    // rekor terbawah, tidak perlu menawarkan simpan skor (pasti akan terpotong).
-    if (playerRecords.length >= MAX_LEADERBOARD_RECORDS && timeTaken >= worstRecord.time) {
-        qualifiesForLeaderboard = false;
-        const timeDifference = timeTaken - worstRecord.time;
-        const timeDifferenceElement = document.getElementById('timeDifference');
-        if (timeTaken > worstRecord.time) {
-            timeDifferenceElement.textContent = `Waktumu ${timeDifference} detik lebih lambat dari peringkat terbawah.`;
-        } else {
-            timeDifferenceElement.textContent = `Waktumu sama dengan peringkat terbawah :( Coba lebih cepat lagi ya.`;
-        }
-        timeDifferenceInfo.style.display = 'block';
-        saveScoreButton.style.display = 'none';
-    } else {
-        timeDifferenceInfo.style.display = 'none';
-        saveScoreButton.style.display = 'inline-block';
-    }
+    // Skor yang tidak akan masuk papan peringkat tidak perlu ditawarkan untuk disimpan
+    document.getElementById('saveScoreButton').style.display = insight.qualifies ? 'inline-block' : 'none';
 
-    new bootstrap.Modal(document.getElementById('endGameModal')).show();
+    showModal('endGameModal');
     launchConfetti();
-    playFinishSounds(qualifiesForLeaderboard);
+    playFinishSounds(insight.qualifies);
 }
 
 /* =====================================================================
    SIMPAN SKOR
 ===================================================================== */
 document.getElementById('saveScoreButton').addEventListener('click', () => {
-    bootstrap.Modal.getInstance(document.getElementById('endGameModal'))?.hide();
-    new bootstrap.Modal(document.getElementById('saveRecordModal')).show();
+    hideModal('endGameModal');
+    showModal('saveRecordModal');
 });
 
 document.getElementById('buttonSavePlayerRecord').addEventListener('click', savePlayerRecord);
@@ -720,7 +806,7 @@ async function savePlayerRecord() {
     try {
         saveResult = await saveRecord(currentQuestionCount, {
             name: playerName,
-            time: elapsedTime,
+            time: finalTimeSeconds,
             mistakes: mistakes,
             avatar: selectedAvatar,
             bgColor: savedBackgroundColor
@@ -730,8 +816,10 @@ async function savePlayerRecord() {
         saveButton.textContent = 'Simpan';
     }
 
-    bootstrap.Modal.getInstance(document.getElementById('saveRecordModal'))?.hide();
+    hideModal('saveRecordModal');
     playerNameInput.value = '';
+
+    lastSavedRecord = { count: currentQuestionCount, name: playerName, time: finalTimeSeconds, mistakes: mistakes };
 
     if (saveResult && saveResult.error) {
         showToast('danger', `Gagal simpan online: ${saveResult.error}`, 6000);
@@ -749,26 +837,26 @@ document.getElementById('saveRecordModal').addEventListener('shown.bs.modal', fu
 ===================================================================== */
 document.getElementById('backToDashboardButton').addEventListener('click', () => {
     if (gameInProgress) {
-        new bootstrap.Modal(document.getElementById('confirmExitModal')).show();
+        showModal('confirmExitModal');
     } else {
         goToDashboard();
     }
 });
 
 document.getElementById('confirmExitYesButton').addEventListener('click', () => {
-    bootstrap.Modal.getInstance(document.getElementById('confirmExitModal'))?.hide();
+    hideModal('confirmExitModal');
     stopStopwatch();
     gameInProgress = false;
     goToDashboard();
 });
 
 document.getElementById('playAgainButton').addEventListener('click', () => {
-    bootstrap.Modal.getInstance(document.getElementById('endGameModal'))?.hide();
+    hideModal('endGameModal');
     startGameWithCount(currentQuestionCount);
 });
 
 document.getElementById('endGameBackToDashboardButton').addEventListener('click', () => {
-    bootstrap.Modal.getInstance(document.getElementById('endGameModal'))?.hide();
+    hideModal('endGameModal');
     goToDashboard(currentQuestionCount);
 });
 
@@ -778,15 +866,19 @@ document.getElementById('endGameBackToDashboardButton').addEventListener('click'
 function startStopwatch() {
     clearInterval(stopwatchInterval);
     stopwatchInterval = setInterval(() => {
-        elapsedTime++;
-        document.getElementById('stopwatch').textContent = formatTime(elapsedTime);
+        const seconds = Math.floor((Date.now() - startTime) / 1000);
+        if (seconds === elapsedTime) return;
+        elapsedTime = seconds;
+
+        const stopwatchEl = document.getElementById('stopwatch');
+        stopwatchEl.textContent = formatTime(elapsedTime);
         if (elapsedTime >= WARNING_TIME_SECONDS) {
-            document.getElementById('stopwatch').style.backgroundColor = '#dc3545';
+            stopwatchEl.style.backgroundColor = '#dc3545';
         } else {
             const opacity = elapsedTime / WARNING_TIME_SECONDS;
-            document.getElementById('stopwatch').style.backgroundColor = `rgba(255, 0, 0, ${opacity})`;
+            stopwatchEl.style.backgroundColor = `rgba(255, 0, 0, ${opacity})`;
         }
-    }, 1000);
+    }, 250);
 }
 
 function stopStopwatch() {
