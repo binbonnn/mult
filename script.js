@@ -18,6 +18,7 @@ let questions = [];
 let gameInProgress = false;
 
 let activeLeaderboardCount = QUESTION_COUNT_OPTIONS[0]; // tab papan peringkat yang sedang dilihat
+let leaderboardRequestToken = 0; // penjaga supaya hasil fetch basi tidak menimpa tab yang lebih baru
 let selectedAvatar = null; // null = "tanpa foto profil"
 let countdownRunToken = 0;
 
@@ -50,7 +51,7 @@ function safeSetLocalStorage(key, value) {
 }
 
 function getRecordsKey(count) {
-    return `playerRecords_${count}`;
+    return `records_${count}`;
 }
 
 // Mencegah XSS: teks dari input pengguna tidak boleh langsung masuk ke innerHTML
@@ -70,8 +71,214 @@ function formatTime(totalSeconds) {
     return `${minutes}:${seconds}`;
 }
 
+function formatMistakes(mistakeCount) {
+    return mistakeCount === 0 ? 'Sempurna' : `${mistakeCount} salah`;
+}
+
 function avatarGlyph(avatar) {
     return avatar ? avatar : '👤';
+}
+
+let soundEnabled = safeGetLocalStorage('soundEnabled', 'true') !== 'false';
+
+/* =====================================================================
+   PAPAN PERINGKAT BERSAMA (Firebase Firestore, fallback ke localStorage)
+===================================================================== */
+let firestoreDb = null;
+let firebaseReady = false;
+
+function initFirebase() {
+    try {
+        if (typeof firebaseConfig === 'undefined' || !firebaseConfig.apiKey || firebaseConfig.apiKey.indexOf('ISI_') === 0) {
+            console.warn('[Papan Peringkat] Firebase belum dikonfigurasi (lihat firebase-config.js). Memakai localStorage sebagai cadangan di perangkat ini saja.');
+            return;
+        }
+        if (typeof firebase === 'undefined') {
+            console.warn('[Papan Peringkat] SDK Firebase gagal dimuat. Memakai localStorage sebagai cadangan.');
+            return;
+        }
+        firebase.initializeApp(firebaseConfig);
+        firestoreDb = firebase.firestore();
+        firebaseReady = true;
+    } catch (e) {
+        console.warn('[Papan Peringkat] Gagal menyambung ke Firebase, memakai localStorage sebagai cadangan.', e);
+    }
+}
+initFirebase();
+
+function getRecordsFromLocalStorage(count) {
+    try {
+        return JSON.parse(safeGetLocalStorage(getRecordsKey(count), '[]'));
+    } catch (e) {
+        return [];
+    }
+}
+
+async function getRecordsForCount(count) {
+    if (firebaseReady) {
+        try {
+            const snapshot = await firestoreDb
+                .collection(getRecordsKey(count))
+                .orderBy('time', 'asc')
+                .limit(MAX_LEADERBOARD_RECORDS)
+                .get();
+            return snapshot.docs.map(doc => doc.data());
+        } catch (e) {
+            console.warn('[Papan Peringkat] Gagal memuat dari Firebase, memakai localStorage.', e);
+        }
+    }
+    return getRecordsFromLocalStorage(count);
+}
+
+async function saveRecord(count, record) {
+    if (firebaseReady) {
+        try {
+            await firestoreDb.collection(getRecordsKey(count)).add(record);
+            return;
+        } catch (e) {
+            console.warn('[Papan Peringkat] Gagal menyimpan ke Firebase, menyimpan ke localStorage saja.', e);
+        }
+    }
+    let records = getRecordsFromLocalStorage(count);
+    records.push(record);
+    records.sort((a, b) => (a.time === b.time ? a.mistakes - b.mistakes : a.time - b.time));
+    records = records.slice(0, MAX_LEADERBOARD_RECORDS);
+    safeSetLocalStorage(getRecordsKey(count), JSON.stringify(records));
+}
+
+/* =====================================================================
+   EFEK SUARA (Web Audio API — tanpa file audio eksternal)
+===================================================================== */
+let audioCtx = null;
+
+function getAudioContext() {
+    if (!audioCtx) {
+        try {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        } catch (e) {
+            audioCtx = null;
+        }
+    }
+    if (audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume().catch(() => {});
+    }
+    return audioCtx;
+}
+
+function playTone({ freq = 440, duration = 0.15, type = 'sine', volume = 0.2, delay = 0, glideTo = null }) {
+    if (!soundEnabled) return;
+    const ctx = getAudioContext();
+    if (!ctx) return;
+
+    const startAt = ctx.currentTime + delay;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, startAt);
+    if (glideTo) {
+        osc.frequency.linearRampToValueAtTime(glideTo, startAt + duration);
+    }
+
+    gain.gain.setValueAtTime(0, startAt);
+    gain.gain.linearRampToValueAtTime(volume, startAt + 0.015);
+    gain.gain.exponentialRampToValueAtTime(0.0001, startAt + duration);
+
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start(startAt);
+    osc.stop(startAt + duration + 0.05);
+}
+
+// Tik countdown: makin tinggi nadanya makin dekat ke waktu mulai (menambah ketegangan)
+function playCountdownTick(stepIndex) {
+    if (stepIndex < 3) {
+        playTone({ freq: 380 + stepIndex * 70, duration: 0.16, type: 'square', volume: 0.16 });
+    } else {
+        playTone({ freq: 660, duration: 0.12, type: 'triangle', volume: 0.2 });
+        playTone({ freq: 880, duration: 0.26, type: 'triangle', volume: 0.22, delay: 0.12 });
+    }
+}
+
+function playCorrectSound() {
+    playTone({ freq: 660, duration: 0.1, type: 'sine', volume: 0.2 });
+    playTone({ freq: 880, duration: 0.16, type: 'sine', volume: 0.22, delay: 0.09 });
+}
+
+function playWrongSound() {
+    playTone({ freq: 220, duration: 0.22, type: 'sawtooth', volume: 0.16, glideTo: 140 });
+}
+
+function playFinishJingle() {
+    playTone({ freq: 523.25, duration: 0.14, type: 'triangle', volume: 0.2 });       // C5
+    playTone({ freq: 659.25, duration: 0.14, type: 'triangle', volume: 0.2, delay: 0.14 }); // E5
+    playTone({ freq: 783.99, duration: 0.14, type: 'triangle', volume: 0.2, delay: 0.28 }); // G5
+    playTone({ freq: 1046.5, duration: 0.32, type: 'triangle', volume: 0.24, delay: 0.42 }); // C6
+}
+
+// Terompet kemenangan saat skor masuk papan peringkat
+function playFanfare() {
+    playTone({ freq: 523.25, duration: 0.16, type: 'sawtooth', volume: 0.18 });
+    playTone({ freq: 523.25, duration: 0.16, type: 'sawtooth', volume: 0.18, delay: 0.18 });
+    playTone({ freq: 523.25, duration: 0.16, type: 'sawtooth', volume: 0.18, delay: 0.36 });
+    playTone({ freq: 698.46, duration: 0.55, type: 'sawtooth', volume: 0.22, delay: 0.54 });
+}
+
+function playFinishSounds(qualifiesForLeaderboard) {
+    playFinishJingle();
+    if (qualifiesForLeaderboard) {
+        setTimeout(playFanfare, 550);
+    }
+}
+
+function updateSoundToggleButton() {
+    const btn = document.getElementById('soundToggleButton');
+    if (!btn) return;
+    btn.textContent = soundEnabled ? '🔊' : '🔇';
+    btn.setAttribute('aria-label', soundEnabled ? 'Matikan suara' : 'Aktifkan suara');
+}
+
+document.getElementById('soundToggleButton').addEventListener('click', () => {
+    soundEnabled = !soundEnabled;
+    safeSetLocalStorage('soundEnabled', soundEnabled ? 'true' : 'false');
+    updateSoundToggleButton();
+    if (soundEnabled) {
+        getAudioContext(); // "bangunkan" audio context selagi ada interaksi user
+        playTone({ freq: 660, duration: 0.1, type: 'sine', volume: 0.18 });
+    }
+});
+
+updateSoundToggleButton();
+
+/* =====================================================================
+   EFEK VISUAL: CONFETTI SAAT GAME SELESAI
+===================================================================== */
+function prefersReducedMotion() {
+    return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+}
+
+function launchConfetti() {
+    if (prefersReducedMotion()) return;
+
+    const colors = ['#ffd166', '#ff7ad9', '#8b6cff', '#34d399', '#38bdf8'];
+    const container = document.createElement('div');
+    container.className = 'confetti-container';
+    document.body.appendChild(container);
+
+    const pieceCount = 60;
+    for (let i = 0; i < pieceCount; i++) {
+        const piece = document.createElement('span');
+        piece.className = 'confetti-piece';
+        piece.style.left = `${Math.random() * 100}%`;
+        piece.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+        piece.style.animationDelay = `${(Math.random() * 0.4).toFixed(2)}s`;
+        piece.style.animationDuration = `${(2.2 + Math.random() * 1.2).toFixed(2)}s`;
+        piece.style.setProperty('--drift', `${Math.round((Math.random() - 0.5) * 140)}px`);
+        piece.style.setProperty('--rotate', `${Math.round(Math.random() * 720 - 360)}deg`);
+        container.appendChild(piece);
+    }
+
+    setTimeout(() => container.remove(), 3800);
 }
 
 /* =====================================================================
@@ -117,14 +324,6 @@ function goToDashboard(focusCount) {
 /* =====================================================================
    DASHBOARD: TAB PAPAN PERINGKAT (podium ala gambar referensi)
 ===================================================================== */
-function getRecordsForCount(count) {
-    try {
-        return JSON.parse(safeGetLocalStorage(getRecordsKey(count), '[]'));
-    } catch (e) {
-        return [];
-    }
-}
-
 function setActiveLeaderboardTab(count) {
     activeLeaderboardCount = count;
     document.querySelectorAll('.leaderboard-tab').forEach(tab => {
@@ -133,8 +332,18 @@ function setActiveLeaderboardTab(count) {
     renderLeaderboardPanel(count);
 }
 
-function renderLeaderboardPanel(count) {
-    const records = getRecordsForCount(count);
+function showLeaderboardLoading() {
+    document.getElementById('podium').innerHTML = '<div class="leaderboard-loading">Memuat papan peringkat...</div>';
+    document.getElementById('rankList').innerHTML = '';
+}
+
+async function renderLeaderboardPanel(count) {
+    const myToken = ++leaderboardRequestToken;
+    showLeaderboardLoading();
+
+    const records = await getRecordsForCount(count);
+    if (myToken !== leaderboardRequestToken) return; // tab sudah berpindah lagi, abaikan hasil basi
+
     renderPodium(records);
     renderRankList(records);
 }
@@ -157,6 +366,7 @@ function renderPodium(records) {
                     </div>
                     <div class="podium-name">—</div>
                     <div class="podium-score">--:--</div>
+                    <div class="podium-mistakes">&nbsp;</div>
                 </div>
             `;
         }
@@ -170,6 +380,7 @@ function renderPodium(records) {
                 </div>
                 <div class="podium-name">${escapeHtml(record.name)}</div>
                 <div class="podium-score">${formatTime(record.time)}</div>
+                <div class="podium-mistakes">${formatMistakes(record.mistakes)}</div>
             </div>
         `;
     }).join('');
@@ -191,14 +402,13 @@ function renderRankList(records) {
 
     listEl.innerHTML = rest.map((record, i) => {
         const rank = i + 4;
-        const mistakesText = record.mistakes === 0 ? 'Sempurna' : `${record.mistakes} salah`;
         return `
             <li class="rank-list-row">
                 <span class="rank-list-position">${rank}</span>
                 <span class="rank-list-avatar">${avatarGlyph(record.avatar)}</span>
                 <span class="rank-list-name">${escapeHtml(record.name)}</span>
                 <span class="rank-list-dots" aria-hidden="true"></span>
-                <span class="rank-list-score">${formatTime(record.time)}<small>${mistakesText}</small></span>
+                <span class="rank-list-score">${formatTime(record.time)}<small>${formatMistakes(record.mistakes)}</small></span>
             </li>
         `;
     }).join('');
@@ -311,6 +521,7 @@ function runCountdown(onComplete) {
         const step = COUNTDOWN_STEPS[stepIndex];
         numberEl.textContent = step.text;
         labelEl.textContent = step.label;
+        playCountdownTick(stepIndex);
 
         // Re-trigger animasi tiap langkah dengan memaksa reflow
         numberEl.classList.remove('countdown-pop');
@@ -382,11 +593,13 @@ function checkAnswer() {
 
     if (userAnswer !== a * b) {
         mistakes++;
+        playWrongSound();
         showToast('danger', 'Salah! 😅');
         answerInput.classList.add('wiggle-animation');
         answerInput.value = '';
         setTimeout(() => answerInput.classList.remove('wiggle-animation'), 400);
     } else {
+        playCorrectSound();
         showToast('success', 'Benar! 🎉');
         correctAnswers++;
         currentQuestionIndex++;
@@ -404,7 +617,7 @@ function checkAnswer() {
     }
 }
 
-function endGame() {
+async function endGame() {
     gameInProgress = false;
     stopStopwatch();
     updateProgress();
@@ -426,14 +639,16 @@ function endGame() {
     document.getElementById('question').innerText = '';
     document.getElementById('buttonHint').style.display = 'none';
 
-    const playerRecords = getRecordsForCount(currentQuestionCount);
+    const playerRecords = await getRecordsForCount(currentQuestionCount);
     const saveScoreButton = document.getElementById('saveScoreButton');
     const timeDifferenceInfo = document.getElementById('timeDifferenceInfo');
     const worstRecord = playerRecords[MAX_LEADERBOARD_RECORDS - 1];
+    let qualifiesForLeaderboard = true;
 
     // Jika papan peringkat sudah penuh dan waktu pemain lebih lambat/sama dengan
     // rekor terbawah, tidak perlu menawarkan simpan skor (pasti akan terpotong).
     if (playerRecords.length >= MAX_LEADERBOARD_RECORDS && timeTaken >= worstRecord.time) {
+        qualifiesForLeaderboard = false;
         const timeDifference = timeTaken - worstRecord.time;
         const timeDifferenceElement = document.getElementById('timeDifference');
         if (timeTaken > worstRecord.time) {
@@ -449,6 +664,8 @@ function endGame() {
     }
 
     new bootstrap.Modal(document.getElementById('endGameModal')).show();
+    launchConfetti();
+    playFinishSounds(qualifiesForLeaderboard);
 }
 
 /* =====================================================================
@@ -461,7 +678,7 @@ document.getElementById('saveScoreButton').addEventListener('click', () => {
 
 document.getElementById('buttonSavePlayerRecord').addEventListener('click', savePlayerRecord);
 
-function savePlayerRecord() {
+async function savePlayerRecord() {
     const playerNameInput = document.getElementById('playerName');
     const playerName = playerNameInput.value.trim();
     if (!playerName) {
@@ -469,27 +686,24 @@ function savePlayerRecord() {
         return;
     }
 
-    const key = getRecordsKey(currentQuestionCount);
-    let playerRecords = getRecordsForCount(currentQuestionCount);
+    const saveButton = document.getElementById('buttonSavePlayerRecord');
+    saveButton.disabled = true;
+    saveButton.textContent = 'Menyimpan...';
+
     const savedBackgroundColor = safeGetLocalStorage('lastGameBackgroundColor');
 
-    playerRecords.push({
-        name: playerName,
-        time: elapsedTime,
-        mistakes: mistakes,
-        avatar: selectedAvatar,
-        bgColor: savedBackgroundColor
-    });
-
-    playerRecords.sort((a, b) => {
-        if (a.time === b.time) {
-            return a.mistakes - b.mistakes;
-        }
-        return a.time - b.time;
-    });
-
-    playerRecords = playerRecords.slice(0, MAX_LEADERBOARD_RECORDS);
-    safeSetLocalStorage(key, JSON.stringify(playerRecords));
+    try {
+        await saveRecord(currentQuestionCount, {
+            name: playerName,
+            time: elapsedTime,
+            mistakes: mistakes,
+            avatar: selectedAvatar,
+            bgColor: savedBackgroundColor
+        });
+    } finally {
+        saveButton.disabled = false;
+        saveButton.textContent = 'Simpan';
+    }
 
     bootstrap.Modal.getInstance(document.getElementById('saveRecordModal'))?.hide();
     playerNameInput.value = '';
