@@ -61,8 +61,12 @@
                 <p class="leaderboard-status" id="leaderboardStatus" role="status"></p>
             </div>
 
-            <button type="button" class="btn-playful btn-playful-primary btn-start-game"
-                id="openStartModalButton">▶️ Mulai Main</button>
+            <div class="cta-row">
+                <button type="button" class="btn-playful btn-playful-primary btn-start-game"
+                    id="openStartModalButton">▶️ Main Sendiri</button>
+                <button type="button" class="btn-playful btn-playful-secondary btn-start-game"
+                    id="openDuelModalButton">⚔️ Duel 1v1</button>
+            </div>
         </section>
         <!-- ================= DASHBOARD VIEW END ================= -->
 
@@ -90,6 +94,22 @@
                 </div>
 
                 <span id="stopwatch">00:00</span>
+            </div>
+
+            <div class="duel-opponent-bar" id="duelOpponentBar" style="display:none;">
+                <span class="duel-opponent-avatar" id="duelOpponentAvatar">👤</span>
+                <div class="duel-opponent-info">
+                    <span class="duel-opponent-name" id="duelOpponentName">Lawan</span>
+                    <div class="progress-bar-track duel-opponent-track">
+                        <div class="progress-bar-fill duel-opponent-fill" id="duelOpponentFill"></div>
+                    </div>
+                </div>
+                <span class="duel-opponent-count" id="duelOpponentCount">0/10</span>
+            </div>
+
+            <div class="duel-disconnect-banner" id="duelDisconnectBanner" style="display:none;">
+                ⚠️ Koneksi lawan tidak terdeteksi.
+                <button type="button" class="duel-banner-link" id="duelLeaveDisconnectedButton">Kembali ke dashboard</button>
             </div>
 
             <div class="question-row">
@@ -277,6 +297,143 @@
         </div>
     </div>
     <!-- INI MODAL SAVE RECORD END -->
+
+    <!-- INI MODAL PILIH MODE DUEL -->
+    <div class="modal fade" id="duelModal" tabindex="-1" aria-labelledby="duelModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content playful-modal">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="duelModalLabel">⚔️ Duel 1v1</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body count-option-list">
+                    <button type="button" class="count-option-button" id="duelCreateRoomButton">
+                        <span class="count-option-emoji">🆕</span>
+                        <span class="count-option-text">
+                            <strong>Buat Room</strong>
+                            <small>Dapatkan kode untuk dibagikan ke temanmu</small>
+                        </span>
+                    </button>
+                    <button type="button" class="count-option-button" id="duelJoinRoomButton">
+                        <span class="count-option-emoji">🔑</span>
+                        <span class="count-option-text">
+                            <strong>Gabung Room</strong>
+                            <small>Sudah punya kode dari temanmu? Masuk di sini</small>
+                        </span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- INI MODAL PILIH MODE DUEL END -->
+
+    <!-- INI MODAL BUAT ROOM DUEL -->
+    <div class="modal fade" id="duelCreateModal" tabindex="-1" aria-labelledby="duelCreateModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content playful-modal">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="duelCreateModalLabel">🆕 Buat Room Duel</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <label for="duelCreateName" class="save-record-label">Nama Kamu</label>
+                    <input type="text" id="duelCreateName" class="form-control playful-input" placeholder="Nama Kamu" maxlength="20">
+
+                    <label class="save-record-label">Pilih Avatar</label>
+                    <div class="avatar-picker" id="duelCreateAvatarPicker"></div>
+
+                    <label class="save-record-label">Jumlah Soal</label>
+                    <div class="count-option-list">
+                        <button type="button" class="count-option-button" data-count="10">
+                            <span class="count-option-emoji">🟢</span>
+                            <span class="count-option-text"><strong>10 Soal</strong><small>Mudah</small></span>
+                        </button>
+                        <button type="button" class="count-option-button" data-count="20">
+                            <span class="count-option-emoji">🟡</span>
+                            <span class="count-option-text"><strong>20 Soal</strong><small>Sedang</small></span>
+                        </button>
+                        <button type="button" class="count-option-button" data-count="30">
+                            <span class="count-option-emoji">🔴</span>
+                            <span class="count-option-text"><strong>30 Soal</strong><small>Sulit</small></span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- INI MODAL BUAT ROOM DUEL END -->
+
+    <!-- INI MODAL GABUNG ROOM DUEL -->
+    <div class="modal fade" id="duelJoinModal" tabindex="-1" aria-labelledby="duelJoinModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content playful-modal">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="duelJoinModalLabel">🔑 Gabung Room</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <label for="duelJoinCode" class="save-record-label">Kode Room</label>
+                    <input type="text" id="duelJoinCode" class="form-control playful-input duel-code-input" placeholder="K7Q2" maxlength="4">
+
+                    <label for="duelJoinName" class="save-record-label">Nama Kamu</label>
+                    <input type="text" id="duelJoinName" class="form-control playful-input" placeholder="Nama Kamu" maxlength="20">
+
+                    <label class="save-record-label">Pilih Avatar</label>
+                    <div class="avatar-picker" id="duelJoinAvatarPicker"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-playful btn-playful-success" id="duelJoinSubmitButton">Gabung</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- INI MODAL GABUNG ROOM DUEL END -->
+
+    <!-- INI MODAL RUANG TUNGGU DUEL -->
+    <div class="modal fade" id="duelWaitingModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
+        aria-labelledby="duelWaitingModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content playful-modal text-center">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="duelWaitingModalLabel">⚔️ Room Dibuat!</h1>
+                </div>
+                <div class="modal-body">
+                    <p>Bagikan kode ini ke temanmu:</p>
+                    <div class="duel-room-code" id="duelRoomCodeDisplay">----</div>
+                    <button type="button" class="btn-playful btn-playful-outline" id="duelCopyCodeButton">📋 Salin Kode</button>
+                    <p class="duel-waiting-text">
+                        <span class="duel-spinner" aria-hidden="true"></span>
+                        Menunggu lawan bergabung...
+                    </p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-playful btn-playful-danger" id="duelCancelWaitingButton">Batalkan</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- INI MODAL RUANG TUNGGU DUEL END -->
+
+    <!-- INI MODAL HASIL DUEL -->
+    <div class="modal fade" id="duelResultModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
+        aria-labelledby="duelResultModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content playful-modal">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="duelResultModalLabel">⚔️ Hasil Duel</h1>
+                </div>
+                <div class="modal-body">
+                    <div class="duel-winner-banner" id="duelWinnerBanner"></div>
+                    <div class="duel-result-grid" id="duelResultGrid"></div>
+                </div>
+                <div class="modal-footer flex-wrap justify-content-center gap-2">
+                    <button type="button" class="btn-playful btn-playful-secondary" id="duelRematchButton">🔁 Main Lagi</button>
+                    <button type="button" class="btn-playful btn-playful-outline" id="duelResultDashboardButton">🏠 Dashboard</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- INI MODAL HASIL DUEL END -->
 
     <!-- Firebase (dipakai untuk papan peringkat bersama semua pemain).
          Kalau belum dikonfigurasi, game otomatis memakai localStorage sebagai cadangan. -->
