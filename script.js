@@ -24,6 +24,16 @@ let leaderboardRequestToken = 0; // penjaga supaya hasil fetch basi tidak menimp
 let selectedAvatar = null; // null = "tanpa foto profil"
 let countdownRunToken = 0;
 
+// ---- Duel 1v1 ----
+let duelState = null; // null = tidak sedang duel; lihat createDuelRoom/joinDuelRoom untuk bentuknya
+let duelCreateSelectedAvatar = null;
+let duelJoinSelectedAvatar = null;
+let duelHeartbeatInterval = null;
+const DUEL_CODE_CHARS = '23456789ABCDEFGHJKMNPQRSTUVWXYZ'; // tanpa 0/O/1/I/L biar gak ketuker
+const DUEL_HEARTBEAT_INTERVAL_MS = 5000;
+const DUEL_HEARTBEAT_TIMEOUT_MS = 13000;
+const DUEL_START_BUFFER_MS = 6000; // jeda setelah lawan bergabung, sebelum countdown mulai (untuk sinkronisasi)
+
 /* =====================================================================
    REFERENSI DOM (diambil sekali di awal)
 ===================================================================== */
@@ -473,8 +483,9 @@ document.querySelectorAll('.leaderboard-tab').forEach(tab => {
 /* =====================================================================
    AVATAR PICKER (dipakai saat menyimpan skor)
 ===================================================================== */
-function buildAvatarPicker() {
-    const picker = document.getElementById('avatarPicker');
+function buildAvatarPicker(containerId, onSelect) {
+    const picker = document.getElementById(containerId);
+    if (!picker) return;
     const noProfileButton = `<button type="button" class="avatar-option is-selected" data-avatar="" aria-label="Tanpa foto profil">👤</button>`;
     const optionButtons = AVATAR_OPTIONS.map(avatar =>
         `<button type="button" class="avatar-option" data-avatar="${avatar}" aria-label="Avatar ${avatar}">${avatar}</button>`
@@ -486,7 +497,7 @@ function buildAvatarPicker() {
         btn.addEventListener('click', () => {
             picker.querySelectorAll('.avatar-option').forEach(b => b.classList.remove('is-selected'));
             btn.classList.add('is-selected');
-            selectedAvatar = btn.dataset.avatar || null;
+            onSelect(btn.dataset.avatar || null);
         });
     });
 }
@@ -502,7 +513,7 @@ document.getElementById('openStartModalButton').addEventListener('click', () => 
     showModal('chooseCountModal');
 });
 
-document.querySelectorAll('.count-option-button').forEach(btn => {
+document.querySelectorAll('#chooseCountModal .count-option-button').forEach(btn => {
     btn.addEventListener('click', () => {
         const count = parseInt(btn.dataset.count, 10);
         hideModal('chooseCountModal');
@@ -660,9 +671,14 @@ function checkAnswer() {
         }
 
         if (correctAnswers === currentQuestionCount) {
-            endGame();
+            if (duelState) {
+                endDuelGame();
+            } else {
+                endGame();
+            }
         } else {
             displayQuestion();
+            if (duelState) reportDuelProgress();
         }
     }
 }
@@ -836,17 +852,20 @@ document.getElementById('saveRecordModal').addEventListener('shown.bs.modal', fu
    NAVIGASI: KEMBALI KE DASHBOARD / MAIN LAGI
 ===================================================================== */
 document.getElementById('backToDashboardButton').addEventListener('click', () => {
-    if (gameInProgress) {
+    if (gameInProgress || duelState) {
         showModal('confirmExitModal');
     } else {
         goToDashboard();
     }
 });
 
-document.getElementById('confirmExitYesButton').addEventListener('click', () => {
+document.getElementById('confirmExitYesButton').addEventListener('click', async () => {
     hideModal('confirmExitModal');
     stopStopwatch();
     gameInProgress = false;
+    if (duelState) {
+        await abandonDuel();
+    }
     goToDashboard();
 });
 
@@ -924,7 +943,472 @@ function showToast(type, message, duration = 1400) {
 }
 
 /* =====================================================================
+   DUEL 1v1 (room code, realtime lewat Firestore)
+===================================================================== */
+function duelDocRef(roomCode) {
+    return firestoreDb.collection('duels').doc(roomCode);
+}
+
+function generateRoomCode() {
+    let code = '';
+    for (let i = 0; i < 4; i++) {
+        code += DUEL_CODE_CHARS[Math.floor(Math.random() * DUEL_CODE_CHARS.length)];
+    }
+    return code;
+}
+
+function requireFirebaseForDuel() {
+    if (firebaseReady) return true;
+    showToast('danger', 'Fitur duel butuh koneksi ke server. Cek firebase-config.js sudah diisi & Firestore Rules sudah di-publish.', 6000);
+    return false;
+}
+
+document.getElementById('openDuelModalButton').addEventListener('click', () => {
+    if (!requireFirebaseForDuel()) return;
+    showModal('duelModal');
+});
+
+document.getElementById('duelCreateRoomButton').addEventListener('click', () => {
+    hideModal('duelModal');
+    showModal('duelCreateModal');
+});
+
+document.getElementById('duelJoinRoomButton').addEventListener('click', () => {
+    hideModal('duelModal');
+    showModal('duelJoinModal');
+});
+
+buildAvatarPicker('duelCreateAvatarPicker', (avatar) => { duelCreateSelectedAvatar = avatar; });
+buildAvatarPicker('duelJoinAvatarPicker', (avatar) => { duelJoinSelectedAvatar = avatar; });
+
+document.getElementById('duelJoinCode').addEventListener('input', function () {
+    this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 4);
+});
+
+/* ---- Buat Room ---- */
+document.querySelectorAll('#duelCreateModal .count-option-button').forEach(btn => {
+    btn.addEventListener('click', () => createDuelRoom(parseInt(btn.dataset.count, 10)));
+});
+
+async function createDuelRoom(count) {
+    const nameInput = document.getElementById('duelCreateName');
+    const name = nameInput.value.trim();
+    if (!name) {
+        showToast('danger', 'Isi dulu namamu ya!');
+        nameInput.focus();
+        return;
+    }
+
+    cleanupDuel();
+    hideModal('duelCreateModal');
+
+    const questions = generateUniqueQuestions(count);
+    let roomCode = null;
+
+    try {
+        for (let attempt = 0; attempt < 6 && !roomCode; attempt++) {
+            const candidate = generateRoomCode();
+            const snap = await duelDocRef(candidate).get();
+            if (!snap.exists) roomCode = candidate;
+        }
+        if (!roomCode) throw new Error('kode-habis');
+
+        await duelDocRef(roomCode).set({
+            count: count,
+            questions: questions,
+            status: 'waiting',
+            createdAt: Date.now(),
+            startAtMillis: null,
+            winner: null,
+            host: { name: name, avatar: duelCreateSelectedAvatar, progress: 0, mistakes: 0, time: null, finishedAt: null, lastSeen: Date.now() },
+            guest: null
+        });
+    } catch (e) {
+        showToast('danger', `Gagal membuat room: ${e.code || e.message}`, 5000);
+        return;
+    }
+
+    duelState = { roomCode, role: 'host', count, questions, lastStartAtMillis: null, resultShown: false };
+    document.getElementById('duelRoomCodeDisplay').textContent = roomCode;
+    showModal('duelWaitingModal');
+    listenToDuelRoom(roomCode);
+    startDuelHeartbeat();
+}
+
+document.getElementById('duelCopyCodeButton').addEventListener('click', () => {
+    const code = document.getElementById('duelRoomCodeDisplay').textContent;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(code).then(() => showToast('success', 'Kode disalin!')).catch(() => {});
+    }
+});
+
+document.getElementById('duelCancelWaitingButton').addEventListener('click', async () => {
+    hideModal('duelWaitingModal');
+    await abandonDuel();
+});
+
+/* ---- Gabung Room ---- */
+document.getElementById('duelJoinSubmitButton').addEventListener('click', joinDuelRoom);
+
+async function joinDuelRoom() {
+    const codeInput = document.getElementById('duelJoinCode');
+    const nameInput = document.getElementById('duelJoinName');
+    const code = codeInput.value.trim().toUpperCase();
+    const name = nameInput.value.trim();
+
+    if (code.length !== 4) {
+        showToast('danger', 'Kode room terdiri dari 4 karakter.');
+        codeInput.focus();
+        return;
+    }
+    if (!name) {
+        showToast('danger', 'Isi dulu namamu ya!');
+        nameInput.focus();
+        return;
+    }
+
+    const submitBtn = document.getElementById('duelJoinSubmitButton');
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Menghubungkan...';
+
+    try {
+        const ref = duelDocRef(code);
+        const snap = await ref.get();
+        if (!snap.exists) {
+            showToast('danger', 'Kode room tidak ditemukan.');
+            return;
+        }
+        const room = snap.data();
+        if (room.status !== 'waiting' || room.guest) {
+            showToast('danger', 'Room ini sudah penuh atau sedang bermain.');
+            return;
+        }
+
+        const startAtMillis = Date.now() + DUEL_START_BUFFER_MS;
+        await ref.update({
+            guest: { name: name, avatar: duelJoinSelectedAvatar, progress: 0, mistakes: 0, time: null, finishedAt: null, lastSeen: Date.now() },
+            status: 'countdown',
+            startAtMillis: startAtMillis
+        });
+
+        cleanupDuel();
+        duelState = { roomCode: code, role: 'guest', count: room.count, questions: room.questions, lastStartAtMillis: null, resultShown: false };
+        codeInput.value = '';
+        nameInput.value = '';
+        hideModal('duelJoinModal');
+        listenToDuelRoom(code);
+        startDuelHeartbeat();
+    } catch (e) {
+        showToast('danger', `Gagal gabung room: ${e.code || e.message}`, 5000);
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Gabung';
+    }
+}
+
+/* ---- Listener realtime: satu fungsi ini yang menggerakkan seluruh alur duel ---- */
+function listenToDuelRoom(roomCode) {
+    if (!duelState) return;
+    duelState.unsubscribe = duelDocRef(roomCode).onSnapshot(
+        snap => {
+            if (!snap.exists) {
+                if (!duelState) return;
+                showToast('danger', 'Room duel sudah tidak tersedia.', 4000);
+                cleanupDuel();
+                goToDashboard();
+                return;
+            }
+            handleDuelRoomUpdate(snap.data());
+        },
+        err => console.warn('[Duel] listener error', err)
+    );
+}
+
+function handleDuelRoomUpdate(room) {
+    if (!duelState) return;
+
+    const opponentRole = duelState.role === 'host' ? 'guest' : 'host';
+    const opponent = room[opponentRole];
+
+    if (room.status === 'abandoned') {
+        showToast('danger', 'Lawan meninggalkan duel.', 4000);
+        cleanupDuel();
+        goToDashboard();
+        return;
+    }
+
+    // Bandingkan startAtMillis (bukan boolean sepihak) supaya KEDUA sisi mendeteksi ronde baru
+    // dengan cara yang sama, baik yang menekan "Main Lagi" maupun yang tidak.
+    if (room.status === 'countdown' && room.startAtMillis !== duelState.lastStartAtMillis) {
+        duelState.lastStartAtMillis = room.startAtMillis;
+        duelState.resultShown = false;
+        duelState.questions = room.questions;
+        duelState.opponentName = opponent ? opponent.name : 'Lawan';
+        duelState.opponentAvatar = opponent ? opponent.avatar : null;
+        // Tutup modal apa pun yang mungkin masih terbuka di sisi ini (mis. sisi yang TIDAK
+        // menekan "Main Lagi" tetap punya modal hasil pertandingan sebelumnya terbuka)
+        hideModal('duelWaitingModal');
+        hideModal('duelResultModal');
+        beginDuelCountdown(room.startAtMillis);
+    }
+
+    if ((room.status === 'playing' || room.status === 'countdown') && opponent) {
+        updateDuelOpponentUI(opponent);
+    }
+
+    if (room.status === 'finished' && !duelState.resultShown) {
+        duelState.resultShown = true;
+        if (gameInProgress) { // saya diinterupsi sebelum sempat menjawab semua soal
+            gameInProgress = false;
+            stopStopwatch();
+            answerInput.disabled = true;
+            document.querySelectorAll('.buttonKeypad, .buttonDelete, .buttonStart').forEach(btn => { btn.disabled = true; });
+        }
+        showDuelResult(room);
+    }
+
+    checkDuelOpponentHeartbeat(opponent, room.status);
+}
+
+/* ---- Countdown tersinkron: dua HP mulai hitung mundur pada waktu yang (kurang lebih) sama ---- */
+function beginDuelCountdown(startAtMillis) {
+    const countdownDurationMs = COUNTDOWN_STEPS.length * 800 + 650; // total waktu runCountdown sampai onComplete
+    const waitMs = Math.max(0, (startAtMillis - Date.now()) - countdownDurationMs);
+
+    prepareDuelGameUI();
+
+    setTimeout(() => {
+        if (!duelState) return;
+        runCountdown(beginDuelPlaying);
+    }, waitMs);
+
+    duelDocRef(duelState.roomCode).update({ status: 'playing' }).catch(() => {});
+}
+
+function prepareDuelGameUI() {
+    currentQuestionCount = duelState.count;
+    currentQuestionIndex = 0;
+    correctAnswers = 0;
+    mistakes = 0;
+    elapsedTime = 0;
+    gameInProgress = true;
+    lastSavedRecord = null;
+    questions = duelState.questions;
+
+    const stopwatchEl = document.getElementById('stopwatch');
+    stopwatchEl.textContent = '00:00';
+    stopwatchEl.style.backgroundColor = 'white';
+
+    answerInput.value = '';
+    answerInput.disabled = true;
+    document.querySelectorAll('.buttonKeypad, .buttonDelete, .buttonStart').forEach(btn => { btn.disabled = true; });
+    document.querySelector('.buttonStart').textContent = 'Jawab';
+    document.getElementById('question').innerText = '';
+    document.getElementById('buttonHint').style.display = 'none';
+    document.getElementById('progressLabel').textContent = `Soal 1 dari ${duelState.count}`;
+    document.getElementById('progressBarFill').style.width = '0%';
+
+    const oppBar = document.getElementById('duelOpponentBar');
+    oppBar.style.display = 'flex';
+    document.getElementById('duelOpponentAvatar').textContent = avatarGlyph(duelState.opponentAvatar);
+    document.getElementById('duelOpponentName').textContent = duelState.opponentName || 'Lawan';
+    document.getElementById('duelOpponentFill').style.width = '0%';
+    document.getElementById('duelOpponentCount').textContent = `0/${duelState.count}`;
+    document.getElementById('duelDisconnectBanner').style.display = 'none';
+
+    switchView('game');
+}
+
+function beginDuelPlaying() {
+    if (!duelState) return;
+    answerInput.disabled = false;
+    document.querySelectorAll('.buttonKeypad, .buttonDelete, .buttonStart').forEach(btn => { btn.disabled = false; });
+    displayQuestion();
+    startTime = Date.now();
+    startStopwatch();
+    answerInput.focus();
+}
+
+function updateDuelOpponentUI(opponent) {
+    if (!duelState) return;
+    const fill = document.getElementById('duelOpponentFill');
+    const countEl = document.getElementById('duelOpponentCount');
+    if (!fill || !countEl) return;
+    const pct = Math.min(100, (opponent.progress / duelState.count) * 100);
+    fill.style.width = `${pct}%`;
+    countEl.textContent = `${opponent.progress}/${duelState.count}`;
+}
+
+function reportDuelProgress() {
+    if (!duelState) return;
+    duelDocRef(duelState.roomCode).update({
+        [`${duelState.role}.progress`]: correctAnswers,
+        [`${duelState.role}.mistakes`]: mistakes,
+        [`${duelState.role}.lastSeen`]: Date.now()
+    }).catch(e => console.warn('[Duel] gagal kirim progres', e));
+}
+
+/* ---- Selesai: transaksi memastikan hanya yang PERTAMA selesai jadi pemenang ---- */
+async function endDuelGame() {
+    gameInProgress = false;
+    stopStopwatch();
+    updateProgress();
+    finalTimeSeconds = Math.floor((Date.now() - startTime) / 1000);
+
+    answerInput.disabled = true;
+    document.querySelectorAll('.buttonKeypad, .buttonDelete, .buttonStart').forEach(btn => { btn.disabled = true; });
+    document.getElementById('question').innerText = '';
+    document.getElementById('buttonHint').style.display = 'none';
+
+    const myRole = duelState.role;
+    const roomRef = duelDocRef(duelState.roomCode);
+
+    try {
+        await firestoreDb.runTransaction(async (tx) => {
+            const snap = await tx.get(roomRef);
+            if (!snap.exists) return;
+            const room = snap.data();
+
+            const update = {
+                [`${myRole}.progress`]: correctAnswers,
+                [`${myRole}.mistakes`]: mistakes,
+                [`${myRole}.time`]: finalTimeSeconds,
+                [`${myRole}.finishedAt`]: Date.now()
+            };
+
+            if (room.status !== 'finished') {
+                update.status = 'finished';
+                update.winner = myRole;
+            }
+
+            tx.update(roomRef, update);
+        });
+    } catch (e) {
+        showToast('danger', `Gagal mengirim hasil duel: ${e.code || e.message}`, 5000);
+    }
+    // Modal hasil akan muncul lewat listener (handleDuelRoomUpdate) begitu status 'finished' diterima,
+    // supaya kedua pemain melihat hasil pada saat yang (hampir) bersamaan.
+}
+
+function showDuelResult(room) {
+    stopDuelHeartbeat();
+    const amIWinner = room.winner === duelState.role;
+    const me = duelState.role === 'host' ? room.host : room.guest;
+    const opponent = duelState.role === 'host' ? room.guest : room.host;
+
+    const banner = document.getElementById('duelWinnerBanner');
+    banner.textContent = amIWinner ? '🏆 Kamu Menang!' : `😅 ${opponent ? opponent.name : 'Lawan'} Menang`;
+    banner.className = `duel-winner-banner ${amIWinner ? 'is-win' : 'is-lose'}`;
+
+    const renderPlayer = (label, player, isWinnerSide) => {
+        const finished = !!(player && player.finishedAt);
+        const statLine = finished
+            ? `${formatTime(player.time)} · ${formatMistakes(player.mistakes)}`
+            : `Berhenti di soal ${player ? player.progress : 0}/${room.count}`;
+        return `
+            <div class="duel-result-card ${isWinnerSide ? 'is-winner' : ''}">
+                <div class="duel-result-avatar">${avatarGlyph(player ? player.avatar : null)}</div>
+                <div class="duel-result-name">${escapeHtml(player ? player.name : '—')}</div>
+                <div class="duel-result-label">${label}</div>
+                <div class="duel-result-stat">${statLine}</div>
+            </div>
+        `;
+    };
+
+    document.getElementById('duelResultGrid').innerHTML =
+        renderPlayer('Kamu', me, amIWinner) + renderPlayer('Lawan', opponent, !amIWinner);
+
+    showModal('duelResultModal');
+    launchConfetti();
+    playFinishSounds(amIWinner);
+}
+
+document.getElementById('duelRematchButton').addEventListener('click', async () => {
+    if (!duelState) return;
+    hideModal('duelResultModal');
+
+    const newQuestions = generateUniqueQuestions(duelState.count);
+    duelState.questions = newQuestions;
+
+    try {
+        await duelDocRef(duelState.roomCode).update({
+            questions: newQuestions,
+            status: 'countdown',
+            startAtMillis: Date.now() + DUEL_START_BUFFER_MS,
+            winner: null,
+            'host.progress': 0, 'host.mistakes': 0, 'host.time': null, 'host.finishedAt': null, 'host.lastSeen': Date.now(),
+            'guest.progress': 0, 'guest.mistakes': 0, 'guest.time': null, 'guest.finishedAt': null, 'guest.lastSeen': Date.now()
+        });
+    } catch (e) {
+        showToast('danger', `Gagal memulai ulang duel: ${e.code || e.message}`, 5000);
+    }
+});
+
+document.getElementById('duelResultDashboardButton').addEventListener('click', () => {
+    hideModal('duelResultModal');
+    cleanupDuel();
+    goToDashboard();
+});
+
+/* ---- Deteksi lawan terputus (heartbeat) ---- */
+function startDuelHeartbeat() {
+    stopDuelHeartbeat();
+    duelHeartbeatInterval = setInterval(() => {
+        if (!duelState) return;
+        duelDocRef(duelState.roomCode).update({
+            [`${duelState.role}.lastSeen`]: Date.now()
+        }).catch(() => {});
+    }, DUEL_HEARTBEAT_INTERVAL_MS);
+}
+
+function stopDuelHeartbeat() {
+    if (duelHeartbeatInterval) {
+        clearInterval(duelHeartbeatInterval);
+        duelHeartbeatInterval = null;
+    }
+}
+
+function checkDuelOpponentHeartbeat(opponent, status) {
+    const banner = document.getElementById('duelDisconnectBanner');
+    if (!banner) return;
+    if (!opponent || status === 'finished' || status === 'waiting') {
+        banner.style.display = 'none';
+        return;
+    }
+    const stale = opponent.lastSeen && (Date.now() - opponent.lastSeen > DUEL_HEARTBEAT_TIMEOUT_MS);
+    banner.style.display = stale ? 'flex' : 'none';
+}
+
+document.getElementById('duelLeaveDisconnectedButton').addEventListener('click', async () => {
+    await abandonDuel();
+    goToDashboard();
+});
+
+/* ---- Keluar dari duel ---- */
+async function abandonDuel() {
+    if (!duelState) return;
+    try {
+        await duelDocRef(duelState.roomCode).update({ status: 'abandoned' });
+    } catch (e) {
+        // room mungkin sudah tidak ada / sudah selesai duluan, aman diabaikan
+    }
+    cleanupDuel();
+}
+
+function cleanupDuel() {
+    if (duelState && typeof duelState.unsubscribe === 'function') {
+        duelState.unsubscribe();
+    }
+    stopDuelHeartbeat();
+    const oppBar = document.getElementById('duelOpponentBar');
+    const banner = document.getElementById('duelDisconnectBanner');
+    if (oppBar) oppBar.style.display = 'none';
+    if (banner) banner.style.display = 'none';
+    duelState = null;
+}
+
+/* =====================================================================
    INISIALISASI
 ===================================================================== */
-buildAvatarPicker();
+buildAvatarPicker('avatarPicker', (avatar) => { selectedAvatar = avatar; });
 setActiveLeaderboardTab(activeLeaderboardCount);
