@@ -945,6 +945,17 @@ function showToast(type, message, duration = 1400) {
 /* =====================================================================
    DUEL 1v1 (room code, realtime lewat Firestore)
 ===================================================================== */
+// Firestore TIDAK mendukung array bersarang (array di dalam array).
+// questions lokal berbentuk [[a,b], [a,b], ...] harus diubah jadi [{a,b}, ...] sebelum
+// ditulis ke Firestore, dan dikembalikan lagi ke bentuk [[a,b], ...] saat dibaca.
+function questionsToFirestoreArray(qs) {
+    return qs.map(pair => ({ a: pair[0], b: pair[1] }));
+}
+
+function questionsFromFirestoreArray(qs) {
+    return qs.map(q => [q.a, q.b]);
+}
+
 function duelDocRef(roomCode) {
     return firestoreDb.collection('duels').doc(roomCode);
 }
@@ -1015,7 +1026,7 @@ async function createDuelRoom(count) {
 
         await duelDocRef(roomCode).set({
             count: count,
-            questions: questions,
+            questions: questionsToFirestoreArray(questions),
             status: 'waiting',
             createdAt: Date.now(),
             startAtMillis: null,
@@ -1092,7 +1103,7 @@ async function joinDuelRoom() {
         });
 
         cleanupDuel();
-        duelState = { roomCode: code, role: 'guest', count: room.count, questions: room.questions, lastStartAtMillis: null, resultShown: false };
+        duelState = { roomCode: code, role: 'guest', count: room.count, questions: questionsFromFirestoreArray(room.questions), lastStartAtMillis: null, resultShown: false };
         codeInput.value = '';
         nameInput.value = '';
         hideModal('duelJoinModal');
@@ -1142,7 +1153,7 @@ function handleDuelRoomUpdate(room) {
     if (room.status === 'countdown' && room.startAtMillis !== duelState.lastStartAtMillis) {
         duelState.lastStartAtMillis = room.startAtMillis;
         duelState.resultShown = false;
-        duelState.questions = room.questions;
+        duelState.questions = questionsFromFirestoreArray(room.questions);
         duelState.opponentName = opponent ? opponent.name : 'Lawan';
         duelState.opponentAvatar = opponent ? opponent.avatar : null;
         // Tutup modal apa pun yang mungkin masih terbuka di sisi ini (mis. sisi yang TIDAK
@@ -1332,7 +1343,7 @@ document.getElementById('duelRematchButton').addEventListener('click', async () 
 
     try {
         await duelDocRef(duelState.roomCode).update({
-            questions: newQuestions,
+            questions: questionsToFirestoreArray(newQuestions),
             status: 'countdown',
             startAtMillis: Date.now() + DUEL_START_BUFFER_MS,
             winner: null,
