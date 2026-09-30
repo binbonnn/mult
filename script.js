@@ -1031,6 +1031,7 @@ async function createDuelRoom(count) {
             createdAt: Date.now(),
             startAtMillis: null,
             winner: null,
+            rematch: null,
             host: { name: name, avatar: duelCreateSelectedAvatar, progress: 0, mistakes: 0, time: null, finishedAt: null, lastSeen: Date.now() },
             guest: null
         });
@@ -1039,7 +1040,7 @@ async function createDuelRoom(count) {
         return;
     }
 
-    duelState = { roomCode, role: 'host', count, questions, lastStartAtMillis: null, resultShown: false };
+    duelState = { roomCode, role: 'host', count, questions, lastStartAtMillis: null, lastRematchUpdatedAt: null, resultShown: false };
     document.getElementById('duelRoomCodeDisplay').textContent = roomCode;
     showModal('duelWaitingModal');
     listenToDuelRoom(roomCode);
@@ -1103,7 +1104,7 @@ async function joinDuelRoom() {
         });
 
         cleanupDuel();
-        duelState = { roomCode: code, role: 'guest', count: room.count, questions: questionsFromFirestoreArray(room.questions), lastStartAtMillis: null, resultShown: false };
+        duelState = { roomCode: code, role: 'guest', count: room.count, questions: questionsFromFirestoreArray(room.questions), lastStartAtMillis: null, lastRematchUpdatedAt: null, resultShown: false };
         codeInput.value = '';
         nameInput.value = '';
         hideModal('duelJoinModal');
@@ -1152,6 +1153,7 @@ function handleDuelRoomUpdate(room) {
     // dengan cara yang sama, baik yang menekan "Main Lagi" maupun yang tidak.
     if (room.status === 'countdown' && room.startAtMillis !== duelState.lastStartAtMillis) {
         duelState.lastStartAtMillis = room.startAtMillis;
+        duelState.lastRematchUpdatedAt = null;
         duelState.resultShown = false;
         duelState.questions = questionsFromFirestoreArray(room.questions);
         duelState.opponentName = opponent ? opponent.name : 'Lawan';
@@ -1160,6 +1162,8 @@ function handleDuelRoomUpdate(room) {
         // menekan "Main Lagi" tetap punya modal hasil pertandingan sebelumnya terbuka)
         hideModal('duelWaitingModal');
         hideModal('duelResultModal');
+        hideModal('duelRematchWaitingModal');
+        hideModal('duelRematchRequestModal');
         beginDuelCountdown(room.startAtMillis);
     }
 
@@ -1176,6 +1180,32 @@ function handleDuelRoomUpdate(room) {
             document.querySelectorAll('.buttonKeypad, .buttonDelete, .buttonStart').forEach(btn => { btn.disabled = true; });
         }
         showDuelResult(room);
+    }
+
+    // Ajakan main lagi: minta persetujuan lawan dulu sebelum benar-benar mengulang.
+    // Dibandingkan lewat updatedAt (bukan boolean) supaya permintaan & penolakan berikutnya
+    // tetap terdeteksi meski isi field-nya sempat sama.
+    if (room.rematch && room.rematch.updatedAt !== duelState.lastRematchUpdatedAt) {
+        duelState.lastRematchUpdatedAt = room.rematch.updatedAt;
+        const iAmRequester = room.rematch.requestedBy === duelState.role;
+
+        if (room.rematch.status === 'pending') {
+            if (iAmRequester) {
+                showModal('duelRematchWaitingModal');
+            } else {
+                document.getElementById('duelRematchRequestText').textContent =
+                    `${opponent ? opponent.name : 'Lawan'} ingin main lagi. Setuju?`;
+                showModal('duelRematchRequestModal');
+            }
+        } else if (room.rematch.status === 'declined') {
+            hideModal('duelRematchWaitingModal');
+            hideModal('duelRematchRequestModal');
+            if (iAmRequester) {
+                showToast('danger', 'Lawan menolak ajakan main lagi.', 4000);
+                showModal('duelResultModal');
+                duelDocRef(duelState.roomCode).update({ rematch: null }).catch(() => {});
+            }
+        }
     }
 
     checkDuelOpponentHeartbeat(opponent, room.status);
@@ -1197,6 +1227,14 @@ function beginDuelCountdown(startAtMillis) {
 }
 
 function prepareDuelGameUI() {
+    // Tampilkan overlay countdown DI SINI, sinkron bareng switchView('game') di bawah.
+    // Kalau overlay baru muncul lewat runCountdown() (yang dijadwalkan via setTimeout terpisah),
+    // browser sempat merender satu frame "layar game polos" tanpa overlay lebih dulu -> kelihatan kedip.
+    const overlay = document.getElementById('countdownOverlay');
+    document.getElementById('countdownNumber').textContent = COUNTDOWN_STEPS[0].text;
+    document.getElementById('countdownLabel').textContent = COUNTDOWN_STEPS[0].label;
+    overlay.classList.add('is-visible');
+
     currentQuestionCount = duelState.count;
     currentQuestionIndex = 0;
     correctAnswers = 0;
@@ -1334,9 +1372,37 @@ function showDuelResult(room) {
     playFinishSounds(amIWinner);
 }
 
+// Tombol "Main Lagi": hanya MENGAJUKAN permintaan, belum langsung mengulang duelnya.
+// Duel baru benar-benar dimulai lagi setelah lawan menekan "Setuju" (lihat duelRematchAcceptButton).
 document.getElementById('duelRematchButton').addEventListener('click', async () => {
     if (!duelState) return;
     hideModal('duelResultModal');
+    try {
+        await duelDocRef(duelState.roomCode).update({
+            rematch: { requestedBy: duelState.role, status: 'pending', updatedAt: Date.now() }
+        });
+        showModal('duelRematchWaitingModal');
+    } catch (e) {
+        showToast('danger', `Gagal mengirim ajakan main lagi: ${e.code || e.message}`, 5000);
+        showModal('duelResultModal');
+    }
+});
+
+document.getElementById('duelRematchCancelButton').addEventListener('click', async () => {
+    hideModal('duelRematchWaitingModal');
+    if (duelState) {
+        try {
+            await duelDocRef(duelState.roomCode).update({ rematch: null });
+        } catch (e) {
+            // room mungkin sudah berubah/hilang, aman diabaikan
+        }
+    }
+    showModal('duelResultModal');
+});
+
+document.getElementById('duelRematchAcceptButton').addEventListener('click', async () => {
+    if (!duelState) return;
+    hideModal('duelRematchRequestModal');
 
     const newQuestions = generateUniqueQuestions(duelState.count);
     duelState.questions = newQuestions;
@@ -1347,11 +1413,27 @@ document.getElementById('duelRematchButton').addEventListener('click', async () 
             status: 'countdown',
             startAtMillis: Date.now() + DUEL_START_BUFFER_MS,
             winner: null,
+            rematch: null,
             'host.progress': 0, 'host.mistakes': 0, 'host.time': null, 'host.finishedAt': null, 'host.lastSeen': Date.now(),
             'guest.progress': 0, 'guest.mistakes': 0, 'guest.time': null, 'guest.finishedAt': null, 'guest.lastSeen': Date.now()
         });
     } catch (e) {
         showToast('danger', `Gagal memulai ulang duel: ${e.code || e.message}`, 5000);
+    }
+});
+
+document.getElementById('duelRematchDeclineButton').addEventListener('click', async () => {
+    if (!duelState) return;
+    hideModal('duelRematchRequestModal');
+    showModal('duelResultModal');
+
+    const requesterRole = duelState.role === 'host' ? 'guest' : 'host';
+    try {
+        await duelDocRef(duelState.roomCode).update({
+            rematch: { requestedBy: requesterRole, status: 'declined', updatedAt: Date.now() }
+        });
+    } catch (e) {
+        // room mungkin sudah berubah/hilang, aman diabaikan
     }
 });
 
