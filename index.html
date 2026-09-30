@@ -435,6 +435,48 @@
     </div>
     <!-- INI MODAL HASIL DUEL END -->
 
+    <!-- INI MODAL MENUNGGU PERSETUJUAN REMATCH -->
+    <div class="modal fade" id="duelRematchWaitingModal" data-bs-backdrop="static" data-bs-keyboard="false"
+        tabindex="-1" aria-labelledby="duelRematchWaitingModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content playful-modal text-center">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="duelRematchWaitingModalLabel">🔁 Ajakan Terkirim</h1>
+                </div>
+                <div class="modal-body">
+                    <p class="duel-waiting-text">
+                        <span class="duel-spinner" aria-hidden="true"></span>
+                        Menunggu persetujuan lawan untuk main lagi...
+                    </p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-playful btn-playful-danger" id="duelRematchCancelButton">Batalkan</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- INI MODAL MENUNGGU PERSETUJUAN REMATCH END -->
+
+    <!-- INI MODAL AJAKAN REMATCH DARI LAWAN -->
+    <div class="modal fade" id="duelRematchRequestModal" data-bs-backdrop="static" data-bs-keyboard="false"
+        tabindex="-1" aria-labelledby="duelRematchRequestModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content playful-modal text-center">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="duelRematchRequestModalLabel">🔁 Ajakan Main Lagi</h1>
+                </div>
+                <div class="modal-body" id="duelRematchRequestText">Lawan ingin main lagi. Setuju?</div>
+                <div class="modal-footer flex-wrap justify-content-center gap-2">
+                    <button type="button" class="btn-playful btn-playful-success" id="duelRematchAcceptButton">✅ Setuju</button>
+                    <button type="button" class="btn-playful btn-playful-outline" id="duelRematchDeclineButton">❌ Tolak</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- INI MODAL AJAKAN REMATCH DARI LAWAN END -->
+
+
+
     <!-- Firebase (dipakai untuk papan peringkat bersama semua pemain).
          Kalau belum dikonfigurasi, game otomatis memakai localStorage sebagai cadangan. -->
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
