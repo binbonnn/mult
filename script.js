@@ -37,6 +37,7 @@ const DUEL_START_BUFFER_MS = 6000; // jeda setelah lawan bergabung, sebelum coun
 /* =====================================================================
    REFERENSI DOM (diambil sekali di awal)
 ===================================================================== */
+const hubView = document.getElementById('hubView');
 const dashboardView = document.getElementById('dashboardView');
 const gameView = document.getElementById('gameView');
 const answerInput = document.querySelector('.answer-input');
@@ -80,6 +81,29 @@ function showModal(id) {
 
 function hideModal(id) {
     bootstrap.Modal.getInstance(document.getElementById(id))?.hide();
+}
+
+// Bootstrap menyembunyikan modal lewat transisi CSS yang berjalan ASYNC. Kalau modal lain
+// langsung ditampilkan sebelum transisi itu benar-benar selesai, sesekali terjadi race:
+// modal lama bisa tersangkut dengan class "show" dan backdrop-nya menutupi layar.
+// Fungsi ini menunggu event 'hidden.bs.modal' dulu (dengan jaring pengaman waktu) sebelum
+// kode lanjut menampilkan modal berikutnya.
+function waitForModalHidden(id) {
+    return new Promise(resolve => {
+        const el = document.getElementById(id);
+        if (!el || !el.classList.contains('show')) {
+            resolve();
+            return;
+        }
+        let done = false;
+        const finish = () => {
+            if (done) return;
+            done = true;
+            resolve();
+        };
+        el.addEventListener('hidden.bs.modal', finish, { once: true });
+        setTimeout(finish, 400); // jaring pengaman jika event entah kenapa tidak terpicu
+    });
 }
 
 function generateRandomNumber(max) {
@@ -356,11 +380,16 @@ function generateUniqueQuestions(count) {
 }
 
 /* =====================================================================
-   VIEW SWITCHING (Dashboard <-> Game)
+   VIEW SWITCHING (Hub <-> Dashboard <-> Game)
 ===================================================================== */
 function switchView(viewName) {
+    hubView.classList.toggle('active', viewName === 'hub');
     dashboardView.classList.toggle('active', viewName === 'dashboard');
     gameView.classList.toggle('active', viewName === 'game');
+}
+
+function goToHub() {
+    switchView('hub');
 }
 
 function goToDashboard(focusCount) {
@@ -369,6 +398,26 @@ function goToDashboard(focusCount) {
     setActiveLeaderboardTab(focusCount || activeLeaderboardCount);
     switchView('dashboard');
 }
+
+/* =====================================================================
+   HUB: PILIH GAME
+===================================================================== */
+document.getElementById('hubOpenMultiplyButton').addEventListener('click', () => {
+    goToDashboard();
+});
+
+document.getElementById('backToHubButton').addEventListener('click', () => {
+    goToHub();
+});
+
+function showGameComingSoonToast(btn) {
+    const title = btn.querySelector('.game-card-title')?.textContent?.trim() || 'Game ini';
+    showToast('danger', `🔒 ${title} segera hadir, nantikan ya!`, 3500);
+}
+
+document.querySelectorAll('.game-card.is-coming-soon, .game-card-soon').forEach(btn => {
+    btn.addEventListener('click', () => showGameComingSoonToast(btn));
+});
 
 /* =====================================================================
    DASHBOARD: TAB PAPAN PERINGKAT (podium ala gambar referensi)
@@ -797,8 +846,9 @@ async function endGame() {
 /* =====================================================================
    SIMPAN SKOR
 ===================================================================== */
-document.getElementById('saveScoreButton').addEventListener('click', () => {
+document.getElementById('saveScoreButton').addEventListener('click', async () => {
     hideModal('endGameModal');
+    await waitForModalHidden('endGameModal');
     showModal('saveRecordModal');
 });
 
@@ -979,13 +1029,15 @@ document.getElementById('openDuelModalButton').addEventListener('click', () => {
     showModal('duelModal');
 });
 
-document.getElementById('duelCreateRoomButton').addEventListener('click', () => {
+document.getElementById('duelCreateRoomButton').addEventListener('click', async () => {
     hideModal('duelModal');
+    await waitForModalHidden('duelModal');
     showModal('duelCreateModal');
 });
 
-document.getElementById('duelJoinRoomButton').addEventListener('click', () => {
+document.getElementById('duelJoinRoomButton').addEventListener('click', async () => {
     hideModal('duelModal');
+    await waitForModalHidden('duelModal');
     showModal('duelJoinModal');
 });
 
@@ -1042,6 +1094,7 @@ async function createDuelRoom(count) {
 
     duelState = { roomCode, role: 'host', count, questions, lastStartAtMillis: null, lastRematchUpdatedAt: null, resultShown: false };
     document.getElementById('duelRoomCodeDisplay').textContent = roomCode;
+    await waitForModalHidden('duelCreateModal');
     showModal('duelWaitingModal');
     listenToDuelRoom(roomCode);
     startDuelHeartbeat();
@@ -1136,7 +1189,7 @@ function listenToDuelRoom(roomCode) {
     );
 }
 
-function handleDuelRoomUpdate(room) {
+async function handleDuelRoomUpdate(room) {
     if (!duelState) return;
 
     const opponentRole = duelState.role === 'host' ? 'guest' : 'host';
@@ -1202,6 +1255,7 @@ function handleDuelRoomUpdate(room) {
             hideModal('duelRematchRequestModal');
             if (iAmRequester) {
                 showToast('danger', 'Lawan menolak ajakan main lagi.', 4000);
+                await waitForModalHidden('duelRematchWaitingModal');
                 showModal('duelResultModal');
                 duelDocRef(duelState.roomCode).update({ rematch: null }).catch(() => {});
             }
@@ -1377,6 +1431,7 @@ function showDuelResult(room) {
 document.getElementById('duelRematchButton').addEventListener('click', async () => {
     if (!duelState) return;
     hideModal('duelResultModal');
+    await waitForModalHidden('duelResultModal');
     try {
         await duelDocRef(duelState.roomCode).update({
             rematch: { requestedBy: duelState.role, status: 'pending', updatedAt: Date.now() }
@@ -1397,6 +1452,7 @@ document.getElementById('duelRematchCancelButton').addEventListener('click', asy
             // room mungkin sudah berubah/hilang, aman diabaikan
         }
     }
+    await waitForModalHidden('duelRematchWaitingModal');
     showModal('duelResultModal');
 });
 
@@ -1425,6 +1481,7 @@ document.getElementById('duelRematchAcceptButton').addEventListener('click', asy
 document.getElementById('duelRematchDeclineButton').addEventListener('click', async () => {
     if (!duelState) return;
     hideModal('duelRematchRequestModal');
+    await waitForModalHidden('duelRematchRequestModal');
     showModal('duelResultModal');
 
     const requesterRole = duelState.role === 'host' ? 'guest' : 'host';
@@ -1504,4 +1561,3 @@ function cleanupDuel() {
    INISIALISASI
 ===================================================================== */
 buildAvatarPicker('avatarPicker', (avatar) => { selectedAvatar = avatar; });
-setActiveLeaderboardTab(activeLeaderboardCount);
