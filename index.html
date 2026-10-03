@@ -18,8 +18,52 @@
 
     <div id="app">
 
-        <!-- ================= DASHBOARD VIEW ================= -->
-        <section id="dashboardView" class="view active">
+        <!-- ================= HUB VIEW (landing page pilihan game) ================= -->
+        <section id="hubView" class="view active">
+            <header class="dashboard-header hub-header">
+                <div class="dashboard-heading">
+                    <h1>🕹️ Pilih Game</h1>
+                    <p class="subtitle">Semua game kuis kumpulan kami dalam satu tempat!</p>
+                </div>
+            </header>
+
+            <div class="game-grid">
+                <button type="button" class="game-card game-card-multiply" id="hubOpenMultiplyButton">
+                    <span class="game-card-icon">🎯</span>
+                    <span class="game-card-title">Perkalian 1-10</span>
+                    <span class="game-card-subtitle">Kuis &amp; Duel 1v1</span>
+                </button>
+
+                <button type="button" class="game-card game-card-knowledge is-coming-soon" id="hubComingSoonKnowledge">
+                    <span class="game-card-icon">🧠</span>
+                    <span class="game-card-title">Pengetahuan Dasar</span>
+                    <span class="game-card-badge">Segera Hadir</span>
+                </button>
+
+                <button type="button" class="game-card game-card-advanced is-coming-soon" id="hubComingSoonAdvanced">
+                    <span class="game-card-icon">✖️</span>
+                    <span class="game-card-title">Perkalian 1-10 Lanjutan</span>
+                    <span class="game-card-badge">Segera Hadir</span>
+                </button>
+
+                <button type="button" class="game-card game-card-soon" id="hubComingSoon1">
+                    <span class="game-card-icon">🌟</span>
+                    <span class="game-card-title">Game Akan Datang</span>
+                    <span class="game-card-badge">Segera Hadir</span>
+                </button>
+
+                <button type="button" class="game-card game-card-soon" id="hubComingSoon2">
+                    <span class="game-card-icon">🎲</span>
+                    <span class="game-card-title">Game Akan Datang</span>
+                    <span class="game-card-badge">Segera Hadir</span>
+                </button>
+            </div>
+        </section>
+        <!-- ================= HUB VIEW END ================= -->
+
+        <!-- ================= DASHBOARD VIEW (Game Perkalian 1-10) ================= -->
+        <section id="dashboardView" class="view">
+            <button type="button" class="breadcrumb-back" id="backToHubButton">← Semua Game</button>
             <header class="dashboard-header">
                 <div class="dashboard-heading">
                     <h1>🎯 Kuis Perkalian</h1>
