@@ -40,6 +40,8 @@ const DUEL_START_BUFFER_MS = 6000; // jeda setelah lawan bergabung, sebelum coun
 const hubView = document.getElementById('hubView');
 const dashboardView = document.getElementById('dashboardView');
 const gameView = document.getElementById('gameView');
+const knowledgeDashboardView = document.getElementById('knowledgeDashboardView');
+const knowledgeGameView = document.getElementById('knowledgeGameView');
 const answerInput = document.querySelector('.answer-input');
 
 /* =====================================================================
@@ -132,18 +134,21 @@ let soundEnabled = safeGetLocalStorage('soundEnabled', 'true') !== 'false';
 let firestoreDb = null;
 let firebaseReady = false;
 
-// Indikator status di bawah papan peringkat, supaya jelas skor disimpan di mana
+// Indikator status di bawah papan peringkat, supaya jelas skor disimpan di mana.
+// Dipakai bersama oleh dashboard game Perkalian & Pengetahuan Dasar (satu koneksi Firebase yang sama).
 function setLeaderboardStatus(mode, detail) {
-    const el = document.getElementById('leaderboardStatus');
-    if (!el) return;
-    el.className = `leaderboard-status is-${mode}`;
-    if (mode === 'online') {
-        el.textContent = '🌐 Papan peringkat online: dilihat semua pemain';
-    } else if (mode === 'local') {
-        el.textContent = `📴 Mode lokal: skor hanya tersimpan di perangkat ini${detail ? ` (${detail})` : ''}`;
-    } else {
-        el.textContent = `⚠️ Gagal terhubung ke server${detail ? ` (${detail})` : ''}. Memakai data lokal.`;
-    }
+    ['leaderboardStatus', 'knowledgeLeaderboardStatus'].forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.className = `leaderboard-status is-${mode}`;
+        if (mode === 'online') {
+            el.textContent = '🌐 Papan peringkat online: dilihat semua pemain';
+        } else if (mode === 'local') {
+            el.textContent = `📴 Mode lokal: skor hanya tersimpan di perangkat ini${detail ? ` (${detail})` : ''}`;
+        } else {
+            el.textContent = `⚠️ Gagal terhubung ke server${detail ? ` (${detail})` : ''}. Memakai data lokal.`;
+        }
+    });
 }
 
 function initFirebase() {
@@ -386,6 +391,8 @@ function switchView(viewName) {
     hubView.classList.toggle('active', viewName === 'hub');
     dashboardView.classList.toggle('active', viewName === 'dashboard');
     gameView.classList.toggle('active', viewName === 'game');
+    knowledgeDashboardView.classList.toggle('active', viewName === 'knowledgeDashboard');
+    knowledgeGameView.classList.toggle('active', viewName === 'knowledgeGame');
 }
 
 function goToHub() {
@@ -410,6 +417,14 @@ document.getElementById('backToHubButton').addEventListener('click', () => {
     goToHub();
 });
 
+document.getElementById('hubOpenKnowledgeButton').addEventListener('click', () => {
+    goToKnowledgeDashboard();
+});
+
+document.getElementById('knowledgeBackToHubButton').addEventListener('click', () => {
+    goToHub();
+});
+
 function showGameComingSoonToast(btn) {
     const title = btn.querySelector('.game-card-title')?.textContent?.trim() || 'Game ini';
     showToast('danger', `🔒 ${title} segera hadir, nantikan ya!`, 3500);
@@ -424,7 +439,7 @@ document.querySelectorAll('.game-card.is-coming-soon, .game-card-soon').forEach(
 ===================================================================== */
 function setActiveLeaderboardTab(count) {
     activeLeaderboardCount = count;
-    document.querySelectorAll('.leaderboard-tab').forEach(tab => {
+    document.querySelectorAll('#dashboardView .leaderboard-tab').forEach(tab => {
         tab.classList.toggle('is-active', parseInt(tab.dataset.count, 10) === count);
     });
     renderLeaderboardPanel(count);
@@ -525,7 +540,7 @@ function renderRankList(records) {
     }).join('');
 }
 
-document.querySelectorAll('.leaderboard-tab').forEach(tab => {
+document.querySelectorAll('#dashboardView .leaderboard-tab').forEach(tab => {
     tab.addEventListener('click', () => setActiveLeaderboardTab(parseInt(tab.dataset.count, 10)));
 });
 
@@ -1555,6 +1570,1206 @@ function cleanupDuel() {
     if (oppBar) oppBar.style.display = 'none';
     if (banner) banner.style.display = 'none';
     duelState = null;
+}
+
+/* =====================================================================================
+   GAME PENGETAHUAN DASAR
+   (sengaja ditulis paralel/terpisah dari game Perkalian, bukan berbagi satu "engine" --
+   supaya aman: perubahan di sini tidak berisiko merusak game Perkalian yang sudah jalan)
+===================================================================================== */
+
+/* ---- Konstanta & state ---- */
+const KNOWLEDGE_ROUND_DURATION_MS = 60000; // 60 detik per ronde
+const KNOWLEDGE_ROUND_BUFFER = 80; // soal yang disiapkan di depan per ronde (jauh lebih dari cukup utk 60 detik)
+const MAX_KNOWLEDGE_LEADERBOARD = 10;
+const KNOWLEDGE_DUEL_START_BUFFER_MS = 6000;
+const KNOWLEDGE_DUEL_HEARTBEAT_INTERVAL_MS = 5000;
+const KNOWLEDGE_DUEL_HEARTBEAT_TIMEOUT_MS = 13000;
+
+let knowledgeUsedQuestionIds = [];
+let knowledgeSequence = [];
+let knowledgeSeqIndex = 0;
+let knowledgeCorrectCount = 0;
+let knowledgeBurnedCount = 0;
+let knowledgeHintsUsed = 0;
+let knowledgeWrongClicksThisQuestion = 0;
+let knowledgeHintUsedThisQuestion = false;
+let knowledgeGameInProgress = false;
+let knowledgeRoundTimerInterval = null;
+let knowledgeRoundEndAt = 0;
+let knowledgeLastSavedRecord = null;
+let knowledgeActiveLeaderboardTab = 'solo';
+let knowledgeSelectedAvatar = null;
+let knowledgeDuelCreateSelectedAvatar = null;
+let knowledgeDuelJoinSelectedAvatar = null;
+let knowledgeDuelState = null;
+let knowledgeDuelHeartbeatInterval = null;
+
+// Satu nama = satu baris di papan peringkat duel (dipakai sebagai ID dokumen Firestore)
+function nameToDocId(name) {
+    return name.trim().toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 60) || 'anon';
+}
+
+/* ---- Soal: rotasi kategori 1,2,3,...,N,1,2,3,...  (N ikut jumlah kategori yang ADA di data) ---- */
+function getKnowledgeCategories() {
+    const set = new Set(KNOWLEDGE_QUESTIONS.map(q => q.category));
+    return Array.from(set).sort((a, b) => a - b);
+}
+
+function generateKnowledgeSequence(count) {
+    const categories = getKnowledgeCategories();
+    const byCategory = {};
+    categories.forEach(c => { byCategory[c] = KNOWLEDGE_QUESTIONS.filter(q => q.category === c); });
+
+    // Reset riwayat soal yang sudah pernah keluar kalau sisa pool sudah hampir habis,
+    // supaya tidak pernah terjebak (sama seperti pola di game Perkalian)
+    if (knowledgeUsedQuestionIds.length >= KNOWLEDGE_QUESTIONS.length - count) {
+        knowledgeUsedQuestionIds = [];
+    }
+
+    const sequence = [];
+    let pointer = 0;
+    let safety = 0;
+    const safetyLimit = count * 50 + 500;
+    while (sequence.length < count && safety < safetyLimit) {
+        safety++;
+        const cat = categories[pointer % categories.length];
+        pointer++;
+        const pool = byCategory[cat].filter(q =>
+            !knowledgeUsedQuestionIds.includes(q.id) && !sequence.some(s => s.id === q.id)
+        );
+        if (pool.length === 0) continue; // kategori ini lagi kering sementara, lanjut putaran berikutnya
+        const pick = pool[Math.floor(Math.random() * pool.length)];
+        sequence.push(pick);
+        knowledgeUsedQuestionIds.push(pick.id);
+    }
+    return sequence;
+}
+
+/* ---- Papan peringkat: data layer (solo & duel-wins) ---- */
+function getKnowledgeSoloRecordsFromLocalStorage() {
+    try {
+        return JSON.parse(safeGetLocalStorage('knowledge_records', '[]'));
+    } catch (e) {
+        return [];
+    }
+}
+
+function sortKnowledgeSoloRecords(records) {
+    // Lebih banyak benar = lebih baik; kalau seri, lebih sedikit hint lalu lebih sedikit hangus = lebih baik
+    return [...records].sort((a, b) => {
+        if (b.correct !== a.correct) return b.correct - a.correct;
+        if (a.hints !== b.hints) return a.hints - b.hints;
+        return a.burned - b.burned;
+    });
+}
+
+async function getKnowledgeSoloRecords() {
+    if (firebaseReady) {
+        try {
+            const snapshot = await firestoreDb.collection('knowledge_records')
+                .orderBy('correct', 'desc')
+                .limit(MAX_KNOWLEDGE_LEADERBOARD)
+                .get();
+            return sortKnowledgeSoloRecords(snapshot.docs.map(doc => doc.data())).slice(0, MAX_KNOWLEDGE_LEADERBOARD);
+        } catch (e) {
+            console.warn('[Pengetahuan Dasar] Gagal memuat dari Firebase, memakai localStorage.', e);
+        }
+    }
+    return sortKnowledgeSoloRecords(getKnowledgeSoloRecordsFromLocalStorage()).slice(0, MAX_KNOWLEDGE_LEADERBOARD);
+}
+
+async function saveKnowledgeSoloRecord(record) {
+    if (firebaseReady) {
+        try {
+            await firestoreDb.collection('knowledge_records').add(record);
+            return { online: true, error: null };
+        } catch (e) {
+            console.warn('[Pengetahuan Dasar] Gagal menyimpan ke Firebase, menyimpan ke localStorage saja.', e);
+        }
+    }
+    let records = getKnowledgeSoloRecordsFromLocalStorage();
+    records.push(record);
+    records = sortKnowledgeSoloRecords(records).slice(0, MAX_KNOWLEDGE_LEADERBOARD);
+    safeSetLocalStorage('knowledge_records', JSON.stringify(records));
+    return { online: false, error: null };
+}
+
+function getKnowledgeDuelWinsFromLocalStorage() {
+    try {
+        return JSON.parse(safeGetLocalStorage('knowledge_duel_wins', '[]'));
+    } catch (e) {
+        return [];
+    }
+}
+
+async function getKnowledgeDuelWinsLeaderboard() {
+    if (firebaseReady) {
+        try {
+            const snapshot = await firestoreDb.collection('knowledge_duel_wins')
+                .orderBy('wins', 'desc')
+                .limit(MAX_KNOWLEDGE_LEADERBOARD)
+                .get();
+            return snapshot.docs.map(doc => doc.data());
+        } catch (e) {
+            console.warn('[Pengetahuan Dasar] Gagal memuat papan duel dari Firebase.', e);
+        }
+    }
+    return [...getKnowledgeDuelWinsFromLocalStorage()].sort((a, b) => b.wins - a.wins).slice(0, MAX_KNOWLEDGE_LEADERBOARD);
+}
+
+// Nama yang dipakai konsisten akan terus bertambah jumlah kemenangannya (satu nama = satu baris)
+async function recordKnowledgeDuelWin(name, avatar) {
+    const docId = nameToDocId(name);
+    if (firebaseReady) {
+        try {
+            await firestoreDb.collection('knowledge_duel_wins').doc(docId).set({
+                name: name,
+                avatar: avatar,
+                wins: firebase.firestore.FieldValue.increment(1),
+                updatedAt: Date.now()
+            }, { merge: true });
+            return;
+        } catch (e) {
+            console.warn('[Pengetahuan Dasar] Gagal mencatat kemenangan ke Firebase.', e);
+        }
+    }
+    let records = getKnowledgeDuelWinsFromLocalStorage();
+    let rec = records.find(r => r.docId === docId);
+    if (rec) {
+        rec.wins = (rec.wins || 0) + 1;
+        rec.avatar = avatar;
+        rec.name = name;
+    } else {
+        records.push({ docId, name, avatar, wins: 1 });
+    }
+    safeSetLocalStorage('knowledge_duel_wins', JSON.stringify(records));
+}
+
+/* ---- Dashboard: tab & papan peringkat ---- */
+function setKnowledgeLeaderboardTab(tabName) {
+    knowledgeActiveLeaderboardTab = tabName;
+    document.querySelectorAll('#knowledgeDashboardView .leaderboard-tab[data-klboard]').forEach(tab => {
+        tab.classList.toggle('is-active', tab.dataset.klboard === tabName);
+    });
+    renderKnowledgeLeaderboardPanel(tabName);
+}
+
+document.querySelectorAll('#knowledgeDashboardView .leaderboard-tab[data-klboard]').forEach(tab => {
+    tab.addEventListener('click', () => setKnowledgeLeaderboardTab(tab.dataset.klboard));
+});
+
+function showKnowledgeLeaderboardLoading() {
+    document.getElementById('knowledgePodium').innerHTML = '<div class="leaderboard-loading">Memuat papan peringkat...</div>';
+    document.getElementById('knowledgeRankList').innerHTML = '';
+}
+
+async function renderKnowledgeLeaderboardPanel(tabName) {
+    showKnowledgeLeaderboardLoading();
+    if (tabName === 'duel') {
+        const records = await getKnowledgeDuelWinsLeaderboard();
+        renderKnowledgeDuelWinsPodium(records);
+        renderKnowledgeDuelWinsList(records);
+    } else {
+        const records = await getKnowledgeSoloRecords();
+        renderKnowledgeSoloPodium(records);
+        renderKnowledgeSoloList(records);
+    }
+}
+
+function isKnowledgeLastSavedSolo(record) {
+    return !!knowledgeLastSavedRecord
+        && knowledgeLastSavedRecord.name === record.name
+        && knowledgeLastSavedRecord.correct === record.correct
+        && knowledgeLastSavedRecord.hints === record.hints
+        && knowledgeLastSavedRecord.burned === record.burned;
+}
+
+function renderKnowledgeSoloPodium(records) {
+    const podiumEl = document.getElementById('knowledgePodium');
+    const displayOrder = [1, 0, 2];
+
+    podiumEl.innerHTML = displayOrder.map(rankIndex => {
+        const place = rankIndex + 1;
+        const spotClass = place === 1 ? 'podium-first' : place === 2 ? 'podium-second' : 'podium-third';
+        const record = records[rankIndex];
+
+        if (!record) {
+            return `
+                <div class="podium-spot ${spotClass} is-empty">
+                    <div class="podium-avatar-wrap"><div class="podium-avatar">👤</div></div>
+                    <div class="podium-name">—</div>
+                    <div class="podium-score">--</div>
+                    <div class="podium-mistakes">&nbsp;</div>
+                    <div class="podium-base" aria-hidden="true"><span>${place}</span></div>
+                </div>
+            `;
+        }
+
+        const isYou = isKnowledgeLastSavedSolo(record);
+        return `
+            <div class="podium-spot ${spotClass}${isYou ? ' is-you' : ''}" role="group"
+                 aria-label="Peringkat ${place}: ${escapeHtml(record.name)}, ${record.correct} benar">
+                ${place === 1 ? '<div class="podium-medal" aria-hidden="true">👑</div>' : `<div class="podium-medal" aria-hidden="true">${place === 2 ? '🥈' : '🥉'}</div>`}
+                <div class="podium-avatar-wrap"><div class="podium-avatar">${avatarGlyph(record.avatar)}</div></div>
+                <div class="podium-name" title="${escapeHtml(record.name)}">${escapeHtml(record.name)}</div>
+                <div class="podium-score">${record.correct} benar</div>
+                <div class="podium-mistakes">💡${record.hints} · 💀${record.burned}</div>
+                ${isYou ? '<div class="you-chip">⭐ Kamu</div>' : ''}
+                <div class="podium-base" aria-hidden="true"><span>${place}</span></div>
+            </div>
+        `;
+    }).join('');
+}
+
+function renderKnowledgeSoloList(records) {
+    const listEl = document.getElementById('knowledgeRankList');
+    if (records.length === 0) {
+        listEl.innerHTML = `<li class="rank-list-empty">Belum ada pemain di sini.<br>Jadilah yang pertama mencatat skor! 🏁</li>`;
+        return;
+    }
+    const rest = records.slice(3, MAX_KNOWLEDGE_LEADERBOARD);
+    if (rest.length === 0) {
+        listEl.innerHTML = '';
+        return;
+    }
+    listEl.innerHTML = rest.map((record, i) => {
+        const rank = i + 4;
+        const isYou = isKnowledgeLastSavedSolo(record);
+        return `
+            <li class="rank-list-row${isYou ? ' is-you' : ''}">
+                <span class="rank-list-position">${rank}</span>
+                <span class="rank-list-avatar">${avatarGlyph(record.avatar)}</span>
+                <span class="rank-list-name">${escapeHtml(record.name)}${isYou ? ' <span class="you-chip">⭐ Kamu</span>' : ''}</span>
+                <span class="rank-list-dots" aria-hidden="true"></span>
+                <span class="rank-list-score">${record.correct} benar<small>💡${record.hints} · 💀${record.burned}</small></span>
+            </li>
+        `;
+    }).join('');
+}
+
+function renderKnowledgeDuelWinsPodium(records) {
+    const podiumEl = document.getElementById('knowledgePodium');
+    const displayOrder = [1, 0, 2];
+
+    podiumEl.innerHTML = displayOrder.map(rankIndex => {
+        const place = rankIndex + 1;
+        const spotClass = place === 1 ? 'podium-first' : place === 2 ? 'podium-second' : 'podium-third';
+        const record = records[rankIndex];
+
+        if (!record) {
+            return `
+                <div class="podium-spot ${spotClass} is-empty">
+                    <div class="podium-avatar-wrap"><div class="podium-avatar">👤</div></div>
+                    <div class="podium-name">—</div>
+                    <div class="podium-score">--</div>
+                    <div class="podium-mistakes">&nbsp;</div>
+                    <div class="podium-base" aria-hidden="true"><span>${place}</span></div>
+                </div>
+            `;
+        }
+
+        return `
+            <div class="podium-spot ${spotClass}" role="group"
+                 aria-label="Peringkat ${place}: ${escapeHtml(record.name)}, ${record.wins} menang">
+                ${place === 1 ? '<div class="podium-medal" aria-hidden="true">👑</div>' : `<div class="podium-medal" aria-hidden="true">${place === 2 ? '🥈' : '🥉'}</div>`}
+                <div class="podium-avatar-wrap"><div class="podium-avatar">${avatarGlyph(record.avatar)}</div></div>
+                <div class="podium-name" title="${escapeHtml(record.name)}">${escapeHtml(record.name)}</div>
+                <div class="podium-score">${record.wins}x menang</div>
+                <div class="podium-mistakes">&nbsp;</div>
+                <div class="podium-base" aria-hidden="true"><span>${place}</span></div>
+            </div>
+        `;
+    }).join('');
+}
+
+function renderKnowledgeDuelWinsList(records) {
+    const listEl = document.getElementById('knowledgeRankList');
+    if (records.length === 0) {
+        listEl.innerHTML = `<li class="rank-list-empty">Belum ada duel yang dimenangkan di sini.<br>Jadilah yang pertama! 🏁</li>`;
+        return;
+    }
+    const rest = records.slice(3, MAX_KNOWLEDGE_LEADERBOARD);
+    if (rest.length === 0) {
+        listEl.innerHTML = '';
+        return;
+    }
+    listEl.innerHTML = rest.map((record, i) => {
+        const rank = i + 4;
+        return `
+            <li class="rank-list-row">
+                <span class="rank-list-position">${rank}</span>
+                <span class="rank-list-avatar">${avatarGlyph(record.avatar)}</span>
+                <span class="rank-list-name">${escapeHtml(record.name)}</span>
+                <span class="rank-list-dots" aria-hidden="true"></span>
+                <span class="rank-list-score">${record.wins}x<small>menang</small></span>
+            </li>
+        `;
+    }).join('');
+}
+
+function goToKnowledgeDashboard(focusTab) {
+    countdownRunToken++;
+    document.getElementById('countdownOverlay').classList.remove('is-visible');
+    setKnowledgeLeaderboardTab(focusTab || knowledgeActiveLeaderboardTab);
+    switchView('knowledgeDashboard');
+}
+
+/* ---- Avatar picker (simpan skor solo & form duel) ---- */
+buildAvatarPicker('knowledgeAvatarPicker', (avatar) => { knowledgeSelectedAvatar = avatar; });
+buildAvatarPicker('knowledgeDuelCreateAvatarPicker', (avatar) => { knowledgeDuelCreateSelectedAvatar = avatar; });
+buildAvatarPicker('knowledgeDuelJoinAvatarPicker', (avatar) => { knowledgeDuelJoinSelectedAvatar = avatar; });
+
+/* ---- Bantuan & konfirmasi keluar ---- */
+document.getElementById('knowledgeHelpButton').addEventListener('click', () => {
+    showModal('knowledgeHelpModal');
+});
+
+document.getElementById('knowledgeSoundToggleButton').addEventListener('click', () => {
+    soundEnabled = !soundEnabled;
+    safeSetLocalStorage('soundEnabled', soundEnabled ? 'true' : 'false');
+    updateSoundToggleButton();
+    if (soundEnabled) {
+        getAudioContext();
+        playTone({ freq: 660, duration: 0.1, type: 'sine', volume: 0.18 });
+    }
+});
+
+document.getElementById('knowledgeBackToDashboardButton').addEventListener('click', () => {
+    if (knowledgeGameInProgress || knowledgeDuelState) {
+        showModal('knowledgeConfirmExitModal');
+    } else {
+        goToKnowledgeDashboard();
+    }
+});
+
+document.getElementById('knowledgeConfirmExitYesButton').addEventListener('click', async () => {
+    hideModal('knowledgeConfirmExitModal');
+    stopKnowledgeRoundTimer();
+    knowledgeGameInProgress = false;
+    if (knowledgeDuelState) {
+        await abandonKnowledgeDuel();
+    }
+    goToKnowledgeDashboard();
+});
+
+/* =====================================================================================
+   ALUR GAME SOLO
+===================================================================================== */
+document.getElementById('knowledgeOpenSoloButton').addEventListener('click', () => {
+    startKnowledgeSoloGame();
+});
+
+function prepareKnowledgeGameUI() {
+    // Tampilkan overlay countdown SINKRON bareng switchView, supaya tidak ada celah
+    // "layar game polos" sempat kelihatan sebelum overlay menutupinya (lihat catatan
+    // yang sama di prepareDuelGameUI milik game Perkalian).
+    const overlay = document.getElementById('countdownOverlay');
+    document.getElementById('countdownNumber').textContent = COUNTDOWN_STEPS[0].text;
+    document.getElementById('countdownLabel').textContent = COUNTDOWN_STEPS[0].label;
+    overlay.classList.add('is-visible');
+
+    knowledgeGameInProgress = true;
+    knowledgeLastSavedRecord = null;
+    knowledgeCorrectCount = 0;
+    knowledgeBurnedCount = 0;
+    knowledgeHintsUsed = 0;
+    knowledgeSeqIndex = 0;
+
+    document.getElementById('knowledgeTimer').textContent = '01:00';
+    document.getElementById('knowledgeTimerBarFill').style.width = '100%';
+    document.getElementById('knowledgeTimerBarFill').style.backgroundColor = '';
+    document.getElementById('knowledgeProgressLabel').textContent = 'Benar: 0';
+    document.getElementById('knowledgeQuestionText').textContent = '';
+    document.querySelectorAll('.knowledge-option-btn').forEach(btn => {
+        btn.disabled = true;
+        btn.textContent = '';
+        btn.className = 'knowledge-option-btn';
+        btn.style.display = 'flex';
+    });
+    document.getElementById('knowledgeHintButton').disabled = true;
+
+    switchView('knowledgeGame');
+}
+
+function startKnowledgeSoloGame() {
+    knowledgeDuelState = null;
+    knowledgeSequence = generateKnowledgeSequence(KNOWLEDGE_ROUND_BUFFER);
+    prepareKnowledgeGameUI();
+    document.getElementById('knowledgeDuelOpponentBar').style.display = 'none';
+    document.getElementById('knowledgeDuelDisconnectBanner').style.display = 'none';
+    runCountdown(() => {
+        beginKnowledgeRound(Date.now() + KNOWLEDGE_ROUND_DURATION_MS);
+    });
+}
+
+function beginKnowledgeRound(endAtMillis) {
+    knowledgeRoundEndAt = endAtMillis;
+    displayKnowledgeQuestion();
+    startKnowledgeRoundTimer();
+}
+
+function startKnowledgeRoundTimer() {
+    clearInterval(knowledgeRoundTimerInterval);
+    knowledgeRoundTimerInterval = setInterval(() => {
+        const remainingMs = knowledgeRoundEndAt - Date.now();
+        const remainingSec = Math.max(0, Math.ceil(remainingMs / 1000));
+        const minutes = Math.floor(remainingSec / 60).toString().padStart(2, '0');
+        const seconds = (remainingSec % 60).toString().padStart(2, '0');
+        document.getElementById('knowledgeTimer').textContent = `${minutes}:${seconds}`;
+        const pct = Math.max(0, Math.min(100, (remainingMs / KNOWLEDGE_ROUND_DURATION_MS) * 100));
+        const fill = document.getElementById('knowledgeTimerBarFill');
+        fill.style.width = `${pct}%`;
+        fill.style.backgroundColor = remainingSec <= 10 ? 'var(--color-danger)' : '';
+
+        if (remainingMs <= 0) {
+            stopKnowledgeRoundTimer();
+            if (knowledgeDuelState) {
+                endKnowledgeDuelRound();
+            } else {
+                endKnowledgeSoloRound();
+            }
+        }
+    }, 200);
+}
+
+function stopKnowledgeRoundTimer() {
+    clearInterval(knowledgeRoundTimerInterval);
+    knowledgeRoundTimerInterval = null;
+}
+
+function displayKnowledgeQuestion() {
+    if (knowledgeSeqIndex >= knowledgeSequence.length) {
+        knowledgeSequence = knowledgeSequence.concat(generateKnowledgeSequence(KNOWLEDGE_ROUND_BUFFER));
+    }
+    const q = knowledgeSequence[knowledgeSeqIndex];
+    knowledgeWrongClicksThisQuestion = 0;
+    knowledgeHintUsedThisQuestion = false;
+
+    document.getElementById('knowledgeQuestionText').textContent = q.question;
+    const btns = document.querySelectorAll('.knowledge-option-btn');
+    btns.forEach((btn, i) => {
+        btn.textContent = q.options[i];
+        btn.disabled = false;
+        btn.className = 'knowledge-option-btn';
+        btn.style.display = 'flex';
+    });
+    document.getElementById('knowledgeHintButton').disabled = false;
+    document.getElementById('knowledgeProgressLabel').textContent = `Benar: ${knowledgeCorrectCount}`;
+}
+
+document.querySelectorAll('.knowledge-option-btn').forEach((btn, idx) => {
+    btn.addEventListener('click', () => handleKnowledgeOptionClick(idx));
+});
+
+function handleKnowledgeOptionClick(idx) {
+    if (!knowledgeGameInProgress) return;
+    const btns = Array.from(document.querySelectorAll('.knowledge-option-btn'));
+    const btn = btns[idx];
+    if (!btn || btn.disabled) return;
+
+    const q = knowledgeSequence[knowledgeSeqIndex];
+
+    if (idx === q.correctIndex) {
+        btn.classList.add('is-correct');
+        playCorrectSound();
+        showToast('success', 'Benar! 🎉');
+        knowledgeCorrectCount++;
+        btns.forEach(b => { b.disabled = true; });
+        if (knowledgeDuelState) reportKnowledgeDuelProgress();
+        setTimeout(advanceKnowledgeQuestion, 450);
+        return;
+    }
+
+    btn.disabled = true;
+    btn.classList.add('is-wrong');
+    playWrongSound();
+    knowledgeWrongClicksThisQuestion++;
+
+    const visibleCount = btns.filter(b => b.style.display !== 'none').length;
+    if (knowledgeWrongClicksThisQuestion >= visibleCount - 1) {
+        // Sisa tinggal jawaban benar -> langsung hangus, jangan beri kesempatan asal tebak
+        knowledgeBurnedCount++;
+        showToast('danger', 'Soal hangus! 💀', 1800);
+        btns.forEach(b => { b.disabled = true; });
+        if (knowledgeDuelState) reportKnowledgeDuelProgress();
+        setTimeout(advanceKnowledgeQuestion, 650);
+    }
+}
+
+function advanceKnowledgeQuestion() {
+    knowledgeSeqIndex++;
+    if (knowledgeRoundEndAt - Date.now() > 0 && knowledgeGameInProgress) {
+        displayKnowledgeQuestion();
+    }
+    // Kalau waktu sudah habis tepat di momen ini, interval timer yang akan menangani endRound.
+}
+
+document.getElementById('knowledgeHintButton').addEventListener('click', () => {
+    if (knowledgeHintUsedThisQuestion || !knowledgeGameInProgress) return;
+    const q = knowledgeSequence[knowledgeSeqIndex];
+    const btns = Array.from(document.querySelectorAll('.knowledge-option-btn'));
+
+    const viableDistractorIdx = btns
+        .map((b, i) => i)
+        .filter(i => i !== q.correctIndex && !btns[i].disabled && btns[i].style.display !== 'none');
+
+    if (viableDistractorIdx.length === 0) return; // sudah tersisa 1 opsi (benar) saja, hint tak relevan lagi
+
+    knowledgeHintUsedThisQuestion = true;
+    knowledgeHintsUsed++;
+    document.getElementById('knowledgeHintButton').disabled = true;
+
+    // Sembunyikan opsi salah yg sudah ketahuan (sudah dicoba & disabled) biar tidak mengotori tampilan
+    btns.forEach((b, i) => {
+        if (i !== q.correctIndex && b.disabled) b.style.display = 'none';
+    });
+
+    // Dari distraktor yang masih "hidup", sisakan 1 secara acak, sembunyikan sisanya
+    const keepIndex = viableDistractorIdx[Math.floor(Math.random() * viableDistractorIdx.length)];
+    viableDistractorIdx.forEach(i => {
+        if (i !== keepIndex) btns[i].style.display = 'none';
+    });
+
+    showToast('success', '💡 Hint dipakai! Tersisa 2 opsi.');
+});
+
+/* ---- Insight peringkat (analog buildRankInsight milik game Perkalian, tapi "lebih tinggi = lebih baik") ---- */
+function buildKnowledgeRankInsight(correct, hints, burned, records) {
+    const sorted = sortKnowledgeSoloRecords(records);
+    const better = sorted.filter(r =>
+        r.correct > correct || (r.correct === correct && (r.hints < hints || (r.hints === hints && r.burned <= burned)))
+    ).length;
+    const rank = better + 1;
+    const qualifies = rank <= MAX_KNOWLEDGE_LEADERBOARD;
+
+    if (sorted.length === 0) {
+        return {
+            rank: 1, qualifies: true, tone: 'top',
+            headline: '🏆 Kamu pemain pertama di sini!',
+            details: [{ icon: '💾', text: 'Simpan skormu untuk jadi peringkat 1 di papan peringkat.' }]
+        };
+    }
+
+    const top = sorted[0];
+    const details = [];
+
+    if (rank === 1) {
+        const gap = correct - top.correct;
+        details.push({ icon: '⚡', text: gap > 0 ? `${gap} jawaban benar lebih banyak dari rekor sebelumnya.` : `Jumlah benar sama, tapi hint/hangus-mu lebih sedikit.` });
+        return { rank, qualifies, tone: 'top', headline: '👑 Rekor baru! Kamu peringkat 1', details };
+    }
+
+    if (rank <= 3) {
+        const gapToTop = top.correct - correct;
+        details.push({ icon: '🎯', text: `${gapToTop} jawaban benar lagi untuk menyamai peringkat 1.` });
+        return { rank, qualifies, tone: 'top', headline: `${rank === 2 ? '🥈' : '🥉'} Kamu masuk 3 besar! Peringkat ${rank}`, details };
+    }
+
+    if (qualifies) {
+        const third = sorted[2];
+        details.push({ icon: '🥉', text: `${Math.max(1, third.correct - correct + 1)} jawaban benar lagi untuk masuk 3 besar.` });
+        return { rank, qualifies, tone: 'ok', headline: `🎯 Kamu masuk papan peringkat! Peringkat ${rank}`, details };
+    }
+
+    const last = sorted[MAX_KNOWLEDGE_LEADERBOARD - 1];
+    details.push({ icon: '📉', text: `${Math.max(1, last.correct - correct + 1)} jawaban benar lagi untuk masuk papan peringkat.` });
+    return { rank, qualifies, tone: 'miss', headline: '💪 Belum masuk papan peringkat, ayo coba lagi!', details };
+}
+
+function renderKnowledgeRankInsight(insight) {
+    const box = document.getElementById('knowledgeRankInsight');
+    box.className = `rank-insight is-${insight.tone}`;
+    document.getElementById('knowledgeRankInsightHeadline').textContent = insight.headline;
+    const list = document.getElementById('knowledgeRankInsightDetails');
+    list.innerHTML = '';
+    insight.details.forEach(detail => {
+        const li = document.createElement('li');
+        li.dataset.icon = detail.icon;
+        li.textContent = detail.text;
+        list.appendChild(li);
+    });
+    box.style.display = 'block';
+}
+
+async function endKnowledgeSoloRound() {
+    knowledgeGameInProgress = false;
+    document.querySelectorAll('.knowledge-option-btn').forEach(b => { b.disabled = true; });
+    document.getElementById('knowledgeHintButton').disabled = true;
+
+    document.getElementById('knowledgeFinalCorrect').textContent = knowledgeCorrectCount.toString();
+    document.getElementById('knowledgeFinalHints').textContent = knowledgeHintsUsed.toString();
+    document.getElementById('knowledgeFinalBurned').textContent = knowledgeBurnedCount.toString();
+
+    const records = await getKnowledgeSoloRecords();
+    const insight = buildKnowledgeRankInsight(knowledgeCorrectCount, knowledgeHintsUsed, knowledgeBurnedCount, records);
+    renderKnowledgeRankInsight(insight);
+    document.getElementById('knowledgeSaveScoreButton').style.display = insight.qualifies ? 'inline-block' : 'none';
+
+    showModal('knowledgeEndModal');
+    launchConfetti();
+    playFinishSounds(insight.qualifies);
+}
+
+document.getElementById('knowledgeSaveScoreButton').addEventListener('click', async () => {
+    hideModal('knowledgeEndModal');
+    await waitForModalHidden('knowledgeEndModal');
+    showModal('knowledgeSaveRecordModal');
+});
+
+document.getElementById('knowledgeButtonSavePlayerRecord').addEventListener('click', saveKnowledgePlayerRecord);
+
+async function saveKnowledgePlayerRecord() {
+    const nameInput = document.getElementById('knowledgePlayerName');
+    const playerName = nameInput.value.trim();
+    if (!playerName) {
+        showToast('danger', 'Isi dulu namamu ya!');
+        nameInput.focus();
+        return;
+    }
+
+    const saveBtn = document.getElementById('knowledgeButtonSavePlayerRecord');
+    saveBtn.disabled = true;
+    saveBtn.textContent = 'Menyimpan...';
+
+    let saveResult = null;
+    try {
+        saveResult = await saveKnowledgeSoloRecord({
+            name: playerName,
+            correct: knowledgeCorrectCount,
+            hints: knowledgeHintsUsed,
+            burned: knowledgeBurnedCount,
+            avatar: knowledgeSelectedAvatar
+        });
+    } finally {
+        saveBtn.disabled = false;
+        saveBtn.textContent = 'Simpan';
+    }
+
+    hideModal('knowledgeSaveRecordModal');
+    nameInput.value = '';
+    knowledgeLastSavedRecord = { name: playerName, correct: knowledgeCorrectCount, hints: knowledgeHintsUsed, burned: knowledgeBurnedCount };
+
+    if (saveResult && saveResult.error) {
+        showToast('danger', `Gagal simpan online: ${saveResult.error}`, 6000);
+    }
+
+    goToKnowledgeDashboard('solo');
+}
+
+document.getElementById('knowledgeSaveRecordModal').addEventListener('shown.bs.modal', function () {
+    document.getElementById('knowledgePlayerName').focus();
+});
+
+document.getElementById('knowledgePlayAgainButton').addEventListener('click', () => {
+    hideModal('knowledgeEndModal');
+    startKnowledgeSoloGame();
+});
+
+document.getElementById('knowledgeEndBackToDashboardButton').addEventListener('click', () => {
+    hideModal('knowledgeEndModal');
+    goToKnowledgeDashboard('solo');
+});
+
+/* =====================================================================================
+   DUEL 1v1 PENGETAHUAN DASAR
+===================================================================================== */
+function knowledgeDuelDocRef(roomCode) {
+    return firestoreDb.collection('knowledge_duels').doc(roomCode);
+}
+
+document.getElementById('knowledgeOpenDuelButton').addEventListener('click', () => {
+    if (!requireFirebaseForDuel()) return;
+    showModal('knowledgeDuelModal');
+});
+
+document.getElementById('knowledgeDuelCreateRoomButton').addEventListener('click', async () => {
+    hideModal('knowledgeDuelModal');
+    await waitForModalHidden('knowledgeDuelModal');
+    showModal('knowledgeDuelCreateModal');
+});
+
+document.getElementById('knowledgeDuelJoinRoomButton').addEventListener('click', async () => {
+    hideModal('knowledgeDuelModal');
+    await waitForModalHidden('knowledgeDuelModal');
+    showModal('knowledgeDuelJoinModal');
+});
+
+document.getElementById('knowledgeDuelJoinCode').addEventListener('input', function () {
+    this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 4);
+});
+
+document.getElementById('knowledgeDuelCreateSubmitButton').addEventListener('click', createKnowledgeDuelRoom);
+
+async function createKnowledgeDuelRoom() {
+    const nameInput = document.getElementById('knowledgeDuelCreateName');
+    const name = nameInput.value.trim();
+    if (!name) {
+        showToast('danger', 'Isi dulu namamu ya!');
+        nameInput.focus();
+        return;
+    }
+
+    cleanupKnowledgeDuel();
+    hideModal('knowledgeDuelCreateModal');
+
+    const sequence = generateKnowledgeSequence(KNOWLEDGE_ROUND_BUFFER);
+    let roomCode = null;
+
+    try {
+        for (let attempt = 0; attempt < 6 && !roomCode; attempt++) {
+            const candidate = generateRoomCode();
+            const snap = await knowledgeDuelDocRef(candidate).get();
+            if (!snap.exists) roomCode = candidate;
+        }
+        if (!roomCode) throw new Error('kode-habis');
+
+        await knowledgeDuelDocRef(roomCode).set({
+            status: 'waiting',
+            createdAt: Date.now(),
+            startAtMillis: null,
+            winner: null,
+            rematch: null,
+            questions: sequence,
+            host: { name: name, avatar: knowledgeDuelCreateSelectedAvatar, correct: 0, burned: 0, hints: 0, finishedAt: null, lastSeen: Date.now() },
+            guest: null
+        });
+    } catch (e) {
+        showToast('danger', `Gagal membuat room: ${e.code || e.message}`, 5000);
+        return;
+    }
+
+    knowledgeDuelState = {
+        roomCode, role: 'host', sequence,
+        lastStartAtMillis: null, lastRematchUpdatedAt: null, resultShown: false
+    };
+    document.getElementById('knowledgeDuelRoomCodeDisplay').textContent = roomCode;
+    await waitForModalHidden('knowledgeDuelCreateModal');
+    showModal('knowledgeDuelWaitingModal');
+    listenToKnowledgeDuelRoom(roomCode);
+    startKnowledgeDuelHeartbeat();
+}
+
+document.getElementById('knowledgeDuelCopyCodeButton').addEventListener('click', () => {
+    const code = document.getElementById('knowledgeDuelRoomCodeDisplay').textContent;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(code).then(() => showToast('success', 'Kode disalin!')).catch(() => {});
+    }
+});
+
+document.getElementById('knowledgeDuelCancelWaitingButton').addEventListener('click', async () => {
+    hideModal('knowledgeDuelWaitingModal');
+    await abandonKnowledgeDuel();
+});
+
+document.getElementById('knowledgeDuelJoinSubmitButton').addEventListener('click', joinKnowledgeDuelRoom);
+
+async function joinKnowledgeDuelRoom() {
+    const codeInput = document.getElementById('knowledgeDuelJoinCode');
+    const nameInput = document.getElementById('knowledgeDuelJoinName');
+    const code = codeInput.value.trim().toUpperCase();
+    const name = nameInput.value.trim();
+
+    if (code.length !== 4) {
+        showToast('danger', 'Kode room terdiri dari 4 karakter.');
+        codeInput.focus();
+        return;
+    }
+    if (!name) {
+        showToast('danger', 'Isi dulu namamu ya!');
+        nameInput.focus();
+        return;
+    }
+
+    const submitBtn = document.getElementById('knowledgeDuelJoinSubmitButton');
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Menghubungkan...';
+
+    try {
+        const ref = knowledgeDuelDocRef(code);
+        const snap = await ref.get();
+        if (!snap.exists) {
+            showToast('danger', 'Kode room tidak ditemukan.');
+            return;
+        }
+        const room = snap.data();
+        if (room.status !== 'waiting' || room.guest) {
+            showToast('danger', 'Room ini sudah penuh atau sedang bermain.');
+            return;
+        }
+
+        const startAtMillis = Date.now() + KNOWLEDGE_DUEL_START_BUFFER_MS;
+        await ref.update({
+            guest: { name: name, avatar: knowledgeDuelJoinSelectedAvatar, correct: 0, burned: 0, hints: 0, finishedAt: null, lastSeen: Date.now() },
+            status: 'countdown',
+            startAtMillis: startAtMillis
+        });
+
+        cleanupKnowledgeDuel();
+        knowledgeDuelState = {
+            roomCode: code, role: 'guest', sequence: room.questions,
+            lastStartAtMillis: null, lastRematchUpdatedAt: null, resultShown: false
+        };
+        codeInput.value = '';
+        nameInput.value = '';
+        hideModal('knowledgeDuelJoinModal');
+        listenToKnowledgeDuelRoom(code);
+        startKnowledgeDuelHeartbeat();
+    } catch (e) {
+        showToast('danger', `Gagal gabung room: ${e.code || e.message}`, 5000);
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Gabung';
+    }
+}
+
+function listenToKnowledgeDuelRoom(roomCode) {
+    if (!knowledgeDuelState) return;
+    knowledgeDuelState.unsubscribe = knowledgeDuelDocRef(roomCode).onSnapshot(
+        snap => {
+            if (!snap.exists) {
+                if (!knowledgeDuelState) return;
+                showToast('danger', 'Room duel sudah tidak tersedia.', 4000);
+                cleanupKnowledgeDuel();
+                goToKnowledgeDashboard('duel');
+                return;
+            }
+            handleKnowledgeDuelRoomUpdate(snap.data());
+        },
+        err => console.warn('[Duel Pengetahuan Dasar] listener error', err)
+    );
+}
+
+async function handleKnowledgeDuelRoomUpdate(room) {
+    if (!knowledgeDuelState) return;
+
+    const opponentRole = knowledgeDuelState.role === 'host' ? 'guest' : 'host';
+    const opponent = room[opponentRole];
+
+    if (room.status === 'abandoned') {
+        showToast('danger', 'Lawan meninggalkan duel.', 4000);
+        cleanupKnowledgeDuel();
+        goToKnowledgeDashboard('duel');
+        return;
+    }
+
+    if (room.status === 'countdown' && room.startAtMillis !== knowledgeDuelState.lastStartAtMillis) {
+        knowledgeDuelState.lastStartAtMillis = room.startAtMillis;
+        knowledgeDuelState.lastRematchUpdatedAt = null;
+        knowledgeDuelState.resultShown = false;
+        knowledgeDuelState.sequence = room.questions;
+        knowledgeDuelState.opponentName = opponent ? opponent.name : 'Lawan';
+        knowledgeDuelState.opponentAvatar = opponent ? opponent.avatar : null;
+
+        hideModal('knowledgeDuelWaitingModal');
+        hideModal('knowledgeDuelResultModal');
+        hideModal('knowledgeDuelWaitingResultModal');
+        hideModal('knowledgeDuelRematchWaitingModal');
+        hideModal('knowledgeDuelRematchRequestModal');
+        beginKnowledgeDuelCountdown(room.startAtMillis);
+    }
+
+    if ((room.status === 'playing' || room.status === 'countdown') && opponent) {
+        updateKnowledgeDuelOpponentUI(opponent);
+    }
+
+    if (room.status === 'finished' && !knowledgeDuelState.resultShown) {
+        knowledgeDuelState.resultShown = true;
+        if (knowledgeGameInProgress) {
+            knowledgeGameInProgress = false;
+            stopKnowledgeRoundTimer();
+            document.querySelectorAll('.knowledge-option-btn').forEach(b => { b.disabled = true; });
+            document.getElementById('knowledgeHintButton').disabled = true;
+        }
+        await waitForModalHidden('knowledgeDuelWaitingResultModal');
+        showKnowledgeDuelResult(room);
+    }
+
+    if (room.rematch && room.rematch.updatedAt !== knowledgeDuelState.lastRematchUpdatedAt) {
+        knowledgeDuelState.lastRematchUpdatedAt = room.rematch.updatedAt;
+        const iAmRequester = room.rematch.requestedBy === knowledgeDuelState.role;
+
+        if (room.rematch.status === 'pending') {
+            if (iAmRequester) {
+                showModal('knowledgeDuelRematchWaitingModal');
+            } else {
+                document.getElementById('knowledgeDuelRematchRequestText').textContent =
+                    `${opponent ? opponent.name : 'Lawan'} ingin main lagi. Setuju?`;
+                showModal('knowledgeDuelRematchRequestModal');
+            }
+        } else if (room.rematch.status === 'declined') {
+            hideModal('knowledgeDuelRematchWaitingModal');
+            hideModal('knowledgeDuelRematchRequestModal');
+            if (iAmRequester) {
+                showToast('danger', 'Lawan menolak ajakan main lagi.', 4000);
+                await waitForModalHidden('knowledgeDuelRematchWaitingModal');
+                showModal('knowledgeDuelResultModal');
+                knowledgeDuelDocRef(knowledgeDuelState.roomCode).update({ rematch: null }).catch(() => {});
+            }
+        }
+    }
+
+    checkKnowledgeDuelOpponentHeartbeat(opponent, room.status);
+}
+
+function beginKnowledgeDuelCountdown(startAtMillis) {
+    const countdownDurationMs = COUNTDOWN_STEPS.length * 800 + 650;
+    const waitMs = Math.max(0, (startAtMillis - Date.now()) - countdownDurationMs);
+
+    knowledgeSequence = knowledgeDuelState.sequence;
+    prepareKnowledgeGameUI();
+
+    const oppBar = document.getElementById('knowledgeDuelOpponentBar');
+    oppBar.style.display = 'flex';
+    document.getElementById('knowledgeDuelOpponentAvatar').textContent = avatarGlyph(knowledgeDuelState.opponentAvatar);
+    document.getElementById('knowledgeDuelOpponentName').textContent = knowledgeDuelState.opponentName || 'Lawan';
+    document.getElementById('knowledgeDuelOpponentFill').style.width = '0%';
+    document.getElementById('knowledgeDuelOpponentCount').textContent = '0 benar';
+    document.getElementById('knowledgeDuelDisconnectBanner').style.display = 'none';
+
+    setTimeout(() => {
+        if (!knowledgeDuelState) return;
+        runCountdown(() => {
+            beginKnowledgeRound(startAtMillis + KNOWLEDGE_ROUND_DURATION_MS);
+        });
+    }, waitMs);
+
+    knowledgeDuelDocRef(knowledgeDuelState.roomCode).update({ status: 'playing' }).catch(() => {});
+}
+
+function updateKnowledgeDuelOpponentUI(opponent) {
+    const fill = document.getElementById('knowledgeDuelOpponentFill');
+    const countEl = document.getElementById('knowledgeDuelOpponentCount');
+    if (!fill || !countEl) return;
+    const pct = Math.min(100, (opponent.correct / 20) * 100); // skala visual kasar, bukan target pasti
+    fill.style.width = `${pct}%`;
+    countEl.textContent = `${opponent.correct} benar`;
+}
+
+function reportKnowledgeDuelProgress() {
+    if (!knowledgeDuelState) return;
+    knowledgeDuelDocRef(knowledgeDuelState.roomCode).update({
+        [`${knowledgeDuelState.role}.correct`]: knowledgeCorrectCount,
+        [`${knowledgeDuelState.role}.burned`]: knowledgeBurnedCount,
+        [`${knowledgeDuelState.role}.hints`]: knowledgeHintsUsed,
+        [`${knowledgeDuelState.role}.lastSeen`]: Date.now()
+    }).catch(e => console.warn('[Duel Pengetahuan Dasar] gagal kirim progres', e));
+}
+
+// Berbeda dari duel Perkalian: di sini KEDUA pemain main penuh 60 detik (bukan lomba selesai duluan),
+// jadi pemenang baru bisa ditentukan setelah KEDUA sisi sama-sama menuliskan hasil akhirnya.
+async function endKnowledgeDuelRound() {
+    knowledgeGameInProgress = false;
+    document.querySelectorAll('.knowledge-option-btn').forEach(b => { b.disabled = true; });
+    document.getElementById('knowledgeHintButton').disabled = true;
+
+    const myRole = knowledgeDuelState.role;
+    const opponentRole = myRole === 'host' ? 'guest' : 'host';
+    const roomRef = knowledgeDuelDocRef(knowledgeDuelState.roomCode);
+    const myFinal = { correct: knowledgeCorrectCount, burned: knowledgeBurnedCount, hints: knowledgeHintsUsed };
+
+    try {
+        await firestoreDb.runTransaction(async (tx) => {
+            const snap = await tx.get(roomRef);
+            if (!snap.exists) return;
+            const room = snap.data();
+
+            const update = {
+                [`${myRole}.correct`]: myFinal.correct,
+                [`${myRole}.burned`]: myFinal.burned,
+                [`${myRole}.hints`]: myFinal.hints,
+                [`${myRole}.finishedAt`]: Date.now()
+            };
+
+            const opponentData = room[opponentRole];
+            if (opponentData && opponentData.finishedAt) {
+                update.status = 'finished';
+                update.winner = determineKnowledgeDuelWinner(myRole, myFinal, opponentRole, opponentData);
+            }
+
+            tx.update(roomRef, update);
+        });
+    } catch (e) {
+        showToast('danger', `Gagal mengirim hasil duel: ${e.code || e.message}`, 5000);
+    }
+
+    if (!knowledgeDuelState.resultShown) {
+        showModal('knowledgeDuelWaitingResultModal');
+    }
+}
+
+function determineKnowledgeDuelWinner(roleA, dataA, roleB, dataB) {
+    if (dataA.correct !== dataB.correct) return dataA.correct > dataB.correct ? roleA : roleB;
+    if (dataA.hints !== dataB.hints) return dataA.hints < dataB.hints ? roleA : roleB;
+    if (dataA.burned !== dataB.burned) return dataA.burned < dataB.burned ? roleA : roleB;
+    return 'draw';
+}
+
+async function showKnowledgeDuelResult(room) {
+    stopKnowledgeDuelHeartbeat();
+    hideModal('knowledgeDuelWaitingResultModal');
+
+    const isDraw = room.winner === 'draw';
+    const amIWinner = room.winner === knowledgeDuelState.role;
+    const me = knowledgeDuelState.role === 'host' ? room.host : room.guest;
+    const opponent = knowledgeDuelState.role === 'host' ? room.guest : room.host;
+
+    const banner = document.getElementById('knowledgeDuelWinnerBanner');
+    if (isDraw) {
+        banner.textContent = '🤝 Seri!';
+        banner.className = 'duel-winner-banner is-lose';
+    } else {
+        banner.textContent = amIWinner ? '🏆 Kamu Menang!' : `😅 ${opponent ? opponent.name : 'Lawan'} Menang`;
+        banner.className = `duel-winner-banner ${amIWinner ? 'is-win' : 'is-lose'}`;
+    }
+
+    const renderPlayer = (label, player) => {
+        const finished = !!(player && player.finishedAt);
+        const statLine = finished
+            ? `${player.correct} benar · 💡${player.hints} · 💀${player.burned}`
+            : `Belum menyelesaikan waktunya`;
+        return `
+            <div class="duel-result-card">
+                <div class="duel-result-avatar">${avatarGlyph(player ? player.avatar : null)}</div>
+                <div class="duel-result-name">${escapeHtml(player ? player.name : '—')}</div>
+                <div class="duel-result-label">${label}</div>
+                <div class="duel-result-stat">${statLine}</div>
+            </div>
+        `;
+    };
+
+    document.getElementById('knowledgeDuelResultGrid').innerHTML =
+        renderPlayer('Kamu', me) + renderPlayer('Lawan', opponent);
+
+    if (amIWinner && me) {
+        await recordKnowledgeDuelWin(me.name, me.avatar);
+    }
+
+    showModal('knowledgeDuelResultModal');
+    launchConfetti();
+    playFinishSounds(amIWinner);
+}
+
+document.getElementById('knowledgeDuelRematchButton').addEventListener('click', async () => {
+    if (!knowledgeDuelState) return;
+    hideModal('knowledgeDuelResultModal');
+    await waitForModalHidden('knowledgeDuelResultModal');
+    try {
+        await knowledgeDuelDocRef(knowledgeDuelState.roomCode).update({
+            rematch: { requestedBy: knowledgeDuelState.role, status: 'pending', updatedAt: Date.now() }
+        });
+        showModal('knowledgeDuelRematchWaitingModal');
+    } catch (e) {
+        showToast('danger', `Gagal mengirim ajakan main lagi: ${e.code || e.message}`, 5000);
+        showModal('knowledgeDuelResultModal');
+    }
+});
+
+document.getElementById('knowledgeDuelRematchCancelButton').addEventListener('click', async () => {
+    hideModal('knowledgeDuelRematchWaitingModal');
+    if (knowledgeDuelState) {
+        try {
+            await knowledgeDuelDocRef(knowledgeDuelState.roomCode).update({ rematch: null });
+        } catch (e) { /* abaikan */ }
+    }
+    await waitForModalHidden('knowledgeDuelRematchWaitingModal');
+    showModal('knowledgeDuelResultModal');
+});
+
+document.getElementById('knowledgeDuelRematchAcceptButton').addEventListener('click', async () => {
+    if (!knowledgeDuelState) return;
+    hideModal('knowledgeDuelRematchRequestModal');
+    await waitForModalHidden('knowledgeDuelRematchRequestModal');
+
+    const newSequence = generateKnowledgeSequence(KNOWLEDGE_ROUND_BUFFER);
+    knowledgeDuelState.sequence = newSequence;
+
+    try {
+        await knowledgeDuelDocRef(knowledgeDuelState.roomCode).update({
+            questions: newSequence,
+            status: 'countdown',
+            startAtMillis: Date.now() + KNOWLEDGE_DUEL_START_BUFFER_MS,
+            winner: null,
+            rematch: null,
+            'host.correct': 0, 'host.burned': 0, 'host.hints': 0, 'host.finishedAt': null, 'host.lastSeen': Date.now(),
+            'guest.correct': 0, 'guest.burned': 0, 'guest.hints': 0, 'guest.finishedAt': null, 'guest.lastSeen': Date.now()
+        });
+    } catch (e) {
+        showToast('danger', `Gagal memulai ulang duel: ${e.code || e.message}`, 5000);
+    }
+});
+
+document.getElementById('knowledgeDuelRematchDeclineButton').addEventListener('click', async () => {
+    if (!knowledgeDuelState) return;
+    hideModal('knowledgeDuelRematchRequestModal');
+    await waitForModalHidden('knowledgeDuelRematchRequestModal');
+    showModal('knowledgeDuelResultModal');
+
+    const requesterRole = knowledgeDuelState.role === 'host' ? 'guest' : 'host';
+    try {
+        await knowledgeDuelDocRef(knowledgeDuelState.roomCode).update({
+            rematch: { requestedBy: requesterRole, status: 'declined', updatedAt: Date.now() }
+        });
+    } catch (e) { /* abaikan */ }
+});
+
+document.getElementById('knowledgeDuelResultDashboardButton').addEventListener('click', () => {
+    hideModal('knowledgeDuelResultModal');
+    cleanupKnowledgeDuel();
+    goToKnowledgeDashboard('duel');
+});
+
+function startKnowledgeDuelHeartbeat() {
+    stopKnowledgeDuelHeartbeat();
+    knowledgeDuelHeartbeatInterval = setInterval(() => {
+        if (!knowledgeDuelState) return;
+        knowledgeDuelDocRef(knowledgeDuelState.roomCode).update({
+            [`${knowledgeDuelState.role}.lastSeen`]: Date.now()
+        }).catch(() => {});
+    }, KNOWLEDGE_DUEL_HEARTBEAT_INTERVAL_MS);
+}
+
+function stopKnowledgeDuelHeartbeat() {
+    if (knowledgeDuelHeartbeatInterval) {
+        clearInterval(knowledgeDuelHeartbeatInterval);
+        knowledgeDuelHeartbeatInterval = null;
+    }
+}
+
+function checkKnowledgeDuelOpponentHeartbeat(opponent, status) {
+    const banner = document.getElementById('knowledgeDuelDisconnectBanner');
+    if (!banner) return;
+    if (!opponent || status === 'finished' || status === 'waiting') {
+        banner.style.display = 'none';
+        return;
+    }
+    const stale = opponent.lastSeen && (Date.now() - opponent.lastSeen > KNOWLEDGE_DUEL_HEARTBEAT_TIMEOUT_MS);
+    banner.style.display = stale ? 'flex' : 'none';
+}
+
+document.getElementById('knowledgeDuelLeaveDisconnectedButton').addEventListener('click', async () => {
+    await abandonKnowledgeDuel();
+    goToKnowledgeDashboard('duel');
+});
+
+async function abandonKnowledgeDuel() {
+    if (!knowledgeDuelState) return;
+    try {
+        await knowledgeDuelDocRef(knowledgeDuelState.roomCode).update({ status: 'abandoned' });
+    } catch (e) { /* room mungkin sudah tidak ada / sudah selesai duluan, aman diabaikan */ }
+    cleanupKnowledgeDuel();
+}
+
+function cleanupKnowledgeDuel() {
+    if (knowledgeDuelState && typeof knowledgeDuelState.unsubscribe === 'function') {
+        knowledgeDuelState.unsubscribe();
+    }
+    stopKnowledgeDuelHeartbeat();
+    const oppBar = document.getElementById('knowledgeDuelOpponentBar');
+    const banner = document.getElementById('knowledgeDuelDisconnectBanner');
+    if (oppBar) oppBar.style.display = 'none';
+    if (banner) banner.style.display = 'none';
+    knowledgeDuelState = null;
 }
 
 /* =====================================================================
