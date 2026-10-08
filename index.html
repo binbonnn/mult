@@ -10,7 +10,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/css/bootstrap.min.css" rel="stylesheet"
         integrity="sha384-4bw+/aepP/YC94hEpVNVgiZdgIC5+VKNBQNGCHeKRQN+PtmoHDEXuppvnDJzQIu9" crossorigin="anonymous">
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css?v=20261004">
     <title>Game Perkalian Seru</title>
 </head>
 
@@ -28,16 +28,16 @@
             </header>
 
             <div class="game-grid">
-                <button type="button" class="game-card game-card-multiply" id="hubOpenMultiplyButton">
+                <button type="button" class="game-card game-card-active game-card-multiply" id="hubOpenMultiplyButton">
                     <span class="game-card-icon">🎯</span>
                     <span class="game-card-title">Perkalian 1-10</span>
                     <span class="game-card-subtitle">Kuis &amp; Duel 1v1</span>
                 </button>
 
-                <button type="button" class="game-card game-card-knowledge is-coming-soon" id="hubComingSoonKnowledge">
+                <button type="button" class="game-card game-card-active game-card-knowledge" id="hubOpenKnowledgeButton">
                     <span class="game-card-icon">🧠</span>
                     <span class="game-card-title">Pengetahuan Dasar</span>
-                    <span class="game-card-badge">Segera Hadir</span>
+                    <span class="game-card-subtitle">Kuis &amp; Duel 1v1</span>
                 </button>
 
                 <button type="button" class="game-card game-card-advanced is-coming-soon" id="hubComingSoonAdvanced">
@@ -186,6 +186,89 @@
         </section>
         <!-- ================= GAME VIEW END ================= -->
 
+        <!-- ================= KNOWLEDGE DASHBOARD VIEW (Game Pengetahuan Dasar) ================= -->
+        <section id="knowledgeDashboardView" class="view">
+            <button type="button" class="breadcrumb-back" id="knowledgeBackToHubButton">← Semua Game</button>
+            <header class="dashboard-header">
+                <div class="dashboard-heading">
+                    <h1>🧠 Pengetahuan Dasar</h1>
+                    <p class="subtitle">Jawab sebanyak &amp; secepat mungkin dalam 60 detik!</p>
+                </div>
+                <div class="dashboard-header-actions">
+                    <button type="button" class="icon-button" id="knowledgeSoundToggleButton" aria-label="Matikan suara">🔊</button>
+                    <button type="button" class="icon-button" id="knowledgeHelpButton" aria-label="Cara bermain">❔</button>
+                </div>
+            </header>
+
+            <div class="leaderboard-panel">
+                <div class="leaderboard-tabs" id="knowledgeLeaderboardTabs">
+                    <button type="button" class="leaderboard-tab" data-klboard="solo">🧠 Main Sendiri</button>
+                    <button type="button" class="leaderboard-tab" data-klboard="duel">⚔️ Duel</button>
+                </div>
+
+                <div class="podium" id="knowledgePodium"></div>
+
+                <ul class="rank-list" id="knowledgeRankList"></ul>
+
+                <p class="leaderboard-status" id="knowledgeLeaderboardStatus" role="status"></p>
+            </div>
+
+            <div class="cta-row">
+                <button type="button" class="btn-playful btn-playful-primary btn-start-game"
+                    id="knowledgeOpenSoloButton">▶️ Main Sendiri</button>
+                <button type="button" class="btn-playful btn-playful-secondary btn-start-game"
+                    id="knowledgeOpenDuelButton">⚔️ Duel 1v1</button>
+            </div>
+        </section>
+        <!-- ================= KNOWLEDGE DASHBOARD VIEW END ================= -->
+
+        <!-- ================= KNOWLEDGE GAME VIEW ================= -->
+        <section id="knowledgeGameView" class="view">
+            <div class="game-topbar">
+                <button type="button" class="icon-button" id="knowledgeBackToDashboardButton" aria-label="Kembali ke dashboard">←</button>
+
+                <div class="progress-info">
+                    <span id="knowledgeProgressLabel">Benar: 0</span>
+                    <div class="progress-bar-track">
+                        <div class="progress-bar-fill" id="knowledgeTimerBarFill"></div>
+                    </div>
+                </div>
+
+                <span id="knowledgeTimer">01:00</span>
+            </div>
+
+            <div class="duel-opponent-bar" id="knowledgeDuelOpponentBar" style="display:none;">
+                <span class="duel-opponent-avatar" id="knowledgeDuelOpponentAvatar">👤</span>
+                <div class="duel-opponent-info">
+                    <span class="duel-opponent-name" id="knowledgeDuelOpponentName">Lawan</span>
+                    <div class="progress-bar-track duel-opponent-track">
+                        <div class="progress-bar-fill duel-opponent-fill" id="knowledgeDuelOpponentFill"></div>
+                    </div>
+                </div>
+                <span class="duel-opponent-count" id="knowledgeDuelOpponentCount">0 benar</span>
+            </div>
+
+            <div class="duel-disconnect-banner" id="knowledgeDuelDisconnectBanner" style="display:none;">
+                ⚠️ Koneksi lawan tidak terdeteksi.
+                <button type="button" class="duel-banner-link" id="knowledgeDuelLeaveDisconnectedButton">Kembali ke dashboard</button>
+            </div>
+
+            <div class="question-row">
+                <div id="knowledgeQuestionText" class="knowledge-question-card"></div>
+            </div>
+
+            <div class="knowledge-options-grid" id="knowledgeOptionsGrid">
+                <button type="button" class="knowledge-option-btn" data-idx="0" disabled></button>
+                <button type="button" class="knowledge-option-btn" data-idx="1" disabled></button>
+                <button type="button" class="knowledge-option-btn" data-idx="2" disabled></button>
+                <button type="button" class="knowledge-option-btn" data-idx="3" disabled></button>
+            </div>
+
+            <button type="button" class="btn-playful btn-playful-outline knowledge-hint-button"
+                id="knowledgeHintButton" disabled>💡 Hint: hilangkan 2 opsi salah</button>
+        </section>
+        <!-- ================= KNOWLEDGE GAME VIEW END ================= -->
+
     </div>
 
     <!-- INI HINT MODAL (diletakkan di luar #app supaya tidak tertutup backdrop) -->
@@ -208,6 +291,286 @@
         </div>
     </div>
     <!-- INI HINT MODAL END -->
+
+    <!-- INI MODAL BANTUAN PENGETAHUAN DASAR -->
+    <div class="modal fade" id="knowledgeHelpModal" tabindex="-1" aria-labelledby="knowledgeHelpModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content playful-modal">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="knowledgeHelpModalLabel">📚 Cara Bermain</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <ol class="help-list">
+                        <li>Kamu punya waktu <strong>60 detik</strong> untuk menjawab sebanyak mungkin soal.</li>
+                        <li>Tiap soal punya 4 pilihan jawaban, tekan salah satu yang menurutmu benar.</li>
+                        <li>Pilih 3 jawaban salah pada 1 soal (tanpa hint) &rarr; soal itu <strong>hangus</strong>, tidak terhitung, lanjut ke soal berikutnya.</li>
+                        <li>Bingung? Tekan <strong>💡 Hint</strong> untuk menyisakan 2 opsi saja. Tapi kalau salah lagi setelah itu, soal tetap hangus.</li>
+                        <li>Jumlah jawaban benar itulah skormu. Makin sedikit hint &amp; soal hangus, makin bagus peringkatmu kalau skor seri!</li>
+                    </ol>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-playful btn-playful-primary" data-bs-dismiss="modal">Mengerti!</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- INI MODAL BANTUAN PENGETAHUAN DASAR END -->
+
+    <!-- INI MODAL KONFIRMASI KELUAR PENGETAHUAN DASAR -->
+    <div class="modal fade" id="knowledgeConfirmExitModal" tabindex="-1" aria-labelledby="knowledgeConfirmExitModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content playful-modal">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="knowledgeConfirmExitModalLabel">👀 Yakin mau keluar?</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    Progres permainan yang sedang berjalan akan hilang kalau kamu keluar sekarang.
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-playful btn-playful-outline" data-bs-dismiss="modal">Batal</button>
+                    <button type="button" class="btn-playful btn-playful-danger" id="knowledgeConfirmExitYesButton">Ya, Keluar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- INI MODAL KONFIRMASI KELUAR PENGETAHUAN DASAR END -->
+
+    <!-- INI MODAL HASIL RONDE SOLO PENGETAHUAN DASAR -->
+    <div class="modal fade" id="knowledgeEndModal" aria-hidden="true" aria-labelledby="knowledgeEndModalLabel" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content playful-modal">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="knowledgeEndModalLabel">⏰ Waktu Habis!</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <div class="end-game-stat">✅ Benar: <span id="knowledgeFinalCorrect">0</span></div>
+                    <div class="end-game-stat">💡 Hint dipakai: <span id="knowledgeFinalHints">0</span></div>
+                    <div class="end-game-stat">💀 Soal hangus: <span id="knowledgeFinalBurned">0</span></div>
+
+                    <div class="rank-insight" id="knowledgeRankInsight" style="display:none;" aria-live="polite">
+                        <div class="rank-insight-headline" id="knowledgeRankInsightHeadline"></div>
+                        <ul class="rank-insight-details" id="knowledgeRankInsightDetails"></ul>
+                    </div>
+                </div>
+
+                <div class="modal-footer flex-wrap justify-content-center gap-2">
+                    <button type="button" class="btn-playful btn-playful-success" id="knowledgeSaveScoreButton">💾 Simpan Skor</button>
+                    <button type="button" class="btn-playful btn-playful-secondary" id="knowledgePlayAgainButton">🔁 Main Lagi</button>
+                    <button type="button" class="btn-playful btn-playful-outline" id="knowledgeEndBackToDashboardButton">🏠 Dashboard</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- INI MODAL HASIL RONDE SOLO PENGETAHUAN DASAR END -->
+
+    <!-- INI MODAL SIMPAN SKOR PENGETAHUAN DASAR -->
+    <div class="modal fade" id="knowledgeSaveRecordModal" aria-hidden="true" aria-labelledby="knowledgeSaveRecordModalLabel" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content playful-modal">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="knowledgeSaveRecordModalLabel">🏆 Simpan Skormu!</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <label for="knowledgePlayerName" class="save-record-label">Nama Pemain</label>
+                    <input type="text" id="knowledgePlayerName" class="form-control playful-input" placeholder="Nama Kamu" maxlength="20">
+
+                    <label class="save-record-label">Pilih Avatar</label>
+                    <div class="avatar-picker" id="knowledgeAvatarPicker"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-playful btn-playful-success" id="knowledgeButtonSavePlayerRecord">Simpan</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- INI MODAL SIMPAN SKOR PENGETAHUAN DASAR END -->
+
+    <!-- INI MODAL PILIH MODE DUEL PENGETAHUAN DASAR -->
+    <div class="modal fade" id="knowledgeDuelModal" tabindex="-1" aria-labelledby="knowledgeDuelModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content playful-modal">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="knowledgeDuelModalLabel">⚔️ Duel 1v1</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body count-option-list">
+                    <button type="button" class="count-option-button" id="knowledgeDuelCreateRoomButton">
+                        <span class="count-option-emoji">🆕</span>
+                        <span class="count-option-text">
+                            <strong>Buat Room</strong>
+                            <small>Dapatkan kode untuk dibagikan ke temanmu</small>
+                        </span>
+                    </button>
+                    <button type="button" class="count-option-button" id="knowledgeDuelJoinRoomButton">
+                        <span class="count-option-emoji">🔑</span>
+                        <span class="count-option-text">
+                            <strong>Gabung Room</strong>
+                            <small>Sudah punya kode dari temanmu? Masuk di sini</small>
+                        </span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- INI MODAL PILIH MODE DUEL PENGETAHUAN DASAR END -->
+
+    <!-- INI MODAL BUAT ROOM DUEL PENGETAHUAN DASAR -->
+    <div class="modal fade" id="knowledgeDuelCreateModal" tabindex="-1" aria-labelledby="knowledgeDuelCreateModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content playful-modal">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="knowledgeDuelCreateModalLabel">🆕 Buat Room Duel</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <label for="knowledgeDuelCreateName" class="save-record-label">Nama Kamu</label>
+                    <input type="text" id="knowledgeDuelCreateName" class="form-control playful-input" placeholder="Nama Kamu" maxlength="20">
+
+                    <label class="save-record-label">Pilih Avatar</label>
+                    <div class="avatar-picker" id="knowledgeDuelCreateAvatarPicker"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-playful btn-playful-success" id="knowledgeDuelCreateSubmitButton">Buat Room</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- INI MODAL BUAT ROOM DUEL PENGETAHUAN DASAR END -->
+
+    <!-- INI MODAL GABUNG ROOM DUEL PENGETAHUAN DASAR -->
+    <div class="modal fade" id="knowledgeDuelJoinModal" tabindex="-1" aria-labelledby="knowledgeDuelJoinModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content playful-modal">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="knowledgeDuelJoinModalLabel">🔑 Gabung Room</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <label for="knowledgeDuelJoinCode" class="save-record-label">Kode Room</label>
+                    <input type="text" id="knowledgeDuelJoinCode" class="form-control playful-input duel-code-input" placeholder="K7Q2" maxlength="4">
+
+                    <label for="knowledgeDuelJoinName" class="save-record-label">Nama Kamu</label>
+                    <input type="text" id="knowledgeDuelJoinName" class="form-control playful-input" placeholder="Nama Kamu" maxlength="20">
+
+                    <label class="save-record-label">Pilih Avatar</label>
+                    <div class="avatar-picker" id="knowledgeDuelJoinAvatarPicker"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-playful btn-playful-success" id="knowledgeDuelJoinSubmitButton">Gabung</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- INI MODAL GABUNG ROOM DUEL PENGETAHUAN DASAR END -->
+
+    <!-- INI MODAL RUANG TUNGGU DUEL PENGETAHUAN DASAR -->
+    <div class="modal fade" id="knowledgeDuelWaitingModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
+        aria-labelledby="knowledgeDuelWaitingModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content playful-modal text-center">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="knowledgeDuelWaitingModalLabel">⚔️ Room Dibuat!</h1>
+                </div>
+                <div class="modal-body">
+                    <p>Bagikan kode ini ke temanmu:</p>
+                    <div class="duel-room-code" id="knowledgeDuelRoomCodeDisplay">----</div>
+                    <button type="button" class="btn-playful btn-playful-outline" id="knowledgeDuelCopyCodeButton">📋 Salin Kode</button>
+                    <p class="duel-waiting-text">
+                        <span class="duel-spinner" aria-hidden="true"></span>
+                        Menunggu lawan bergabung...
+                    </p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-playful btn-playful-danger" id="knowledgeDuelCancelWaitingButton">Batalkan</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- INI MODAL RUANG TUNGGU DUEL PENGETAHUAN DASAR END -->
+
+    <!-- INI MODAL MENUNGGU LAWAN MENYELESAIKAN WAKTUNYA -->
+    <div class="modal fade" id="knowledgeDuelWaitingResultModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
+        aria-labelledby="knowledgeDuelWaitingResultModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content playful-modal text-center">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="knowledgeDuelWaitingResultModalLabel">⏰ Waktu Habis!</h1>
+                </div>
+                <div class="modal-body">
+                    <p class="duel-waiting-text">
+                        <span class="duel-spinner" aria-hidden="true"></span>
+                        Menunggu lawan menyelesaikan waktunya...
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- INI MODAL MENUNGGU LAWAN MENYELESAIKAN WAKTUNYA END -->
+
+    <!-- INI MODAL HASIL DUEL PENGETAHUAN DASAR -->
+    <div class="modal fade" id="knowledgeDuelResultModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
+        aria-labelledby="knowledgeDuelResultModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content playful-modal">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="knowledgeDuelResultModalLabel">⚔️ Hasil Duel</h1>
+                </div>
+                <div class="modal-body">
+                    <div class="duel-winner-banner" id="knowledgeDuelWinnerBanner"></div>
+                    <div class="duel-result-grid" id="knowledgeDuelResultGrid"></div>
+                </div>
+                <div class="modal-footer flex-wrap justify-content-center gap-2">
+                    <button type="button" class="btn-playful btn-playful-secondary" id="knowledgeDuelRematchButton">🔁 Main Lagi</button>
+                    <button type="button" class="btn-playful btn-playful-outline" id="knowledgeDuelResultDashboardButton">🏠 Dashboard</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- INI MODAL HASIL DUEL PENGETAHUAN DASAR END -->
+
+    <!-- INI MODAL MENUNGGU PERSETUJUAN REMATCH PENGETAHUAN DASAR -->
+    <div class="modal fade" id="knowledgeDuelRematchWaitingModal" data-bs-backdrop="static" data-bs-keyboard="false"
+        tabindex="-1" aria-labelledby="knowledgeDuelRematchWaitingModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content playful-modal text-center">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="knowledgeDuelRematchWaitingModalLabel">🔁 Ajakan Terkirim</h1>
+                </div>
+                <div class="modal-body">
+                    <p class="duel-waiting-text">
+                        <span class="duel-spinner" aria-hidden="true"></span>
+                        Menunggu persetujuan lawan untuk main lagi...
+                    </p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-playful btn-playful-danger" id="knowledgeDuelRematchCancelButton">Batalkan</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- INI MODAL MENUNGGU PERSETUJUAN REMATCH PENGETAHUAN DASAR END -->
+
+    <!-- INI MODAL AJAKAN REMATCH DARI LAWAN PENGETAHUAN DASAR -->
+    <div class="modal fade" id="knowledgeDuelRematchRequestModal" data-bs-backdrop="static" data-bs-keyboard="false"
+        tabindex="-1" aria-labelledby="knowledgeDuelRematchRequestModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content playful-modal text-center">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="knowledgeDuelRematchRequestModalLabel">🔁 Ajakan Main Lagi</h1>
+                </div>
+                <div class="modal-body" id="knowledgeDuelRematchRequestText">Lawan ingin main lagi. Setuju?</div>
+                <div class="modal-footer flex-wrap justify-content-center gap-2">
+                    <button type="button" class="btn-playful btn-playful-success" id="knowledgeDuelRematchAcceptButton">✅ Setuju</button>
+                    <button type="button" class="btn-playful btn-playful-outline" id="knowledgeDuelRematchDeclineButton">❌ Tolak</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- INI MODAL AJAKAN REMATCH DARI LAWAN PENGETAHUAN DASAR END -->
 
     <!-- INI MODAL PILIH JUMLAH SOAL -->
     <div class="modal fade" id="chooseCountModal" tabindex="-1" aria-labelledby="chooseCountModalLabel" aria-hidden="true">
@@ -525,12 +888,13 @@
          Kalau belum dikonfigurasi, game otomatis memakai localStorage sebagai cadangan. -->
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-    <script src="firebase-config.js"></script>
+    <script src="firebase-config.js?v=20261004"></script>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/js/bootstrap.bundle.min.js"
         integrity="sha384-HwwvtgBNo3bZJJLYd8oVXjrBZt8cqVSpeBNS5n7C8IVInixGAoxmnlMuBnhbgrkm"
         crossorigin="anonymous"></script>
-    <script src="script.js"></script>
+    <script src="knowledge-questions.js?v=20261004"></script>
+    <script src="script.js?v=20261004"></script>
 
 </body>
 
