@@ -309,21 +309,32 @@ function playFinishSounds(qualifiesForLeaderboard) {
     }
 }
 
+const SOUND_TOGGLE_BUTTON_IDS = ['soundToggleButton', 'knowledgeSoundToggleButton'];
+
 function updateSoundToggleButton() {
-    const btn = document.getElementById('soundToggleButton');
-    if (!btn) return;
-    btn.textContent = soundEnabled ? '🔊' : '🔇';
-    btn.setAttribute('aria-label', soundEnabled ? 'Matikan suara' : 'Aktifkan suara');
+    const label = soundEnabled ? 'Matikan suara' : 'Aktifkan suara';
+    SOUND_TOGGLE_BUTTON_IDS.forEach(id => {
+        const btn = document.getElementById(id);
+        if (!btn) return;
+        btn.textContent = soundEnabled ? '🔊' : '🔇';
+        btn.setAttribute('aria-label', label);
+        btn.setAttribute('title', label);
+    });
 }
 
-document.getElementById('soundToggleButton').addEventListener('click', () => {
+function toggleSound() {
     soundEnabled = !soundEnabled;
     safeSetLocalStorage('soundEnabled', soundEnabled ? 'true' : 'false');
     updateSoundToggleButton();
     if (soundEnabled) {
-        getAudioContext(); // "bangunkan" audio context selagi ada interaksi user
+        getAudioContext();
         playTone({ freq: 660, duration: 0.1, type: 'sine', volume: 0.18 });
     }
+}
+
+SOUND_TOGGLE_BUTTON_IDS.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('click', toggleSound);
 });
 
 updateSoundToggleButton();
@@ -1813,7 +1824,7 @@ function renderKnowledgeSoloPodium(records) {
                 ${place === 1 ? '<div class="podium-medal" aria-hidden="true">👑</div>' : `<div class="podium-medal" aria-hidden="true">${place === 2 ? '🥈' : '🥉'}</div>`}
                 <div class="podium-avatar-wrap"><div class="podium-avatar">${avatarGlyph(record.avatar)}</div></div>
                 <div class="podium-name" title="${escapeHtml(record.name)}">${escapeHtml(record.name)}</div>
-                <div class="podium-score">${record.correct} benar</div>
+                <div class="podium-score"><span>${record.correct}</span> <span class="podium-score-unit">benar</span></div>
                 <div class="podium-mistakes">💡${record.hints} · 💀${record.burned}</div>
                 ${isYou ? '<div class="you-chip">⭐ Kamu</div>' : ''}
                 <div class="podium-base" aria-hidden="true"><span>${place}</span></div>
@@ -1875,7 +1886,7 @@ function renderKnowledgeDuelWinsPodium(records) {
                 ${place === 1 ? '<div class="podium-medal" aria-hidden="true">👑</div>' : `<div class="podium-medal" aria-hidden="true">${place === 2 ? '🥈' : '🥉'}</div>`}
                 <div class="podium-avatar-wrap"><div class="podium-avatar">${avatarGlyph(record.avatar)}</div></div>
                 <div class="podium-name" title="${escapeHtml(record.name)}">${escapeHtml(record.name)}</div>
-                <div class="podium-score">${record.wins}x menang</div>
+                <div class="podium-score"><span>${record.wins}x</span> <span class="podium-score-unit">menang</span></div>
                 <div class="podium-mistakes">&nbsp;</div>
                 <div class="podium-base" aria-hidden="true"><span>${place}</span></div>
             </div>
@@ -1925,15 +1936,6 @@ document.getElementById('knowledgeHelpButton').addEventListener('click', () => {
     showModal('knowledgeHelpModal');
 });
 
-document.getElementById('knowledgeSoundToggleButton').addEventListener('click', () => {
-    soundEnabled = !soundEnabled;
-    safeSetLocalStorage('soundEnabled', soundEnabled ? 'true' : 'false');
-    updateSoundToggleButton();
-    if (soundEnabled) {
-        getAudioContext();
-        playTone({ freq: 660, duration: 0.1, type: 'sine', volume: 0.18 });
-    }
-});
 
 document.getElementById('knowledgeBackToDashboardButton').addEventListener('click', () => {
     if (knowledgeGameInProgress || knowledgeDuelState) {
