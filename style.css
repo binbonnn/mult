@@ -406,6 +406,19 @@ body::before {
     font-weight: 800;
     margin-top: 2px;
     font-variant-numeric: tabular-nums;
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+    gap: .25em;
+    white-space: nowrap;
+    max-width: 100%;
+    text-align: center;
+}
+
+.podium-score-unit {
+    font-size: .6em;
+    font-weight: 700;
+    opacity: .85;
 }
 
 .podium-first .podium-score {
