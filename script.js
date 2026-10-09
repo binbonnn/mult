@@ -1601,6 +1601,8 @@ let knowledgeUsedQuestionIds = [];
 let knowledgeSequence = [];
 let knowledgeSeqIndex = 0;
 let knowledgeCorrectCount = 0;
+// Skor disimpan dalam "persepuluhan" (10 = 1,0 poin) supaya penjumlahan 0,7 + 0,3 dst. tidak kena error pecahan desimal
+let knowledgeScoreTenths = 0;
 let knowledgeBurnedCount = 0;
 let knowledgeHintsUsed = 0;
 let knowledgeWrongClicksThisQuestion = 0;
@@ -1657,6 +1659,39 @@ function generateKnowledgeSequence(count) {
     return sequence;
 }
 
+/* ---- Sistem skor Pengetahuan Dasar (berdasarkan "klik ke berapa" jawaban benar) ---- */
+const KNOWLEDGE_POINTS_CLICK_1 = 10;  // benar di klik pertama  = 1,0
+const KNOWLEDGE_POINTS_CLICK_2 = 7;   // benar di klik kedua    = 0,7
+const KNOWLEDGE_POINTS_CLICK_3 = 3;   // benar di klik ketiga   = 0,3 (juga batas maksimal jika memakai hint)
+const KNOWLEDGE_POINTS_BURNED = -10;  // soal hangus            = -1,0
+
+function knowledgePointsForCorrect(wrongClicksBefore, hintUsed) {
+    const base = wrongClicksBefore === 0 ? KNOWLEDGE_POINTS_CLICK_1
+        : wrongClicksBefore === 1 ? KNOWLEDGE_POINTS_CLICK_2
+        : KNOWLEDGE_POINTS_CLICK_3;
+    return hintUsed ? Math.min(base, KNOWLEDGE_POINTS_CLICK_3) : base;
+}
+
+function tenthsToScore(tenths) {
+    return Math.round(tenths) / 10;
+}
+
+// Format Indonesia: koma desimal, 1 angka di belakang koma, tanda minus sungguhan (mis. "7,3" / "−1,0")
+function formatKnowledgeScore(score) {
+    const tenths = Math.round((Number(score) || 0) * 10);
+    const text = (Math.abs(tenths) / 10).toFixed(1).replace('.', ',');
+    return tenths < 0 ? `\u2212${text}` : text;
+}
+
+function formatKnowledgeGain(points) {
+    const tenths = Math.round(points);
+    return tenths < 0 ? `\u2212${(Math.abs(tenths) / 10).toFixed(1).replace('.', ',')}` : `+${(tenths / 10).toFixed(1).replace('.', ',')}`;
+}
+
+function knowledgeScoreTenthsOf(record) {
+    return Math.round((Number(record && record.score) || 0) * 10);
+}
+
 /* ---- Papan peringkat: data layer (solo & duel-wins) ---- */
 function getKnowledgeSoloRecordsFromLocalStorage() {
     try {
@@ -1667,9 +1702,11 @@ function getKnowledgeSoloRecordsFromLocalStorage() {
 }
 
 function sortKnowledgeSoloRecords(records) {
-    // Lebih banyak benar = lebih baik; kalau seri, lebih sedikit hint lalu lebih sedikit hangus = lebih baik
-    return [...records].sort((a, b) => {
-        if (b.correct !== a.correct) return b.correct - a.correct;
+    // Skor lebih tinggi = lebih baik; kalau seri, lebih sedikit hint lalu lebih sedikit hangus = lebih baik.
+    // Rekor lama (sebelum sistem skor baru, tanpa field "score") tidak ikut karena aturannya tidak sebanding.
+    return records.filter(r => typeof r.score === 'number').sort((a, b) => {
+        const diff = knowledgeScoreTenthsOf(b) - knowledgeScoreTenthsOf(a);
+        if (diff !== 0) return diff;
         if (a.hints !== b.hints) return a.hints - b.hints;
         return a.burned - b.burned;
     });
@@ -1679,7 +1716,7 @@ async function getKnowledgeSoloRecords() {
     if (firebaseReady) {
         try {
             const snapshot = await firestoreDb.collection('knowledge_records')
-                .orderBy('correct', 'desc')
+                .orderBy('score', 'desc')
                 .limit(MAX_KNOWLEDGE_LEADERBOARD)
                 .get();
             return sortKnowledgeSoloRecords(snapshot.docs.map(doc => doc.data())).slice(0, MAX_KNOWLEDGE_LEADERBOARD);
@@ -1791,7 +1828,7 @@ async function renderKnowledgeLeaderboardPanel(tabName) {
 function isKnowledgeLastSavedSolo(record) {
     return !!knowledgeLastSavedRecord
         && knowledgeLastSavedRecord.name === record.name
-        && knowledgeLastSavedRecord.correct === record.correct
+        && knowledgeLastSavedRecord.score === record.score
         && knowledgeLastSavedRecord.hints === record.hints
         && knowledgeLastSavedRecord.burned === record.burned;
 }
@@ -1820,11 +1857,11 @@ function renderKnowledgeSoloPodium(records) {
         const isYou = isKnowledgeLastSavedSolo(record);
         return `
             <div class="podium-spot ${spotClass}${isYou ? ' is-you' : ''}" role="group"
-                 aria-label="Peringkat ${place}: ${escapeHtml(record.name)}, ${record.correct} benar">
+                 aria-label="Peringkat ${place}: ${escapeHtml(record.name)}, skor ${formatKnowledgeScore(record.score)}">
                 ${place === 1 ? '<div class="podium-medal" aria-hidden="true">👑</div>' : `<div class="podium-medal" aria-hidden="true">${place === 2 ? '🥈' : '🥉'}</div>`}
                 <div class="podium-avatar-wrap"><div class="podium-avatar">${avatarGlyph(record.avatar)}</div></div>
                 <div class="podium-name" title="${escapeHtml(record.name)}">${escapeHtml(record.name)}</div>
-                <div class="podium-score"><span>${record.correct}</span> <span class="podium-score-unit">benar</span></div>
+                <div class="podium-score"><span>${formatKnowledgeScore(record.score)}</span> <span class="podium-score-unit">poin</span></div>
                 <div class="podium-mistakes">💡${record.hints} · 💀${record.burned}</div>
                 ${isYou ? '<div class="you-chip">⭐ Kamu</div>' : ''}
                 <div class="podium-base" aria-hidden="true"><span>${place}</span></div>
@@ -1853,7 +1890,7 @@ function renderKnowledgeSoloList(records) {
                 <span class="rank-list-avatar">${avatarGlyph(record.avatar)}</span>
                 <span class="rank-list-name">${escapeHtml(record.name)}${isYou ? ' <span class="you-chip">⭐ Kamu</span>' : ''}</span>
                 <span class="rank-list-dots" aria-hidden="true"></span>
-                <span class="rank-list-score">${record.correct} benar<small>💡${record.hints} · 💀${record.burned}</small></span>
+                <span class="rank-list-score">${formatKnowledgeScore(record.score)} poin<small>💡${record.hints} · 💀${record.burned}</small></span>
             </li>
         `;
     }).join('');
@@ -1974,6 +2011,7 @@ function prepareKnowledgeGameUI() {
     knowledgeGameInProgress = true;
     knowledgeLastSavedRecord = null;
     knowledgeCorrectCount = 0;
+    knowledgeScoreTenths = 0;
     knowledgeBurnedCount = 0;
     knowledgeHintsUsed = 0;
     knowledgeSeqIndex = 0;
@@ -1981,7 +2019,7 @@ function prepareKnowledgeGameUI() {
     document.getElementById('knowledgeTimer').textContent = '01:00';
     document.getElementById('knowledgeTimerBarFill').style.width = '100%';
     document.getElementById('knowledgeTimerBarFill').style.backgroundColor = '';
-    document.getElementById('knowledgeProgressLabel').textContent = 'Benar: 0';
+    document.getElementById('knowledgeProgressLabel').textContent = 'Skor: 0,0';
     document.getElementById('knowledgeQuestionText').textContent = '';
     document.querySelectorAll('.knowledge-option-btn').forEach(btn => {
         btn.disabled = true;
@@ -2057,7 +2095,7 @@ function displayKnowledgeQuestion() {
         btn.style.display = 'flex';
     });
     document.getElementById('knowledgeHintButton').disabled = false;
-    document.getElementById('knowledgeProgressLabel').textContent = `Benar: ${knowledgeCorrectCount}`;
+    document.getElementById('knowledgeProgressLabel').textContent = `Skor: ${formatKnowledgeScore(tenthsToScore(knowledgeScoreTenths))}`;
 }
 
 document.querySelectorAll('.knowledge-option-btn').forEach((btn, idx) => {
@@ -2075,8 +2113,11 @@ function handleKnowledgeOptionClick(idx) {
     if (idx === q.correctIndex) {
         btn.classList.add('is-correct');
         playCorrectSound();
-        showToast('success', 'Benar! 🎉');
+        const gained = knowledgePointsForCorrect(knowledgeWrongClicksThisQuestion, knowledgeHintUsedThisQuestion);
+        knowledgeScoreTenths += gained;
         knowledgeCorrectCount++;
+        showToast('success', `Benar! ${formatKnowledgeGain(gained)} poin 🎉`);
+        document.getElementById('knowledgeProgressLabel').textContent = `Skor: ${formatKnowledgeScore(tenthsToScore(knowledgeScoreTenths))}`;
         btns.forEach(b => { b.disabled = true; });
         if (knowledgeDuelState) reportKnowledgeDuelProgress();
         setTimeout(advanceKnowledgeQuestion, 450);
@@ -2092,7 +2133,9 @@ function handleKnowledgeOptionClick(idx) {
     if (knowledgeWrongClicksThisQuestion >= visibleCount - 1) {
         // Sisa tinggal jawaban benar -> langsung hangus, jangan beri kesempatan asal tebak
         knowledgeBurnedCount++;
-        showToast('danger', 'Soal hangus! 💀', 1800);
+        knowledgeScoreTenths += KNOWLEDGE_POINTS_BURNED;
+        showToast('danger', `Soal hangus! ${formatKnowledgeGain(KNOWLEDGE_POINTS_BURNED)} poin 💀`, 1800);
+        document.getElementById('knowledgeProgressLabel').textContent = `Skor: ${formatKnowledgeScore(tenthsToScore(knowledgeScoreTenths))}`;
         btns.forEach(b => { b.disabled = true; });
         if (knowledgeDuelState) reportKnowledgeDuelProgress();
         setTimeout(advanceKnowledgeQuestion, 650);
@@ -2133,17 +2176,20 @@ document.getElementById('knowledgeHintButton').addEventListener('click', () => {
         if (i !== keepIndex) btns[i].style.display = 'none';
     });
 
-    showToast('success', '💡 Hint dipakai! Tersisa 2 opsi.');
+    showToast('success', '💡 Hint dipakai! Tersisa 2 opsi (maks. +0,3 poin).');
 });
 
 /* ---- Insight peringkat (analog buildRankInsight milik game Perkalian, tapi "lebih tinggi = lebih baik") ---- */
-function buildKnowledgeRankInsight(correct, hints, burned, records) {
+function buildKnowledgeRankInsight(score, hints, burned, records) {
+    const myTenths = Math.round(score * 10);
     const sorted = sortKnowledgeSoloRecords(records);
-    const better = sorted.filter(r =>
-        r.correct > correct || (r.correct === correct && (r.hints < hints || (r.hints === hints && r.burned <= burned)))
-    ).length;
+    const better = sorted.filter(r => {
+        const t = knowledgeScoreTenthsOf(r);
+        return t > myTenths || (t === myTenths && (r.hints < hints || (r.hints === hints && r.burned <= burned)));
+    }).length;
     const rank = better + 1;
     const qualifies = rank <= MAX_KNOWLEDGE_LEADERBOARD;
+    const gapText = (tenths) => formatKnowledgeScore(Math.max(1, tenths) / 10);
 
     if (sorted.length === 0) {
         return {
@@ -2157,25 +2203,25 @@ function buildKnowledgeRankInsight(correct, hints, burned, records) {
     const details = [];
 
     if (rank === 1) {
-        const gap = correct - top.correct;
-        details.push({ icon: '⚡', text: gap > 0 ? `${gap} jawaban benar lebih banyak dari rekor sebelumnya.` : `Jumlah benar sama, tapi hint/hangus-mu lebih sedikit.` });
+        const gap = myTenths - knowledgeScoreTenthsOf(top);
+        details.push({ icon: '⚡', text: gap > 0 ? `${gapText(gap)} poin lebih tinggi dari rekor sebelumnya.` : `Skor sama, tapi hint/hangus-mu lebih sedikit.` });
         return { rank, qualifies, tone: 'top', headline: '👑 Rekor baru! Kamu peringkat 1', details };
     }
 
     if (rank <= 3) {
-        const gapToTop = top.correct - correct;
-        details.push({ icon: '🎯', text: `${gapToTop} jawaban benar lagi untuk menyamai peringkat 1.` });
+        const gapToTop = knowledgeScoreTenthsOf(top) - myTenths;
+        details.push({ icon: '🎯', text: `${gapText(gapToTop)} poin lagi untuk menyamai peringkat 1.` });
         return { rank, qualifies, tone: 'top', headline: `${rank === 2 ? '🥈' : '🥉'} Kamu masuk 3 besar! Peringkat ${rank}`, details };
     }
 
     if (qualifies) {
         const third = sorted[2];
-        details.push({ icon: '🥉', text: `${Math.max(1, third.correct - correct + 1)} jawaban benar lagi untuk masuk 3 besar.` });
+        details.push({ icon: '🥉', text: `${gapText(knowledgeScoreTenthsOf(third) - myTenths + 1)} poin lagi untuk masuk 3 besar.` });
         return { rank, qualifies, tone: 'ok', headline: `🎯 Kamu masuk papan peringkat! Peringkat ${rank}`, details };
     }
 
     const last = sorted[MAX_KNOWLEDGE_LEADERBOARD - 1];
-    details.push({ icon: '📉', text: `${Math.max(1, last.correct - correct + 1)} jawaban benar lagi untuk masuk papan peringkat.` });
+    details.push({ icon: '📉', text: `${gapText(knowledgeScoreTenthsOf(last) - myTenths + 1)} poin lagi untuk masuk papan peringkat.` });
     return { rank, qualifies, tone: 'miss', headline: '💪 Belum masuk papan peringkat, ayo coba lagi!', details };
 }
 
@@ -2199,12 +2245,14 @@ async function endKnowledgeSoloRound() {
     document.querySelectorAll('.knowledge-option-btn').forEach(b => { b.disabled = true; });
     document.getElementById('knowledgeHintButton').disabled = true;
 
+    const finalScore = tenthsToScore(knowledgeScoreTenths);
+    document.getElementById('knowledgeFinalScore').textContent = formatKnowledgeScore(finalScore);
     document.getElementById('knowledgeFinalCorrect').textContent = knowledgeCorrectCount.toString();
     document.getElementById('knowledgeFinalHints').textContent = knowledgeHintsUsed.toString();
     document.getElementById('knowledgeFinalBurned').textContent = knowledgeBurnedCount.toString();
 
     const records = await getKnowledgeSoloRecords();
-    const insight = buildKnowledgeRankInsight(knowledgeCorrectCount, knowledgeHintsUsed, knowledgeBurnedCount, records);
+    const insight = buildKnowledgeRankInsight(finalScore, knowledgeHintsUsed, knowledgeBurnedCount, records);
     renderKnowledgeRankInsight(insight);
     document.getElementById('knowledgeSaveScoreButton').style.display = insight.qualifies ? 'inline-block' : 'none';
 
@@ -2238,6 +2286,7 @@ async function saveKnowledgePlayerRecord() {
     try {
         saveResult = await saveKnowledgeSoloRecord({
             name: playerName,
+            score: tenthsToScore(knowledgeScoreTenths),
             correct: knowledgeCorrectCount,
             hints: knowledgeHintsUsed,
             burned: knowledgeBurnedCount,
@@ -2250,7 +2299,7 @@ async function saveKnowledgePlayerRecord() {
 
     hideModal('knowledgeSaveRecordModal');
     nameInput.value = '';
-    knowledgeLastSavedRecord = { name: playerName, correct: knowledgeCorrectCount, hints: knowledgeHintsUsed, burned: knowledgeBurnedCount };
+    knowledgeLastSavedRecord = { name: playerName, score: tenthsToScore(knowledgeScoreTenths), hints: knowledgeHintsUsed, burned: knowledgeBurnedCount };
 
     if (saveResult && saveResult.error) {
         showToast('danger', `Gagal simpan online: ${saveResult.error}`, 6000);
@@ -2333,7 +2382,7 @@ async function createKnowledgeDuelRoom() {
             winner: null,
             rematch: null,
             questions: sequence,
-            host: { name: name, avatar: knowledgeDuelCreateSelectedAvatar, correct: 0, burned: 0, hints: 0, finishedAt: null, lastSeen: Date.now() },
+            host: { name: name, avatar: knowledgeDuelCreateSelectedAvatar, score: 0, correct: 0, burned: 0, hints: 0, finishedAt: null, lastSeen: Date.now() },
             guest: null
         });
     } catch (e) {
@@ -2402,7 +2451,7 @@ async function joinKnowledgeDuelRoom() {
 
         const startAtMillis = Date.now() + KNOWLEDGE_DUEL_START_BUFFER_MS;
         await ref.update({
-            guest: { name: name, avatar: knowledgeDuelJoinSelectedAvatar, correct: 0, burned: 0, hints: 0, finishedAt: null, lastSeen: Date.now() },
+            guest: { name: name, avatar: knowledgeDuelJoinSelectedAvatar, score: 0, correct: 0, burned: 0, hints: 0, finishedAt: null, lastSeen: Date.now() },
             status: 'countdown',
             startAtMillis: startAtMillis
         });
@@ -2543,14 +2592,16 @@ function updateKnowledgeDuelOpponentUI(opponent) {
     const fill = document.getElementById('knowledgeDuelOpponentFill');
     const countEl = document.getElementById('knowledgeDuelOpponentCount');
     if (!fill || !countEl) return;
-    const pct = Math.min(100, (opponent.correct / 20) * 100); // skala visual kasar, bukan target pasti
+    const oppScore = Number(opponent.score) || 0;
+    const pct = Math.max(0, Math.min(100, (oppScore / 15) * 100)); // skala visual kasar, bukan target pasti
     fill.style.width = `${pct}%`;
-    countEl.textContent = `${opponent.correct} benar`;
+    countEl.textContent = `${formatKnowledgeScore(oppScore)} poin`;
 }
 
 function reportKnowledgeDuelProgress() {
     if (!knowledgeDuelState) return;
     knowledgeDuelDocRef(knowledgeDuelState.roomCode).update({
+        [`${knowledgeDuelState.role}.score`]: tenthsToScore(knowledgeScoreTenths),
         [`${knowledgeDuelState.role}.correct`]: knowledgeCorrectCount,
         [`${knowledgeDuelState.role}.burned`]: knowledgeBurnedCount,
         [`${knowledgeDuelState.role}.hints`]: knowledgeHintsUsed,
@@ -2568,7 +2619,7 @@ async function endKnowledgeDuelRound() {
     const myRole = knowledgeDuelState.role;
     const opponentRole = myRole === 'host' ? 'guest' : 'host';
     const roomRef = knowledgeDuelDocRef(knowledgeDuelState.roomCode);
-    const myFinal = { correct: knowledgeCorrectCount, burned: knowledgeBurnedCount, hints: knowledgeHintsUsed };
+    const myFinal = { score: tenthsToScore(knowledgeScoreTenths), correct: knowledgeCorrectCount, burned: knowledgeBurnedCount, hints: knowledgeHintsUsed };
 
     try {
         await firestoreDb.runTransaction(async (tx) => {
@@ -2577,6 +2628,7 @@ async function endKnowledgeDuelRound() {
             const room = snap.data();
 
             const update = {
+                [`${myRole}.score`]: myFinal.score,
                 [`${myRole}.correct`]: myFinal.correct,
                 [`${myRole}.burned`]: myFinal.burned,
                 [`${myRole}.hints`]: myFinal.hints,
@@ -2601,7 +2653,9 @@ async function endKnowledgeDuelRound() {
 }
 
 function determineKnowledgeDuelWinner(roleA, dataA, roleB, dataB) {
-    if (dataA.correct !== dataB.correct) return dataA.correct > dataB.correct ? roleA : roleB;
+    const tA = Math.round((Number(dataA.score) || 0) * 10);
+    const tB = Math.round((Number(dataB.score) || 0) * 10);
+    if (tA !== tB) return tA > tB ? roleA : roleB;
     if (dataA.hints !== dataB.hints) return dataA.hints < dataB.hints ? roleA : roleB;
     if (dataA.burned !== dataB.burned) return dataA.burned < dataB.burned ? roleA : roleB;
     return 'draw';
@@ -2628,7 +2682,7 @@ async function showKnowledgeDuelResult(room) {
     const renderPlayer = (label, player) => {
         const finished = !!(player && player.finishedAt);
         const statLine = finished
-            ? `${player.correct} benar · 💡${player.hints} · 💀${player.burned}`
+            ? `${formatKnowledgeScore(player.score)} poin · ${player.correct} benar · 💡${player.hints} · 💀${player.burned}`
             : `Belum menyelesaikan waktunya`;
         return `
             <div class="duel-result-card">
@@ -2693,8 +2747,8 @@ document.getElementById('knowledgeDuelRematchAcceptButton').addEventListener('cl
             startAtMillis: Date.now() + KNOWLEDGE_DUEL_START_BUFFER_MS,
             winner: null,
             rematch: null,
-            'host.correct': 0, 'host.burned': 0, 'host.hints': 0, 'host.finishedAt': null, 'host.lastSeen': Date.now(),
-            'guest.correct': 0, 'guest.burned': 0, 'guest.hints': 0, 'guest.finishedAt': null, 'guest.lastSeen': Date.now()
+            'host.score': 0, 'host.correct': 0, 'host.burned': 0, 'host.hints': 0, 'host.finishedAt': null, 'host.lastSeen': Date.now(),
+            'guest.score': 0, 'guest.correct': 0, 'guest.burned': 0, 'guest.hints': 0, 'guest.finishedAt': null, 'guest.lastSeen': Date.now()
         });
     } catch (e) {
         showToast('danger', `Gagal memulai ulang duel: ${e.code || e.message}`, 5000);
@@ -2778,3 +2832,14 @@ function cleanupKnowledgeDuel() {
    INISIALISASI
 ===================================================================== */
 buildAvatarPicker('avatarPicker', (avatar) => { selectedAvatar = avatar; });
+
+
+/* Panel "Aturan Skor": terbuka otomatis saat pertama kali, lalu mengingat pilihan pemain (boleh dilipat) */
+(function initKnowledgeScoreRules() {
+    const details = document.getElementById('knowledgeScoreRules');
+    if (!details) return;
+    if (safeGetLocalStorage('knowledgeRulesCollapsed', 'false') === 'true') details.open = false;
+    details.addEventListener('toggle', () => {
+        safeSetLocalStorage('knowledgeRulesCollapsed', details.open ? 'false' : 'true');
+    });
+})();
