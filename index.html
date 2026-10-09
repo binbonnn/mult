@@ -10,7 +10,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/css/bootstrap.min.css" rel="stylesheet"
         integrity="sha384-4bw+/aepP/YC94hEpVNVgiZdgIC5+VKNBQNGCHeKRQN+PtmoHDEXuppvnDJzQIu9" crossorigin="anonymous">
-    <link rel="stylesheet" href="style.css?v=20261008">
+    <link rel="stylesheet" href="style.css?v=20261010">
     <title>Game Perkalian Seru</title>
 </head>
 
@@ -184,13 +184,25 @@
             <header class="dashboard-header">
                 <div class="dashboard-heading">
                     <h1>🧠 Pengetahuan Dasar</h1>
-                    <p class="subtitle">Jawab sebanyak &amp; secepat mungkin dalam 60 detik!</p>
+                    <p class="subtitle">Kumpulkan poin sebanyak mungkin dalam 60 detik!</p>
                 </div>
                 <div class="dashboard-header-actions">
                     <button type="button" class="icon-button" id="knowledgeSoundToggleButton" aria-label="Matikan suara">🔊</button>
                     <button type="button" class="icon-button" id="knowledgeHelpButton" aria-label="Cara bermain">❔</button>
                 </div>
             </header>
+
+            <details class="score-rules" id="knowledgeScoreRules" open>
+                <summary class="score-rules-title">📋 Aturan Skor <span class="score-rules-hint" aria-hidden="true"></span></summary>
+                <ul class="score-rules-grid">
+                    <li class="score-rule is-gain"><span class="score-rule-points">+1</span><span class="score-rule-text">Benar di <b>klik 1</b></span></li>
+                    <li class="score-rule is-gain"><span class="score-rule-points">+0,7</span><span class="score-rule-text">Benar di <b>klik 2</b></span></li>
+                    <li class="score-rule is-gain"><span class="score-rule-points">+0,3</span><span class="score-rule-text">Benar di <b>klik 3</b></span></li>
+                    <li class="score-rule is-gain"><span class="score-rule-points">+0,3</span><span class="score-rule-text">Benar setelah <b>💡 Hint</b></span></li>
+                    <li class="score-rule is-loss"><span class="score-rule-points">−1</span><span class="score-rule-text"><b>Soal hangus</b> 💀</span></li>
+                </ul>
+                <p class="score-rules-note">Skor akhir = jumlah poin selama 60 detik. Asal tekan cepat-cepat bikin soal hangus dan skor turun, jadi jawab dengan yakin!</p>
+            </details>
 
             <div class="leaderboard-panel">
                 <div class="leaderboard-tabs" id="knowledgeLeaderboardTabs">
@@ -220,7 +232,7 @@
                 <button type="button" class="icon-button" id="knowledgeBackToDashboardButton" aria-label="Kembali ke dashboard">←</button>
 
                 <div class="progress-info">
-                    <span id="knowledgeProgressLabel">Benar: 0</span>
+                    <span id="knowledgeProgressLabel">Skor: 0,0</span>
                     <div class="progress-bar-track">
                         <div class="progress-bar-fill" id="knowledgeTimerBarFill"></div>
                     </div>
@@ -237,7 +249,7 @@
                         <div class="progress-bar-fill duel-opponent-fill" id="knowledgeDuelOpponentFill"></div>
                     </div>
                 </div>
-                <span class="duel-opponent-count" id="knowledgeDuelOpponentCount">0 benar</span>
+                <span class="duel-opponent-count" id="knowledgeDuelOpponentCount">0,0 poin</span>
             </div>
 
             <div class="duel-disconnect-banner" id="knowledgeDuelDisconnectBanner" style="display:none;">
@@ -304,11 +316,11 @@
                 </div>
                 <div class="modal-body">
                     <ol class="help-list">
-                        <li>Kamu punya waktu <strong>60 detik</strong> untuk menjawab sebanyak mungkin soal.</li>
-                        <li>Tiap soal punya 4 pilihan jawaban, tekan salah satu yang menurutmu benar.</li>
-                        <li>Pilih 3 jawaban salah pada 1 soal (tanpa hint) &rarr; soal itu <strong>hangus</strong>, tidak terhitung, lanjut ke soal berikutnya.</li>
-                        <li>Bingung? Tekan <strong>💡 Hint</strong> untuk menyisakan 2 opsi saja. Tapi kalau salah lagi setelah itu, soal tetap hangus.</li>
-                        <li>Jumlah jawaban benar itulah skormu. Makin sedikit hint &amp; soal hangus, makin bagus peringkatmu kalau skor seri!</li>
+                        <li>Kamu punya waktu <strong>60 detik</strong>. Tiap soal punya 4 pilihan jawaban.</li>
+                        <li>Poin tergantung <strong>klik ke berapa</strong> kamu menemukan jawaban benar: klik 1 = <strong>+1</strong>, klik 2 = <strong>+0,7</strong>, klik 3 = <strong>+0,3</strong>.</li>
+                        <li>Bingung? Tekan <strong>💡 Hint</strong> untuk menyisakan 2 opsi. Jawaban benar setelah hint bernilai maksimal <strong>+0,3</strong>.</li>
+                        <li>Salah 3 kali (tanpa hint), atau salah lagi setelah hint &rarr; soal <strong>hangus</strong> dan skor <strong>&minus;1</strong>.</li>
+                        <li>Skor akhir = jumlah semua poin dalam 60 detik. Kalau skor seri, lebih sedikit hint lalu lebih sedikit soal hangus menang.</li>
                     </ol>
                 </div>
                 <div class="modal-footer">
@@ -348,7 +360,8 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body text-center">
-                    <div class="end-game-stat">✅ Benar: <span id="knowledgeFinalCorrect">0</span></div>
+                    <div class="end-game-stat end-game-stat-main">🏅 Skor: <span id="knowledgeFinalScore">0,0</span></div>
+                    <div class="end-game-stat">✅ Jawaban benar: <span id="knowledgeFinalCorrect">0</span></div>
                     <div class="end-game-stat">💡 Hint dipakai: <span id="knowledgeFinalHints">0</span></div>
                     <div class="end-game-stat">💀 Soal hangus: <span id="knowledgeFinalBurned">0</span></div>
 
@@ -890,13 +903,13 @@
          Kalau belum dikonfigurasi, game otomatis memakai localStorage sebagai cadangan. -->
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-    <script src="firebase-config.js?v=20261008"></script>
+    <script src="firebase-config.js?v=20261010"></script>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/js/bootstrap.bundle.min.js"
         integrity="sha384-HwwvtgBNo3bZJJLYd8oVXjrBZt8cqVSpeBNS5n7C8IVInixGAoxmnlMuBnhbgrkm"
         crossorigin="anonymous"></script>
-    <script src="knowledge-questions.js?v=20261008"></script>
-    <script src="script.js?v=20261008"></script>
+    <script src="knowledge-questions.js?v=20261010"></script>
+    <script src="script.js?v=20261010"></script>
 
 </body>
 
