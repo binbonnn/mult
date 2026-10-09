@@ -1991,3 +1991,97 @@ button,
         margin: 0 auto;
     }
 }
+
+
+/* =====================================================================
+   ATURAN SKOR (dashboard Pengetahuan Dasar)
+   Panduan di tempat keputusan dibuat (HCI: help & documentation, recognition over recall)
+===================================================================== */
+.score-rules {
+    width: 100%;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px dashed rgba(255, 255, 255, 0.25);
+    border-radius: var(--radius-md);
+    padding: 12px 12px 10px;
+    margin-bottom: 16px;
+}
+
+.score-rules-title {
+    font-size: 15px;
+    font-weight: 800;
+    margin: 0;
+    color: var(--color-accent);
+    cursor: pointer;
+    list-style: none;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 32px; /* target sentuh nyaman */
+}
+
+.score-rules-title::-webkit-details-marker { display: none; }
+
+.score-rules-hint::before { content: 'Tutup ▲'; font-size: 12px; opacity: 0.8; font-weight: 700; }
+.score-rules:not([open]) .score-rules-hint::before { content: 'Lihat ▼'; }
+.score-rules[open] .score-rules-grid { margin-top: 8px; }
+
+.score-rules-grid {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+}
+
+.score-rule {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    padding: 6px 10px;
+    border-radius: var(--radius-sm);
+    background: rgba(0, 0, 0, 0.22);
+    border-left: 4px solid var(--color-success);
+}
+
+.score-rule.is-loss {
+    border-left-color: var(--color-danger);
+    grid-column: 1 / -1;
+}
+
+.score-rule-points {
+    flex: 0 0 auto;
+    min-width: 2.6em;
+    font-weight: 800;
+    font-size: 16px;
+    font-variant-numeric: tabular-nums;
+    color: var(--color-success);
+}
+
+.score-rule.is-loss .score-rule-points {
+    color: var(--color-danger);
+}
+
+.score-rule-text {
+    font-size: 13px;
+    line-height: 1.25;
+}
+
+.score-rules-note {
+    margin: 8px 2px 0;
+    font-size: 12px;
+    line-height: 1.35;
+    opacity: 0.85;
+}
+
+.end-game-stat-main {
+    font-size: 1.25em;
+    font-weight: 800;
+}
+
+@media (min-width: 768px) {
+    .score-rules-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .score-rule.is-loss { grid-column: auto; }
+    .score-rule-text { font-size: 14px; }
+}
