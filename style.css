@@ -1802,13 +1802,13 @@ button,
     filter: drop-shadow(0 4px 10px rgba(255, 209, 102, 0.45));
 }
 
-.game-card-knowledge.game-card-active {
+.game-card-knowledge.game-card-active, .game-card-advmath.game-card-active {
     border-color: rgba(56, 189, 248, 0.55);
     background: linear-gradient(135deg, rgba(56, 189, 248, 0.22), rgba(139, 108, 255, 0.16));
     box-shadow: 0 10px 26px rgba(56, 189, 248, 0.2);
 }
 
-.game-card-knowledge.game-card-active .game-card-icon {
+.game-card-knowledge.game-card-active .game-card-icon, .game-card-advmath.game-card-active .game-card-icon {
     filter: drop-shadow(0 4px 10px rgba(56, 189, 248, 0.45));
 }
 
@@ -1894,7 +1894,7 @@ button,
 }
 
 /* ============ GAME PENGETAHUAN DASAR: SOAL PILIHAN GANDA ============ */
-.knowledge-question-card {
+.knowledge-question-card, .advmath-question-card {
     font-size: clamp(17px, 4.2vw, 25px);
     font-weight: 800;
     background: var(--color-card-bg);
@@ -1911,14 +1911,14 @@ button,
     width: 100%;
 }
 
-.knowledge-options-grid {
+.knowledge-options-grid, .advmath-options-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 12px;
     margin-bottom: 14px;
 }
 
-.knowledge-option-btn {
+.knowledge-option-btn, .advmath-option-btn {
     font-family: var(--font-playful);
     font-size: 14.5px;
     font-weight: 700;
@@ -1938,53 +1938,53 @@ button,
     line-height: 1.3;
 }
 
-.knowledge-option-btn:hover:not(:disabled) {
+.knowledge-option-btn:hover:not(:disabled), .advmath-option-btn:hover:not(:disabled) {
     transform: translateY(-2px);
 }
 
-.knowledge-option-btn:active:not(:disabled) {
+.knowledge-option-btn:active:not(:disabled), .advmath-option-btn:active:not(:disabled) {
     transform: scale(0.96);
 }
 
-.knowledge-option-btn:disabled {
+.knowledge-option-btn:disabled, .advmath-option-btn:disabled {
     cursor: not-allowed;
 }
 
-.knowledge-option-btn.is-correct {
+.knowledge-option-btn.is-correct, .advmath-option-btn.is-correct {
     background: var(--color-success);
     color: white;
     box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.35), 0 8px 18px rgba(52, 211, 153, 0.3);
 }
 
-.knowledge-option-btn.is-wrong {
+.knowledge-option-btn.is-wrong, .advmath-option-btn.is-wrong {
     background: var(--color-danger);
     color: white;
     opacity: 0.7;
     text-decoration: line-through;
 }
 
-.knowledge-hint-button {
+.knowledge-hint-button, .advmath-hint-button {
     width: 100%;
     font-size: 13.5px;
     padding: 12px;
 }
 
-.knowledge-hint-button:disabled {
+.knowledge-hint-button:disabled, .advmath-hint-button:disabled {
     opacity: 0.4;
 }
 
 @media (min-width: 768px) {
-    .knowledge-options-grid {
+.knowledge-options-grid, .advmath-options-grid {
         gap: 16px;
     }
 
-    .knowledge-option-btn {
+.knowledge-option-btn, .advmath-option-btn {
         font-size: 16px;
         min-height: 76px;
         padding: 18px 14px;
     }
 
-    .knowledge-hint-button {
+.knowledge-hint-button, .advmath-hint-button {
         font-size: 15px;
         padding: 14px;
         max-width: 420px;
@@ -2084,4 +2084,16 @@ button,
     .score-rules-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
     .score-rule.is-loss { grid-column: auto; }
     .score-rule-text { font-size: 14px; }
+}
+
+
+/* Kartu hub Perkalian 1-10 Lanjutan: aksen hijau supaya mudah dibedakan dari dua game lain */
+.game-card-advmath.game-card-active {
+    border-color: rgba(52, 211, 153, 0.55);
+    background: linear-gradient(135deg, rgba(52, 211, 153, 0.22), rgba(139, 108, 255, 0.16));
+    box-shadow: 0 10px 26px rgba(52, 211, 153, 0.2);
+}
+
+.game-card-advmath.game-card-active .game-card-icon {
+    filter: drop-shadow(0 4px 10px rgba(52, 211, 153, 0.45));
 }
