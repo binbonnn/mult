@@ -42,6 +42,8 @@ const dashboardView = document.getElementById('dashboardView');
 const gameView = document.getElementById('gameView');
 const knowledgeDashboardView = document.getElementById('knowledgeDashboardView');
 const knowledgeGameView = document.getElementById('knowledgeGameView');
+const advmathDashboardView = document.getElementById('advmathDashboardView');
+const advmathGameView = document.getElementById('advmathGameView');
 const answerInput = document.querySelector('.answer-input');
 
 /* =====================================================================
@@ -137,7 +139,7 @@ let firebaseReady = false;
 // Indikator status di bawah papan peringkat, supaya jelas skor disimpan di mana.
 // Dipakai bersama oleh dashboard game Perkalian & Pengetahuan Dasar (satu koneksi Firebase yang sama).
 function setLeaderboardStatus(mode, detail) {
-    ['leaderboardStatus', 'knowledgeLeaderboardStatus'].forEach(id => {
+    ['leaderboardStatus', 'knowledgeLeaderboardStatus', 'advmathLeaderboardStatus'].forEach(id => {
         const el = document.getElementById(id);
         if (!el) return;
         el.className = `leaderboard-status is-${mode}`;
@@ -309,7 +311,7 @@ function playFinishSounds(qualifiesForLeaderboard) {
     }
 }
 
-const SOUND_TOGGLE_BUTTON_IDS = ['soundToggleButton', 'knowledgeSoundToggleButton'];
+const SOUND_TOGGLE_BUTTON_IDS = ['soundToggleButton', 'knowledgeSoundToggleButton', 'advmathSoundToggleButton'];
 
 function updateSoundToggleButton() {
     const label = soundEnabled ? 'Matikan suara' : 'Aktifkan suara';
@@ -404,6 +406,8 @@ function switchView(viewName) {
     gameView.classList.toggle('active', viewName === 'game');
     knowledgeDashboardView.classList.toggle('active', viewName === 'knowledgeDashboard');
     knowledgeGameView.classList.toggle('active', viewName === 'knowledgeGame');
+    advmathDashboardView.classList.toggle('active', viewName === 'advmathDashboard');
+    advmathGameView.classList.toggle('active', viewName === 'advmathGame');
 }
 
 function goToHub() {
@@ -433,6 +437,14 @@ document.getElementById('hubOpenKnowledgeButton').addEventListener('click', () =
 });
 
 document.getElementById('knowledgeBackToHubButton').addEventListener('click', () => {
+    goToHub();
+});
+
+document.getElementById('hubOpenAdvmathButton').addEventListener('click', () => {
+    goToAdvmathDashboard();
+});
+
+document.getElementById('advmathBackToHubButton').addEventListener('click', () => {
     goToHub();
 });
 
@@ -2828,6 +2840,1251 @@ function cleanupKnowledgeDuel() {
     knowledgeDuelState = null;
 }
 
+/* =====================================================================================
+   GAME PERKALIAN 1-10 LANJUTAN
+   (sengaja ditulis paralel/terpisah dari game Perkalian, bukan berbagi satu "engine" --
+   supaya aman: perubahan di sini tidak berisiko merusak game Perkalian yang sudah jalan)
+===================================================================================== */
+
+/* ---- Konstanta & state ---- */
+const ADVMATH_ROUND_DURATION_MS = 60000; // 60 detik per ronde
+const ADVMATH_ROUND_BUFFER = 80; // soal yang disiapkan di depan per ronde (jauh lebih dari cukup utk 60 detik)
+const MAX_ADVMATH_LEADERBOARD = 10;
+const ADVMATH_DUEL_START_BUFFER_MS = 6000;
+const ADVMATH_DUEL_HEARTBEAT_INTERVAL_MS = 5000;
+const ADVMATH_DUEL_HEARTBEAT_TIMEOUT_MS = 13000;
+
+let advmathUsedQuestionIds = [];
+let advmathSequence = [];
+let advmathSeqIndex = 0;
+let advmathCorrectCount = 0;
+// Skor disimpan dalam "persepuluhan" (10 = 1,0 poin) supaya penjumlahan 0,7 + 0,3 dst. tidak kena error pecahan desimal
+let advmathScoreTenths = 0;
+let advmathBurnedCount = 0;
+let advmathHintsUsed = 0;
+let advmathWrongClicksThisQuestion = 0;
+let advmathHintUsedThisQuestion = false;
+let advmathGameInProgress = false;
+let advmathRoundTimerInterval = null;
+let advmathRoundEndAt = 0;
+let advmathLastSavedRecord = null;
+let advmathActiveLeaderboardTab = 'solo';
+let advmathSelectedAvatar = null;
+let advmathDuelCreateSelectedAvatar = null;
+let advmathDuelJoinSelectedAvatar = null;
+let advmathDuelState = null;
+let advmathDuelHeartbeatInterval = null;
+
+// Satu nama = satu baris di papan peringkat duel (dipakai sebagai ID dokumen Firestore)
+function nameToDocId(name) {
+    return name.trim().toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 60) || 'anon';
+}
+
+/* ---- Soal: rotasi kategori 1,2,3,...,N,1,2,3,...  (N ikut jumlah kategori yang ADA di data) ---- */
+function getAdvmathCategories() {
+    const set = new Set(ADVMATH_QUESTIONS.map(q => q.category));
+    return Array.from(set).sort((a, b) => a - b);
+}
+
+function generateAdvmathSequence(count) {
+    const categories = getAdvmathCategories();
+    const byCategory = {};
+    categories.forEach(c => { byCategory[c] = ADVMATH_QUESTIONS.filter(q => q.category === c); });
+
+    // Reset riwayat soal yang sudah pernah keluar kalau sisa pool sudah hampir habis,
+    // supaya tidak pernah terjebak (sama seperti pola di game Perkalian)
+    if (advmathUsedQuestionIds.length >= ADVMATH_QUESTIONS.length - count) {
+        advmathUsedQuestionIds = [];
+    }
+
+    const sequence = [];
+    let pointer = 0;
+    let safety = 0;
+    const safetyLimit = count * 50 + 500;
+    while (sequence.length < count && safety < safetyLimit) {
+        safety++;
+        const cat = categories[pointer % categories.length];
+        pointer++;
+        const pool = byCategory[cat].filter(q =>
+            !advmathUsedQuestionIds.includes(q.id) && !sequence.some(s => s.id === q.id)
+        );
+        if (pool.length === 0) continue; // kategori ini lagi kering sementara, lanjut putaran berikutnya
+        const pick = pool[Math.floor(Math.random() * pool.length)];
+        sequence.push(pick);
+        advmathUsedQuestionIds.push(pick.id);
+    }
+    return sequence;
+}
+
+/* ---- Sistem skor Perkalian 1-10 Lanjutan (berdasarkan "klik ke berapa" jawaban benar) ---- */
+const ADVMATH_POINTS_CLICK_1 = 10;  // benar di klik pertama  = 1,0
+const ADVMATH_POINTS_CLICK_2 = 7;   // benar di klik kedua    = 0,7
+const ADVMATH_POINTS_CLICK_3 = 3;   // benar di klik ketiga   = 0,3 (juga batas maksimal jika memakai hint)
+const ADVMATH_POINTS_BURNED = -10;  // soal hangus            = -1,0
+
+function advmathPointsForCorrect(wrongClicksBefore, hintUsed) {
+    const base = wrongClicksBefore === 0 ? ADVMATH_POINTS_CLICK_1
+        : wrongClicksBefore === 1 ? ADVMATH_POINTS_CLICK_2
+        : ADVMATH_POINTS_CLICK_3;
+    return hintUsed ? Math.min(base, ADVMATH_POINTS_CLICK_3) : base;
+}
+
+function tenthsToScore(tenths) {
+    return Math.round(tenths) / 10;
+}
+
+// Format Indonesia: koma desimal, 1 angka di belakang koma, tanda minus sungguhan (mis. "7,3" / "−1,0")
+function formatAdvmathScore(score) {
+    const tenths = Math.round((Number(score) || 0) * 10);
+    const text = (Math.abs(tenths) / 10).toFixed(1).replace('.', ',');
+    return tenths < 0 ? `\u2212${text}` : text;
+}
+
+function formatAdvmathGain(points) {
+    const tenths = Math.round(points);
+    return tenths < 0 ? `\u2212${(Math.abs(tenths) / 10).toFixed(1).replace('.', ',')}` : `+${(tenths / 10).toFixed(1).replace('.', ',')}`;
+}
+
+function advmathScoreTenthsOf(record) {
+    return Math.round((Number(record && record.score) || 0) * 10);
+}
+
+/* ---- Papan peringkat: data layer (solo & duel-wins) ---- */
+function getAdvmathSoloRecordsFromLocalStorage() {
+    try {
+        return JSON.parse(safeGetLocalStorage('advmath_records', '[]'));
+    } catch (e) {
+        return [];
+    }
+}
+
+function sortAdvmathSoloRecords(records) {
+    // Skor lebih tinggi = lebih baik; kalau seri, lebih sedikit hint lalu lebih sedikit hangus = lebih baik.
+    // Rekor lama (sebelum sistem skor baru, tanpa field "score") tidak ikut karena aturannya tidak sebanding.
+    return records.filter(r => typeof r.score === 'number').sort((a, b) => {
+        const diff = advmathScoreTenthsOf(b) - advmathScoreTenthsOf(a);
+        if (diff !== 0) return diff;
+        if (a.hints !== b.hints) return a.hints - b.hints;
+        return a.burned - b.burned;
+    });
+}
+
+async function getAdvmathSoloRecords() {
+    if (firebaseReady) {
+        try {
+            const snapshot = await firestoreDb.collection('advmath_records')
+                .orderBy('score', 'desc')
+                .limit(MAX_ADVMATH_LEADERBOARD)
+                .get();
+            return sortAdvmathSoloRecords(snapshot.docs.map(doc => doc.data())).slice(0, MAX_ADVMATH_LEADERBOARD);
+        } catch (e) {
+            console.warn('[Perkalian 1-10 Lanjutan] Gagal memuat dari Firebase, memakai localStorage.', e);
+        }
+    }
+    return sortAdvmathSoloRecords(getAdvmathSoloRecordsFromLocalStorage()).slice(0, MAX_ADVMATH_LEADERBOARD);
+}
+
+async function saveAdvmathSoloRecord(record) {
+    if (firebaseReady) {
+        try {
+            await firestoreDb.collection('advmath_records').add(record);
+            return { online: true, error: null };
+        } catch (e) {
+            console.warn('[Perkalian 1-10 Lanjutan] Gagal menyimpan ke Firebase, menyimpan ke localStorage saja.', e);
+        }
+    }
+    let records = getAdvmathSoloRecordsFromLocalStorage();
+    records.push(record);
+    records = sortAdvmathSoloRecords(records).slice(0, MAX_ADVMATH_LEADERBOARD);
+    safeSetLocalStorage('advmath_records', JSON.stringify(records));
+    return { online: false, error: null };
+}
+
+function getAdvmathDuelWinsFromLocalStorage() {
+    try {
+        return JSON.parse(safeGetLocalStorage('advmath_duel_wins', '[]'));
+    } catch (e) {
+        return [];
+    }
+}
+
+async function getAdvmathDuelWinsLeaderboard() {
+    if (firebaseReady) {
+        try {
+            const snapshot = await firestoreDb.collection('advmath_duel_wins')
+                .orderBy('wins', 'desc')
+                .limit(MAX_ADVMATH_LEADERBOARD)
+                .get();
+            return snapshot.docs.map(doc => doc.data());
+        } catch (e) {
+            console.warn('[Perkalian 1-10 Lanjutan] Gagal memuat papan duel dari Firebase.', e);
+        }
+    }
+    return [...getAdvmathDuelWinsFromLocalStorage()].sort((a, b) => b.wins - a.wins).slice(0, MAX_ADVMATH_LEADERBOARD);
+}
+
+// Nama yang dipakai konsisten akan terus bertambah jumlah kemenangannya (satu nama = satu baris)
+async function recordAdvmathDuelWin(name, avatar) {
+    const docId = nameToDocId(name);
+    if (firebaseReady) {
+        try {
+            await firestoreDb.collection('advmath_duel_wins').doc(docId).set({
+                name: name,
+                avatar: avatar,
+                wins: firebase.firestore.FieldValue.increment(1),
+                updatedAt: Date.now()
+            }, { merge: true });
+            return;
+        } catch (e) {
+            console.warn('[Perkalian 1-10 Lanjutan] Gagal mencatat kemenangan ke Firebase.', e);
+        }
+    }
+    let records = getAdvmathDuelWinsFromLocalStorage();
+    let rec = records.find(r => r.docId === docId);
+    if (rec) {
+        rec.wins = (rec.wins || 0) + 1;
+        rec.avatar = avatar;
+        rec.name = name;
+    } else {
+        records.push({ docId, name, avatar, wins: 1 });
+    }
+    safeSetLocalStorage('advmath_duel_wins', JSON.stringify(records));
+}
+
+/* ---- Dashboard: tab & papan peringkat ---- */
+function setAdvmathLeaderboardTab(tabName) {
+    advmathActiveLeaderboardTab = tabName;
+    document.querySelectorAll('#advmathDashboardView .leaderboard-tab[data-alboard]').forEach(tab => {
+        tab.classList.toggle('is-active', tab.dataset.alboard === tabName);
+    });
+    renderAdvmathLeaderboardPanel(tabName);
+}
+
+document.querySelectorAll('#advmathDashboardView .leaderboard-tab[data-alboard]').forEach(tab => {
+    tab.addEventListener('click', () => setAdvmathLeaderboardTab(tab.dataset.alboard));
+});
+
+function showAdvmathLeaderboardLoading() {
+    document.getElementById('advmathPodium').innerHTML = '<div class="leaderboard-loading">Memuat papan peringkat...</div>';
+    document.getElementById('advmathRankList').innerHTML = '';
+}
+
+async function renderAdvmathLeaderboardPanel(tabName) {
+    showAdvmathLeaderboardLoading();
+    if (tabName === 'duel') {
+        const records = await getAdvmathDuelWinsLeaderboard();
+        renderAdvmathDuelWinsPodium(records);
+        renderAdvmathDuelWinsList(records);
+    } else {
+        const records = await getAdvmathSoloRecords();
+        renderAdvmathSoloPodium(records);
+        renderAdvmathSoloList(records);
+    }
+}
+
+function isAdvmathLastSavedSolo(record) {
+    return !!advmathLastSavedRecord
+        && advmathLastSavedRecord.name === record.name
+        && advmathLastSavedRecord.score === record.score
+        && advmathLastSavedRecord.hints === record.hints
+        && advmathLastSavedRecord.burned === record.burned;
+}
+
+function renderAdvmathSoloPodium(records) {
+    const podiumEl = document.getElementById('advmathPodium');
+    const displayOrder = [1, 0, 2];
+
+    podiumEl.innerHTML = displayOrder.map(rankIndex => {
+        const place = rankIndex + 1;
+        const spotClass = place === 1 ? 'podium-first' : place === 2 ? 'podium-second' : 'podium-third';
+        const record = records[rankIndex];
+
+        if (!record) {
+            return `
+                <div class="podium-spot ${spotClass} is-empty">
+                    <div class="podium-avatar-wrap"><div class="podium-avatar">👤</div></div>
+                    <div class="podium-name">—</div>
+                    <div class="podium-score">--</div>
+                    <div class="podium-mistakes">&nbsp;</div>
+                    <div class="podium-base" aria-hidden="true"><span>${place}</span></div>
+                </div>
+            `;
+        }
+
+        const isYou = isAdvmathLastSavedSolo(record);
+        return `
+            <div class="podium-spot ${spotClass}${isYou ? ' is-you' : ''}" role="group"
+                 aria-label="Peringkat ${place}: ${escapeHtml(record.name)}, skor ${formatAdvmathScore(record.score)}">
+                ${place === 1 ? '<div class="podium-medal" aria-hidden="true">👑</div>' : `<div class="podium-medal" aria-hidden="true">${place === 2 ? '🥈' : '🥉'}</div>`}
+                <div class="podium-avatar-wrap"><div class="podium-avatar">${avatarGlyph(record.avatar)}</div></div>
+                <div class="podium-name" title="${escapeHtml(record.name)}">${escapeHtml(record.name)}</div>
+                <div class="podium-score"><span>${formatAdvmathScore(record.score)}</span> <span class="podium-score-unit">poin</span></div>
+                <div class="podium-mistakes">💡${record.hints} · 💀${record.burned}</div>
+                ${isYou ? '<div class="you-chip">⭐ Kamu</div>' : ''}
+                <div class="podium-base" aria-hidden="true"><span>${place}</span></div>
+            </div>
+        `;
+    }).join('');
+}
+
+function renderAdvmathSoloList(records) {
+    const listEl = document.getElementById('advmathRankList');
+    if (records.length === 0) {
+        listEl.innerHTML = `<li class="rank-list-empty">Belum ada pemain di sini.<br>Jadilah yang pertama mencatat skor! 🏁</li>`;
+        return;
+    }
+    const rest = records.slice(3, MAX_ADVMATH_LEADERBOARD);
+    if (rest.length === 0) {
+        listEl.innerHTML = '';
+        return;
+    }
+    listEl.innerHTML = rest.map((record, i) => {
+        const rank = i + 4;
+        const isYou = isAdvmathLastSavedSolo(record);
+        return `
+            <li class="rank-list-row${isYou ? ' is-you' : ''}">
+                <span class="rank-list-position">${rank}</span>
+                <span class="rank-list-avatar">${avatarGlyph(record.avatar)}</span>
+                <span class="rank-list-name">${escapeHtml(record.name)}${isYou ? ' <span class="you-chip">⭐ Kamu</span>' : ''}</span>
+                <span class="rank-list-dots" aria-hidden="true"></span>
+                <span class="rank-list-score">${formatAdvmathScore(record.score)} poin<small>💡${record.hints} · 💀${record.burned}</small></span>
+            </li>
+        `;
+    }).join('');
+}
+
+function renderAdvmathDuelWinsPodium(records) {
+    const podiumEl = document.getElementById('advmathPodium');
+    const displayOrder = [1, 0, 2];
+
+    podiumEl.innerHTML = displayOrder.map(rankIndex => {
+        const place = rankIndex + 1;
+        const spotClass = place === 1 ? 'podium-first' : place === 2 ? 'podium-second' : 'podium-third';
+        const record = records[rankIndex];
+
+        if (!record) {
+            return `
+                <div class="podium-spot ${spotClass} is-empty">
+                    <div class="podium-avatar-wrap"><div class="podium-avatar">👤</div></div>
+                    <div class="podium-name">—</div>
+                    <div class="podium-score">--</div>
+                    <div class="podium-mistakes">&nbsp;</div>
+                    <div class="podium-base" aria-hidden="true"><span>${place}</span></div>
+                </div>
+            `;
+        }
+
+        return `
+            <div class="podium-spot ${spotClass}" role="group"
+                 aria-label="Peringkat ${place}: ${escapeHtml(record.name)}, ${record.wins} menang">
+                ${place === 1 ? '<div class="podium-medal" aria-hidden="true">👑</div>' : `<div class="podium-medal" aria-hidden="true">${place === 2 ? '🥈' : '🥉'}</div>`}
+                <div class="podium-avatar-wrap"><div class="podium-avatar">${avatarGlyph(record.avatar)}</div></div>
+                <div class="podium-name" title="${escapeHtml(record.name)}">${escapeHtml(record.name)}</div>
+                <div class="podium-score"><span>${record.wins}x</span> <span class="podium-score-unit">menang</span></div>
+                <div class="podium-mistakes">&nbsp;</div>
+                <div class="podium-base" aria-hidden="true"><span>${place}</span></div>
+            </div>
+        `;
+    }).join('');
+}
+
+function renderAdvmathDuelWinsList(records) {
+    const listEl = document.getElementById('advmathRankList');
+    if (records.length === 0) {
+        listEl.innerHTML = `<li class="rank-list-empty">Belum ada duel yang dimenangkan di sini.<br>Jadilah yang pertama! 🏁</li>`;
+        return;
+    }
+    const rest = records.slice(3, MAX_ADVMATH_LEADERBOARD);
+    if (rest.length === 0) {
+        listEl.innerHTML = '';
+        return;
+    }
+    listEl.innerHTML = rest.map((record, i) => {
+        const rank = i + 4;
+        return `
+            <li class="rank-list-row">
+                <span class="rank-list-position">${rank}</span>
+                <span class="rank-list-avatar">${avatarGlyph(record.avatar)}</span>
+                <span class="rank-list-name">${escapeHtml(record.name)}</span>
+                <span class="rank-list-dots" aria-hidden="true"></span>
+                <span class="rank-list-score">${record.wins}x<small>menang</small></span>
+            </li>
+        `;
+    }).join('');
+}
+
+function goToAdvmathDashboard(focusTab) {
+    countdownRunToken++;
+    document.getElementById('countdownOverlay').classList.remove('is-visible');
+    setAdvmathLeaderboardTab(focusTab || advmathActiveLeaderboardTab);
+    switchView('advmathDashboard');
+}
+
+/* ---- Avatar picker (simpan skor solo & form duel) ---- */
+buildAvatarPicker('advmathAvatarPicker', (avatar) => { advmathSelectedAvatar = avatar; });
+buildAvatarPicker('advmathDuelCreateAvatarPicker', (avatar) => { advmathDuelCreateSelectedAvatar = avatar; });
+buildAvatarPicker('advmathDuelJoinAvatarPicker', (avatar) => { advmathDuelJoinSelectedAvatar = avatar; });
+
+/* ---- Bantuan & konfirmasi keluar ---- */
+document.getElementById('advmathHelpButton').addEventListener('click', () => {
+    showModal('advmathHelpModal');
+});
+
+
+document.getElementById('advmathBackToDashboardButton').addEventListener('click', () => {
+    if (advmathGameInProgress || advmathDuelState) {
+        showModal('advmathConfirmExitModal');
+    } else {
+        goToAdvmathDashboard();
+    }
+});
+
+document.getElementById('advmathConfirmExitYesButton').addEventListener('click', async () => {
+    hideModal('advmathConfirmExitModal');
+    stopAdvmathRoundTimer();
+    advmathGameInProgress = false;
+    if (advmathDuelState) {
+        await abandonAdvmathDuel();
+    }
+    goToAdvmathDashboard();
+});
+
+/* =====================================================================================
+   ALUR GAME SOLO
+===================================================================================== */
+document.getElementById('advmathOpenSoloButton').addEventListener('click', () => {
+    startAdvmathSoloGame();
+});
+
+function prepareAdvmathGameUI() {
+    // Tampilkan overlay countdown SINKRON bareng switchView, supaya tidak ada celah
+    // "layar game polos" sempat kelihatan sebelum overlay menutupinya (lihat catatan
+    // yang sama di prepareDuelGameUI milik game Perkalian).
+    const overlay = document.getElementById('countdownOverlay');
+    document.getElementById('countdownNumber').textContent = COUNTDOWN_STEPS[0].text;
+    document.getElementById('countdownLabel').textContent = COUNTDOWN_STEPS[0].label;
+    overlay.classList.add('is-visible');
+
+    advmathGameInProgress = true;
+    advmathLastSavedRecord = null;
+    advmathCorrectCount = 0;
+    advmathScoreTenths = 0;
+    advmathBurnedCount = 0;
+    advmathHintsUsed = 0;
+    advmathSeqIndex = 0;
+
+    document.getElementById('advmathTimer').textContent = '01:00';
+    document.getElementById('advmathTimerBarFill').style.width = '100%';
+    document.getElementById('advmathTimerBarFill').style.backgroundColor = '';
+    document.getElementById('advmathProgressLabel').textContent = 'Skor: 0,0';
+    document.getElementById('advmathQuestionText').textContent = '';
+    document.querySelectorAll('.advmath-option-btn').forEach(btn => {
+        btn.disabled = true;
+        btn.textContent = '';
+        btn.className = 'advmath-option-btn';
+        btn.style.display = 'flex';
+    });
+    document.getElementById('advmathHintButton').disabled = true;
+
+    switchView('advmathGame');
+}
+
+function startAdvmathSoloGame() {
+    advmathDuelState = null;
+    advmathSequence = generateAdvmathSequence(ADVMATH_ROUND_BUFFER);
+    prepareAdvmathGameUI();
+    document.getElementById('advmathDuelOpponentBar').style.display = 'none';
+    document.getElementById('advmathDuelDisconnectBanner').style.display = 'none';
+    runCountdown(() => {
+        beginAdvmathRound(Date.now() + ADVMATH_ROUND_DURATION_MS);
+    });
+}
+
+function beginAdvmathRound(endAtMillis) {
+    advmathRoundEndAt = endAtMillis;
+    displayAdvmathQuestion();
+    startAdvmathRoundTimer();
+}
+
+function startAdvmathRoundTimer() {
+    clearInterval(advmathRoundTimerInterval);
+    advmathRoundTimerInterval = setInterval(() => {
+        const remainingMs = advmathRoundEndAt - Date.now();
+        const remainingSec = Math.max(0, Math.ceil(remainingMs / 1000));
+        const minutes = Math.floor(remainingSec / 60).toString().padStart(2, '0');
+        const seconds = (remainingSec % 60).toString().padStart(2, '0');
+        document.getElementById('advmathTimer').textContent = `${minutes}:${seconds}`;
+        const pct = Math.max(0, Math.min(100, (remainingMs / ADVMATH_ROUND_DURATION_MS) * 100));
+        const fill = document.getElementById('advmathTimerBarFill');
+        fill.style.width = `${pct}%`;
+        fill.style.backgroundColor = remainingSec <= 10 ? 'var(--color-danger)' : '';
+
+        if (remainingMs <= 0) {
+            stopAdvmathRoundTimer();
+            if (advmathDuelState) {
+                endAdvmathDuelRound();
+            } else {
+                endAdvmathSoloRound();
+            }
+        }
+    }, 200);
+}
+
+function stopAdvmathRoundTimer() {
+    clearInterval(advmathRoundTimerInterval);
+    advmathRoundTimerInterval = null;
+}
+
+function displayAdvmathQuestion() {
+    if (advmathSeqIndex >= advmathSequence.length) {
+        advmathSequence = advmathSequence.concat(generateAdvmathSequence(ADVMATH_ROUND_BUFFER));
+    }
+    const q = advmathSequence[advmathSeqIndex];
+    advmathWrongClicksThisQuestion = 0;
+    advmathHintUsedThisQuestion = false;
+
+    document.getElementById('advmathQuestionText').textContent = q.question;
+    const btns = document.querySelectorAll('.advmath-option-btn');
+    btns.forEach((btn, i) => {
+        btn.textContent = q.options[i];
+        btn.disabled = false;
+        btn.className = 'advmath-option-btn';
+        btn.style.display = 'flex';
+    });
+    document.getElementById('advmathHintButton').disabled = false;
+    document.getElementById('advmathProgressLabel').textContent = `Skor: ${formatAdvmathScore(tenthsToScore(advmathScoreTenths))}`;
+}
+
+document.querySelectorAll('.advmath-option-btn').forEach((btn, idx) => {
+    btn.addEventListener('click', () => handleAdvmathOptionClick(idx));
+});
+
+function handleAdvmathOptionClick(idx) {
+    if (!advmathGameInProgress) return;
+    const btns = Array.from(document.querySelectorAll('.advmath-option-btn'));
+    const btn = btns[idx];
+    if (!btn || btn.disabled) return;
+
+    const q = advmathSequence[advmathSeqIndex];
+
+    if (idx === q.correctIndex) {
+        btn.classList.add('is-correct');
+        playCorrectSound();
+        const gained = advmathPointsForCorrect(advmathWrongClicksThisQuestion, advmathHintUsedThisQuestion);
+        advmathScoreTenths += gained;
+        advmathCorrectCount++;
+        showToast('success', `Benar! ${formatAdvmathGain(gained)} poin 🎉`);
+        document.getElementById('advmathProgressLabel').textContent = `Skor: ${formatAdvmathScore(tenthsToScore(advmathScoreTenths))}`;
+        btns.forEach(b => { b.disabled = true; });
+        if (advmathDuelState) reportAdvmathDuelProgress();
+        setTimeout(advanceAdvmathQuestion, 450);
+        return;
+    }
+
+    btn.disabled = true;
+    btn.classList.add('is-wrong');
+    playWrongSound();
+    advmathWrongClicksThisQuestion++;
+
+    const visibleCount = btns.filter(b => b.style.display !== 'none').length;
+    if (advmathWrongClicksThisQuestion >= visibleCount - 1) {
+        // Sisa tinggal jawaban benar -> langsung hangus, jangan beri kesempatan asal tebak
+        advmathBurnedCount++;
+        advmathScoreTenths += ADVMATH_POINTS_BURNED;
+        showToast('danger', `Soal hangus! ${formatAdvmathGain(ADVMATH_POINTS_BURNED)} poin 💀`, 1800);
+        document.getElementById('advmathProgressLabel').textContent = `Skor: ${formatAdvmathScore(tenthsToScore(advmathScoreTenths))}`;
+        btns.forEach(b => { b.disabled = true; });
+        if (advmathDuelState) reportAdvmathDuelProgress();
+        setTimeout(advanceAdvmathQuestion, 650);
+    }
+}
+
+function advanceAdvmathQuestion() {
+    advmathSeqIndex++;
+    if (advmathRoundEndAt - Date.now() > 0 && advmathGameInProgress) {
+        displayAdvmathQuestion();
+    }
+    // Kalau waktu sudah habis tepat di momen ini, interval timer yang akan menangani endRound.
+}
+
+document.getElementById('advmathHintButton').addEventListener('click', () => {
+    if (advmathHintUsedThisQuestion || !advmathGameInProgress) return;
+    const q = advmathSequence[advmathSeqIndex];
+    const btns = Array.from(document.querySelectorAll('.advmath-option-btn'));
+
+    const viableDistractorIdx = btns
+        .map((b, i) => i)
+        .filter(i => i !== q.correctIndex && !btns[i].disabled && btns[i].style.display !== 'none');
+
+    if (viableDistractorIdx.length === 0) return; // sudah tersisa 1 opsi (benar) saja, hint tak relevan lagi
+
+    advmathHintUsedThisQuestion = true;
+    advmathHintsUsed++;
+    document.getElementById('advmathHintButton').disabled = true;
+
+    // Sembunyikan opsi salah yg sudah ketahuan (sudah dicoba & disabled) biar tidak mengotori tampilan
+    btns.forEach((b, i) => {
+        if (i !== q.correctIndex && b.disabled) b.style.display = 'none';
+    });
+
+    // Dari distraktor yang masih "hidup", sisakan 1 secara acak, sembunyikan sisanya
+    const keepIndex = viableDistractorIdx[Math.floor(Math.random() * viableDistractorIdx.length)];
+    viableDistractorIdx.forEach(i => {
+        if (i !== keepIndex) btns[i].style.display = 'none';
+    });
+
+    showToast('success', '💡 Hint dipakai! Tersisa 2 opsi (maks. +0,3 poin).');
+});
+
+/* ---- Insight peringkat (analog buildRankInsight milik game Perkalian, tapi "lebih tinggi = lebih baik") ---- */
+function buildAdvmathRankInsight(score, hints, burned, records) {
+    const myTenths = Math.round(score * 10);
+    const sorted = sortAdvmathSoloRecords(records);
+    const better = sorted.filter(r => {
+        const t = advmathScoreTenthsOf(r);
+        return t > myTenths || (t === myTenths && (r.hints < hints || (r.hints === hints && r.burned <= burned)));
+    }).length;
+    const rank = better + 1;
+    const qualifies = rank <= MAX_ADVMATH_LEADERBOARD;
+    const gapText = (tenths) => formatAdvmathScore(Math.max(1, tenths) / 10);
+
+    if (sorted.length === 0) {
+        return {
+            rank: 1, qualifies: true, tone: 'top',
+            headline: '🏆 Kamu pemain pertama di sini!',
+            details: [{ icon: '💾', text: 'Simpan skormu untuk jadi peringkat 1 di papan peringkat.' }]
+        };
+    }
+
+    const top = sorted[0];
+    const details = [];
+
+    if (rank === 1) {
+        const gap = myTenths - advmathScoreTenthsOf(top);
+        details.push({ icon: '⚡', text: gap > 0 ? `${gapText(gap)} poin lebih tinggi dari rekor sebelumnya.` : `Skor sama, tapi hint/hangus-mu lebih sedikit.` });
+        return { rank, qualifies, tone: 'top', headline: '👑 Rekor baru! Kamu peringkat 1', details };
+    }
+
+    if (rank <= 3) {
+        const gapToTop = advmathScoreTenthsOf(top) - myTenths;
+        details.push({ icon: '🎯', text: `${gapText(gapToTop)} poin lagi untuk menyamai peringkat 1.` });
+        return { rank, qualifies, tone: 'top', headline: `${rank === 2 ? '🥈' : '🥉'} Kamu masuk 3 besar! Peringkat ${rank}`, details };
+    }
+
+    if (qualifies) {
+        const third = sorted[2];
+        details.push({ icon: '🥉', text: `${gapText(advmathScoreTenthsOf(third) - myTenths + 1)} poin lagi untuk masuk 3 besar.` });
+        return { rank, qualifies, tone: 'ok', headline: `🎯 Kamu masuk papan peringkat! Peringkat ${rank}`, details };
+    }
+
+    const last = sorted[MAX_ADVMATH_LEADERBOARD - 1];
+    details.push({ icon: '📉', text: `${gapText(advmathScoreTenthsOf(last) - myTenths + 1)} poin lagi untuk masuk papan peringkat.` });
+    return { rank, qualifies, tone: 'miss', headline: '💪 Belum masuk papan peringkat, ayo coba lagi!', details };
+}
+
+function renderAdvmathRankInsight(insight) {
+    const box = document.getElementById('advmathRankInsight');
+    box.className = `rank-insight is-${insight.tone}`;
+    document.getElementById('advmathRankInsightHeadline').textContent = insight.headline;
+    const list = document.getElementById('advmathRankInsightDetails');
+    list.innerHTML = '';
+    insight.details.forEach(detail => {
+        const li = document.createElement('li');
+        li.dataset.icon = detail.icon;
+        li.textContent = detail.text;
+        list.appendChild(li);
+    });
+    box.style.display = 'block';
+}
+
+async function endAdvmathSoloRound() {
+    advmathGameInProgress = false;
+    document.querySelectorAll('.advmath-option-btn').forEach(b => { b.disabled = true; });
+    document.getElementById('advmathHintButton').disabled = true;
+
+    const finalScore = tenthsToScore(advmathScoreTenths);
+    document.getElementById('advmathFinalScore').textContent = formatAdvmathScore(finalScore);
+    document.getElementById('advmathFinalCorrect').textContent = advmathCorrectCount.toString();
+    document.getElementById('advmathFinalHints').textContent = advmathHintsUsed.toString();
+    document.getElementById('advmathFinalBurned').textContent = advmathBurnedCount.toString();
+
+    const records = await getAdvmathSoloRecords();
+    const insight = buildAdvmathRankInsight(finalScore, advmathHintsUsed, advmathBurnedCount, records);
+    renderAdvmathRankInsight(insight);
+    document.getElementById('advmathSaveScoreButton').style.display = insight.qualifies ? 'inline-block' : 'none';
+
+    showModal('advmathEndModal');
+    launchConfetti();
+    playFinishSounds(insight.qualifies);
+}
+
+document.getElementById('advmathSaveScoreButton').addEventListener('click', async () => {
+    hideModal('advmathEndModal');
+    await waitForModalHidden('advmathEndModal');
+    showModal('advmathSaveRecordModal');
+});
+
+document.getElementById('advmathButtonSavePlayerRecord').addEventListener('click', saveAdvmathPlayerRecord);
+
+async function saveAdvmathPlayerRecord() {
+    const nameInput = document.getElementById('advmathPlayerName');
+    const playerName = nameInput.value.trim();
+    if (!playerName) {
+        showToast('danger', 'Isi dulu namamu ya!');
+        nameInput.focus();
+        return;
+    }
+
+    const saveBtn = document.getElementById('advmathButtonSavePlayerRecord');
+    saveBtn.disabled = true;
+    saveBtn.textContent = 'Menyimpan...';
+
+    let saveResult = null;
+    try {
+        saveResult = await saveAdvmathSoloRecord({
+            name: playerName,
+            score: tenthsToScore(advmathScoreTenths),
+            correct: advmathCorrectCount,
+            hints: advmathHintsUsed,
+            burned: advmathBurnedCount,
+            avatar: advmathSelectedAvatar
+        });
+    } finally {
+        saveBtn.disabled = false;
+        saveBtn.textContent = 'Simpan';
+    }
+
+    hideModal('advmathSaveRecordModal');
+    nameInput.value = '';
+    advmathLastSavedRecord = { name: playerName, score: tenthsToScore(advmathScoreTenths), hints: advmathHintsUsed, burned: advmathBurnedCount };
+
+    if (saveResult && saveResult.error) {
+        showToast('danger', `Gagal simpan online: ${saveResult.error}`, 6000);
+    }
+
+    goToAdvmathDashboard('solo');
+}
+
+document.getElementById('advmathSaveRecordModal').addEventListener('shown.bs.modal', function () {
+    document.getElementById('advmathPlayerName').focus();
+});
+
+document.getElementById('advmathPlayAgainButton').addEventListener('click', () => {
+    hideModal('advmathEndModal');
+    startAdvmathSoloGame();
+});
+
+document.getElementById('advmathEndBackToDashboardButton').addEventListener('click', () => {
+    hideModal('advmathEndModal');
+    goToAdvmathDashboard('solo');
+});
+
+/* =====================================================================================
+   DUEL 1v1 PERKALIAN 1-10 LANJUTAN
+===================================================================================== */
+function advmathDuelDocRef(roomCode) {
+    return firestoreDb.collection('advmath_duels').doc(roomCode);
+}
+
+document.getElementById('advmathOpenDuelButton').addEventListener('click', () => {
+    if (!requireFirebaseForDuel()) return;
+    showModal('advmathDuelModal');
+});
+
+document.getElementById('advmathDuelCreateRoomButton').addEventListener('click', async () => {
+    hideModal('advmathDuelModal');
+    await waitForModalHidden('advmathDuelModal');
+    showModal('advmathDuelCreateModal');
+});
+
+document.getElementById('advmathDuelJoinRoomButton').addEventListener('click', async () => {
+    hideModal('advmathDuelModal');
+    await waitForModalHidden('advmathDuelModal');
+    showModal('advmathDuelJoinModal');
+});
+
+document.getElementById('advmathDuelJoinCode').addEventListener('input', function () {
+    this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 4);
+});
+
+document.getElementById('advmathDuelCreateSubmitButton').addEventListener('click', createAdvmathDuelRoom);
+
+async function createAdvmathDuelRoom() {
+    const nameInput = document.getElementById('advmathDuelCreateName');
+    const name = nameInput.value.trim();
+    if (!name) {
+        showToast('danger', 'Isi dulu namamu ya!');
+        nameInput.focus();
+        return;
+    }
+
+    cleanupAdvmathDuel();
+    hideModal('advmathDuelCreateModal');
+
+    const sequence = generateAdvmathSequence(ADVMATH_ROUND_BUFFER);
+    let roomCode = null;
+
+    try {
+        for (let attempt = 0; attempt < 6 && !roomCode; attempt++) {
+            const candidate = generateRoomCode();
+            const snap = await advmathDuelDocRef(candidate).get();
+            if (!snap.exists) roomCode = candidate;
+        }
+        if (!roomCode) throw new Error('kode-habis');
+
+        await advmathDuelDocRef(roomCode).set({
+            status: 'waiting',
+            createdAt: Date.now(),
+            startAtMillis: null,
+            winner: null,
+            rematch: null,
+            questions: sequence,
+            host: { name: name, avatar: advmathDuelCreateSelectedAvatar, score: 0, correct: 0, burned: 0, hints: 0, finishedAt: null, lastSeen: Date.now() },
+            guest: null
+        });
+    } catch (e) {
+        showToast('danger', `Gagal membuat room: ${e.code || e.message}`, 5000);
+        return;
+    }
+
+    advmathDuelState = {
+        roomCode, role: 'host', sequence,
+        lastStartAtMillis: null, lastRematchUpdatedAt: null, resultShown: false
+    };
+    document.getElementById('advmathDuelRoomCodeDisplay').textContent = roomCode;
+    await waitForModalHidden('advmathDuelCreateModal');
+    showModal('advmathDuelWaitingModal');
+    listenToAdvmathDuelRoom(roomCode);
+    startAdvmathDuelHeartbeat();
+}
+
+document.getElementById('advmathDuelCopyCodeButton').addEventListener('click', () => {
+    const code = document.getElementById('advmathDuelRoomCodeDisplay').textContent;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(code).then(() => showToast('success', 'Kode disalin!')).catch(() => {});
+    }
+});
+
+document.getElementById('advmathDuelCancelWaitingButton').addEventListener('click', async () => {
+    hideModal('advmathDuelWaitingModal');
+    await abandonAdvmathDuel();
+});
+
+document.getElementById('advmathDuelJoinSubmitButton').addEventListener('click', joinAdvmathDuelRoom);
+
+async function joinAdvmathDuelRoom() {
+    const codeInput = document.getElementById('advmathDuelJoinCode');
+    const nameInput = document.getElementById('advmathDuelJoinName');
+    const code = codeInput.value.trim().toUpperCase();
+    const name = nameInput.value.trim();
+
+    if (code.length !== 4) {
+        showToast('danger', 'Kode room terdiri dari 4 karakter.');
+        codeInput.focus();
+        return;
+    }
+    if (!name) {
+        showToast('danger', 'Isi dulu namamu ya!');
+        nameInput.focus();
+        return;
+    }
+
+    const submitBtn = document.getElementById('advmathDuelJoinSubmitButton');
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Menghubungkan...';
+
+    try {
+        const ref = advmathDuelDocRef(code);
+        const snap = await ref.get();
+        if (!snap.exists) {
+            showToast('danger', 'Kode room tidak ditemukan.');
+            return;
+        }
+        const room = snap.data();
+        if (room.status !== 'waiting' || room.guest) {
+            showToast('danger', 'Room ini sudah penuh atau sedang bermain.');
+            return;
+        }
+
+        const startAtMillis = Date.now() + ADVMATH_DUEL_START_BUFFER_MS;
+        await ref.update({
+            guest: { name: name, avatar: advmathDuelJoinSelectedAvatar, score: 0, correct: 0, burned: 0, hints: 0, finishedAt: null, lastSeen: Date.now() },
+            status: 'countdown',
+            startAtMillis: startAtMillis
+        });
+
+        cleanupAdvmathDuel();
+        advmathDuelState = {
+            roomCode: code, role: 'guest', sequence: room.questions,
+            lastStartAtMillis: null, lastRematchUpdatedAt: null, resultShown: false
+        };
+        codeInput.value = '';
+        nameInput.value = '';
+        hideModal('advmathDuelJoinModal');
+        listenToAdvmathDuelRoom(code);
+        startAdvmathDuelHeartbeat();
+    } catch (e) {
+        showToast('danger', `Gagal gabung room: ${e.code || e.message}`, 5000);
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Gabung';
+    }
+}
+
+function listenToAdvmathDuelRoom(roomCode) {
+    if (!advmathDuelState) return;
+    advmathDuelState.unsubscribe = advmathDuelDocRef(roomCode).onSnapshot(
+        snap => {
+            if (!snap.exists) {
+                if (!advmathDuelState) return;
+                showToast('danger', 'Room duel sudah tidak tersedia.', 4000);
+                cleanupAdvmathDuel();
+                goToAdvmathDashboard('duel');
+                return;
+            }
+            handleAdvmathDuelRoomUpdate(snap.data());
+        },
+        err => console.warn('[Duel Perkalian 1-10 Lanjutan] listener error', err)
+    );
+}
+
+async function handleAdvmathDuelRoomUpdate(room) {
+    if (!advmathDuelState) return;
+
+    const opponentRole = advmathDuelState.role === 'host' ? 'guest' : 'host';
+    const opponent = room[opponentRole];
+
+    if (room.status === 'abandoned') {
+        showToast('danger', 'Lawan meninggalkan duel.', 4000);
+        cleanupAdvmathDuel();
+        goToAdvmathDashboard('duel');
+        return;
+    }
+
+    if (room.status === 'countdown' && room.startAtMillis !== advmathDuelState.lastStartAtMillis) {
+        advmathDuelState.lastStartAtMillis = room.startAtMillis;
+        advmathDuelState.lastRematchUpdatedAt = null;
+        advmathDuelState.resultShown = false;
+        advmathDuelState.sequence = room.questions;
+        advmathDuelState.opponentName = opponent ? opponent.name : 'Lawan';
+        advmathDuelState.opponentAvatar = opponent ? opponent.avatar : null;
+
+        hideModal('advmathDuelWaitingModal');
+        hideModal('advmathDuelResultModal');
+        hideModal('advmathDuelWaitingResultModal');
+        hideModal('advmathDuelRematchWaitingModal');
+        hideModal('advmathDuelRematchRequestModal');
+        beginAdvmathDuelCountdown(room.startAtMillis);
+    }
+
+    if ((room.status === 'playing' || room.status === 'countdown') && opponent) {
+        updateAdvmathDuelOpponentUI(opponent);
+    }
+
+    if (room.status === 'finished' && !advmathDuelState.resultShown) {
+        advmathDuelState.resultShown = true;
+        if (advmathGameInProgress) {
+            advmathGameInProgress = false;
+            stopAdvmathRoundTimer();
+            document.querySelectorAll('.advmath-option-btn').forEach(b => { b.disabled = true; });
+            document.getElementById('advmathHintButton').disabled = true;
+        }
+        await waitForModalHidden('advmathDuelWaitingResultModal');
+        showAdvmathDuelResult(room);
+    }
+
+    if (room.rematch && room.rematch.updatedAt !== advmathDuelState.lastRematchUpdatedAt) {
+        advmathDuelState.lastRematchUpdatedAt = room.rematch.updatedAt;
+        const iAmRequester = room.rematch.requestedBy === advmathDuelState.role;
+
+        if (room.rematch.status === 'pending') {
+            if (iAmRequester) {
+                showModal('advmathDuelRematchWaitingModal');
+            } else {
+                document.getElementById('advmathDuelRematchRequestText').textContent =
+                    `${opponent ? opponent.name : 'Lawan'} ingin main lagi. Setuju?`;
+                showModal('advmathDuelRematchRequestModal');
+            }
+        } else if (room.rematch.status === 'declined') {
+            hideModal('advmathDuelRematchWaitingModal');
+            hideModal('advmathDuelRematchRequestModal');
+            if (iAmRequester) {
+                showToast('danger', 'Lawan menolak ajakan main lagi.', 4000);
+                await waitForModalHidden('advmathDuelRematchWaitingModal');
+                showModal('advmathDuelResultModal');
+                advmathDuelDocRef(advmathDuelState.roomCode).update({ rematch: null }).catch(() => {});
+            }
+        }
+    }
+
+    checkAdvmathDuelOpponentHeartbeat(opponent, room.status);
+}
+
+function beginAdvmathDuelCountdown(startAtMillis) {
+    const countdownDurationMs = COUNTDOWN_STEPS.length * 800 + 650;
+    const waitMs = Math.max(0, (startAtMillis - Date.now()) - countdownDurationMs);
+
+    advmathSequence = advmathDuelState.sequence;
+    prepareAdvmathGameUI();
+
+    const oppBar = document.getElementById('advmathDuelOpponentBar');
+    oppBar.style.display = 'flex';
+    document.getElementById('advmathDuelOpponentAvatar').textContent = avatarGlyph(advmathDuelState.opponentAvatar);
+    document.getElementById('advmathDuelOpponentName').textContent = advmathDuelState.opponentName || 'Lawan';
+    document.getElementById('advmathDuelOpponentFill').style.width = '0%';
+    document.getElementById('advmathDuelOpponentCount').textContent = '0 benar';
+    document.getElementById('advmathDuelDisconnectBanner').style.display = 'none';
+
+    setTimeout(() => {
+        if (!advmathDuelState) return;
+        runCountdown(() => {
+            beginAdvmathRound(startAtMillis + ADVMATH_ROUND_DURATION_MS);
+        });
+    }, waitMs);
+
+    advmathDuelDocRef(advmathDuelState.roomCode).update({ status: 'playing' }).catch(() => {});
+}
+
+function updateAdvmathDuelOpponentUI(opponent) {
+    const fill = document.getElementById('advmathDuelOpponentFill');
+    const countEl = document.getElementById('advmathDuelOpponentCount');
+    if (!fill || !countEl) return;
+    const oppScore = Number(opponent.score) || 0;
+    const pct = Math.max(0, Math.min(100, (oppScore / 15) * 100)); // skala visual kasar, bukan target pasti
+    fill.style.width = `${pct}%`;
+    countEl.textContent = `${formatAdvmathScore(oppScore)} poin`;
+}
+
+function reportAdvmathDuelProgress() {
+    if (!advmathDuelState) return;
+    advmathDuelDocRef(advmathDuelState.roomCode).update({
+        [`${advmathDuelState.role}.score`]: tenthsToScore(advmathScoreTenths),
+        [`${advmathDuelState.role}.correct`]: advmathCorrectCount,
+        [`${advmathDuelState.role}.burned`]: advmathBurnedCount,
+        [`${advmathDuelState.role}.hints`]: advmathHintsUsed,
+        [`${advmathDuelState.role}.lastSeen`]: Date.now()
+    }).catch(e => console.warn('[Duel Perkalian 1-10 Lanjutan] gagal kirim progres', e));
+}
+
+// Berbeda dari duel Perkalian: di sini KEDUA pemain main penuh 60 detik (bukan lomba selesai duluan),
+// jadi pemenang baru bisa ditentukan setelah KEDUA sisi sama-sama menuliskan hasil akhirnya.
+async function endAdvmathDuelRound() {
+    advmathGameInProgress = false;
+    document.querySelectorAll('.advmath-option-btn').forEach(b => { b.disabled = true; });
+    document.getElementById('advmathHintButton').disabled = true;
+
+    const myRole = advmathDuelState.role;
+    const opponentRole = myRole === 'host' ? 'guest' : 'host';
+    const roomRef = advmathDuelDocRef(advmathDuelState.roomCode);
+    const myFinal = { score: tenthsToScore(advmathScoreTenths), correct: advmathCorrectCount, burned: advmathBurnedCount, hints: advmathHintsUsed };
+
+    try {
+        await firestoreDb.runTransaction(async (tx) => {
+            const snap = await tx.get(roomRef);
+            if (!snap.exists) return;
+            const room = snap.data();
+
+            const update = {
+                [`${myRole}.score`]: myFinal.score,
+                [`${myRole}.correct`]: myFinal.correct,
+                [`${myRole}.burned`]: myFinal.burned,
+                [`${myRole}.hints`]: myFinal.hints,
+                [`${myRole}.finishedAt`]: Date.now()
+            };
+
+            const opponentData = room[opponentRole];
+            if (opponentData && opponentData.finishedAt) {
+                update.status = 'finished';
+                update.winner = determineAdvmathDuelWinner(myRole, myFinal, opponentRole, opponentData);
+            }
+
+            tx.update(roomRef, update);
+        });
+    } catch (e) {
+        showToast('danger', `Gagal mengirim hasil duel: ${e.code || e.message}`, 5000);
+    }
+
+    if (!advmathDuelState.resultShown) {
+        showModal('advmathDuelWaitingResultModal');
+    }
+}
+
+function determineAdvmathDuelWinner(roleA, dataA, roleB, dataB) {
+    const tA = Math.round((Number(dataA.score) || 0) * 10);
+    const tB = Math.round((Number(dataB.score) || 0) * 10);
+    if (tA !== tB) return tA > tB ? roleA : roleB;
+    if (dataA.hints !== dataB.hints) return dataA.hints < dataB.hints ? roleA : roleB;
+    if (dataA.burned !== dataB.burned) return dataA.burned < dataB.burned ? roleA : roleB;
+    return 'draw';
+}
+
+async function showAdvmathDuelResult(room) {
+    stopAdvmathDuelHeartbeat();
+    hideModal('advmathDuelWaitingResultModal');
+
+    const isDraw = room.winner === 'draw';
+    const amIWinner = room.winner === advmathDuelState.role;
+    const me = advmathDuelState.role === 'host' ? room.host : room.guest;
+    const opponent = advmathDuelState.role === 'host' ? room.guest : room.host;
+
+    const banner = document.getElementById('advmathDuelWinnerBanner');
+    if (isDraw) {
+        banner.textContent = '🤝 Seri!';
+        banner.className = 'duel-winner-banner is-lose';
+    } else {
+        banner.textContent = amIWinner ? '🏆 Kamu Menang!' : `😅 ${opponent ? opponent.name : 'Lawan'} Menang`;
+        banner.className = `duel-winner-banner ${amIWinner ? 'is-win' : 'is-lose'}`;
+    }
+
+    const renderPlayer = (label, player) => {
+        const finished = !!(player && player.finishedAt);
+        const statLine = finished
+            ? `${formatAdvmathScore(player.score)} poin · ${player.correct} benar · 💡${player.hints} · 💀${player.burned}`
+            : `Belum menyelesaikan waktunya`;
+        return `
+            <div class="duel-result-card">
+                <div class="duel-result-avatar">${avatarGlyph(player ? player.avatar : null)}</div>
+                <div class="duel-result-name">${escapeHtml(player ? player.name : '—')}</div>
+                <div class="duel-result-label">${label}</div>
+                <div class="duel-result-stat">${statLine}</div>
+            </div>
+        `;
+    };
+
+    document.getElementById('advmathDuelResultGrid').innerHTML =
+        renderPlayer('Kamu', me) + renderPlayer('Lawan', opponent);
+
+    if (amIWinner && me) {
+        await recordAdvmathDuelWin(me.name, me.avatar);
+    }
+
+    showModal('advmathDuelResultModal');
+    launchConfetti();
+    playFinishSounds(amIWinner);
+}
+
+document.getElementById('advmathDuelRematchButton').addEventListener('click', async () => {
+    if (!advmathDuelState) return;
+    hideModal('advmathDuelResultModal');
+    await waitForModalHidden('advmathDuelResultModal');
+    try {
+        await advmathDuelDocRef(advmathDuelState.roomCode).update({
+            rematch: { requestedBy: advmathDuelState.role, status: 'pending', updatedAt: Date.now() }
+        });
+        showModal('advmathDuelRematchWaitingModal');
+    } catch (e) {
+        showToast('danger', `Gagal mengirim ajakan main lagi: ${e.code || e.message}`, 5000);
+        showModal('advmathDuelResultModal');
+    }
+});
+
+document.getElementById('advmathDuelRematchCancelButton').addEventListener('click', async () => {
+    hideModal('advmathDuelRematchWaitingModal');
+    if (advmathDuelState) {
+        try {
+            await advmathDuelDocRef(advmathDuelState.roomCode).update({ rematch: null });
+        } catch (e) { /* abaikan */ }
+    }
+    await waitForModalHidden('advmathDuelRematchWaitingModal');
+    showModal('advmathDuelResultModal');
+});
+
+document.getElementById('advmathDuelRematchAcceptButton').addEventListener('click', async () => {
+    if (!advmathDuelState) return;
+    hideModal('advmathDuelRematchRequestModal');
+    await waitForModalHidden('advmathDuelRematchRequestModal');
+
+    const newSequence = generateAdvmathSequence(ADVMATH_ROUND_BUFFER);
+    advmathDuelState.sequence = newSequence;
+
+    try {
+        await advmathDuelDocRef(advmathDuelState.roomCode).update({
+            questions: newSequence,
+            status: 'countdown',
+            startAtMillis: Date.now() + ADVMATH_DUEL_START_BUFFER_MS,
+            winner: null,
+            rematch: null,
+            'host.score': 0, 'host.correct': 0, 'host.burned': 0, 'host.hints': 0, 'host.finishedAt': null, 'host.lastSeen': Date.now(),
+            'guest.score': 0, 'guest.correct': 0, 'guest.burned': 0, 'guest.hints': 0, 'guest.finishedAt': null, 'guest.lastSeen': Date.now()
+        });
+    } catch (e) {
+        showToast('danger', `Gagal memulai ulang duel: ${e.code || e.message}`, 5000);
+    }
+});
+
+document.getElementById('advmathDuelRematchDeclineButton').addEventListener('click', async () => {
+    if (!advmathDuelState) return;
+    hideModal('advmathDuelRematchRequestModal');
+    await waitForModalHidden('advmathDuelRematchRequestModal');
+    showModal('advmathDuelResultModal');
+
+    const requesterRole = advmathDuelState.role === 'host' ? 'guest' : 'host';
+    try {
+        await advmathDuelDocRef(advmathDuelState.roomCode).update({
+            rematch: { requestedBy: requesterRole, status: 'declined', updatedAt: Date.now() }
+        });
+    } catch (e) { /* abaikan */ }
+});
+
+document.getElementById('advmathDuelResultDashboardButton').addEventListener('click', () => {
+    hideModal('advmathDuelResultModal');
+    cleanupAdvmathDuel();
+    goToAdvmathDashboard('duel');
+});
+
+function startAdvmathDuelHeartbeat() {
+    stopAdvmathDuelHeartbeat();
+    advmathDuelHeartbeatInterval = setInterval(() => {
+        if (!advmathDuelState) return;
+        advmathDuelDocRef(advmathDuelState.roomCode).update({
+            [`${advmathDuelState.role}.lastSeen`]: Date.now()
+        }).catch(() => {});
+    }, ADVMATH_DUEL_HEARTBEAT_INTERVAL_MS);
+}
+
+function stopAdvmathDuelHeartbeat() {
+    if (advmathDuelHeartbeatInterval) {
+        clearInterval(advmathDuelHeartbeatInterval);
+        advmathDuelHeartbeatInterval = null;
+    }
+}
+
+function checkAdvmathDuelOpponentHeartbeat(opponent, status) {
+    const banner = document.getElementById('advmathDuelDisconnectBanner');
+    if (!banner) return;
+    if (!opponent || status === 'finished' || status === 'waiting') {
+        banner.style.display = 'none';
+        return;
+    }
+    const stale = opponent.lastSeen && (Date.now() - opponent.lastSeen > ADVMATH_DUEL_HEARTBEAT_TIMEOUT_MS);
+    banner.style.display = stale ? 'flex' : 'none';
+}
+
+document.getElementById('advmathDuelLeaveDisconnectedButton').addEventListener('click', async () => {
+    await abandonAdvmathDuel();
+    goToAdvmathDashboard('duel');
+});
+
+async function abandonAdvmathDuel() {
+    if (!advmathDuelState) return;
+    try {
+        await advmathDuelDocRef(advmathDuelState.roomCode).update({ status: 'abandoned' });
+    } catch (e) { /* room mungkin sudah tidak ada / sudah selesai duluan, aman diabaikan */ }
+    cleanupAdvmathDuel();
+}
+
+function cleanupAdvmathDuel() {
+    if (advmathDuelState && typeof advmathDuelState.unsubscribe === 'function') {
+        advmathDuelState.unsubscribe();
+    }
+    stopAdvmathDuelHeartbeat();
+    const oppBar = document.getElementById('advmathDuelOpponentBar');
+    const banner = document.getElementById('advmathDuelDisconnectBanner');
+    if (oppBar) oppBar.style.display = 'none';
+    if (banner) banner.style.display = 'none';
+    advmathDuelState = null;
+}
+
 /* =====================================================================
    INISIALISASI
 ===================================================================== */
@@ -2841,5 +4098,15 @@ buildAvatarPicker('avatarPicker', (avatar) => { selectedAvatar = avatar; });
     if (safeGetLocalStorage('knowledgeRulesCollapsed', 'false') === 'true') details.open = false;
     details.addEventListener('toggle', () => {
         safeSetLocalStorage('knowledgeRulesCollapsed', details.open ? 'false' : 'true');
+    });
+})();
+
+/* Panel "Aturan Skor": terbuka otomatis saat pertama kali, lalu mengingat pilihan pemain (boleh dilipat) */
+(function initAdvmathScoreRules() {
+    const details = document.getElementById('advmathScoreRules');
+    if (!details) return;
+    if (safeGetLocalStorage('advmathRulesCollapsed', 'false') === 'true') details.open = false;
+    details.addEventListener('toggle', () => {
+        safeSetLocalStorage('advmathRulesCollapsed', details.open ? 'false' : 'true');
     });
 })();
