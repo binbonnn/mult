@@ -10,7 +10,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/css/bootstrap.min.css" rel="stylesheet"
         integrity="sha384-4bw+/aepP/YC94hEpVNVgiZdgIC5+VKNBQNGCHeKRQN+PtmoHDEXuppvnDJzQIu9" crossorigin="anonymous">
-    <link rel="stylesheet" href="style.css?v=20261010">
+    <link rel="stylesheet" href="style.css?v=20261011">
     <title>Game Perkalian Seru</title>
 </head>
 
@@ -40,10 +40,10 @@
                     <span class="game-card-subtitle">Kuis &amp; Duel 1v1</span>
                 </button>
 
-                <button type="button" class="game-card game-card-advanced is-coming-soon" id="hubComingSoonAdvanced">
+                <button type="button" class="game-card game-card-active game-card-advmath" id="hubOpenAdvmathButton">
                     <span class="game-card-icon">✖️</span>
                     <span class="game-card-title">Perkalian 1-10 Lanjutan</span>
-                    <span class="game-card-badge">Segera Hadir</span>
+                    <span class="game-card-subtitle">Kuis &amp; Duel 1v1</span>
                 </button>
 
                 <button type="button" class="game-card game-card-soon" id="hubComingSoon1">
@@ -272,6 +272,101 @@
                 id="knowledgeHintButton" disabled>💡 Hint: hilangkan 2 opsi salah</button>
         </section>
         <!-- ================= KNOWLEDGE GAME VIEW END ================= -->
+
+        <!-- ================= ADVMATH DASHBOARD VIEW (Game Perkalian 1-10 Lanjutan) ================= -->
+        <section id="advmathDashboardView" class="view">
+            <button type="button" class="breadcrumb-back" id="advmathBackToHubButton">← Semua Game</button>
+            <header class="dashboard-header">
+                <div class="dashboard-heading">
+                    <h1>✖️ Perkalian 1-10 Lanjutan</h1>
+                    <p class="subtitle">Kumpulkan poin sebanyak mungkin dalam 60 detik!</p>
+                </div>
+                <div class="dashboard-header-actions">
+                    <button type="button" class="icon-button" id="advmathSoundToggleButton" aria-label="Matikan suara">🔊</button>
+                    <button type="button" class="icon-button" id="advmathHelpButton" aria-label="Cara bermain">❔</button>
+                </div>
+            </header>
+
+            <details class="score-rules" id="advmathScoreRules" open>
+                <summary class="score-rules-title">📋 Aturan Skor <span class="score-rules-hint" aria-hidden="true"></span></summary>
+                <ul class="score-rules-grid">
+                    <li class="score-rule is-gain"><span class="score-rule-points">+1</span><span class="score-rule-text">Benar di <b>klik 1</b></span></li>
+                    <li class="score-rule is-gain"><span class="score-rule-points">+0,7</span><span class="score-rule-text">Benar di <b>klik 2</b></span></li>
+                    <li class="score-rule is-gain"><span class="score-rule-points">+0,3</span><span class="score-rule-text">Benar di <b>klik 3</b></span></li>
+                    <li class="score-rule is-gain"><span class="score-rule-points">+0,3</span><span class="score-rule-text">Benar setelah <b>💡 Hint</b></span></li>
+                    <li class="score-rule is-loss"><span class="score-rule-points">−1</span><span class="score-rule-text"><b>Soal hangus</b> 💀</span></li>
+                </ul>
+                <p class="score-rules-note">Skor akhir = jumlah poin selama 60 detik. Asal tekan cepat-cepat bikin soal hangus dan skor turun, jadi jawab dengan yakin!</p>
+            </details>
+
+            <div class="leaderboard-panel">
+                <div class="leaderboard-tabs" id="advmathLeaderboardTabs">
+                    <button type="button" class="leaderboard-tab" data-alboard="solo">🧮 Main Sendiri</button>
+                    <button type="button" class="leaderboard-tab" data-alboard="duel">⚔️ Duel</button>
+                </div>
+
+                <div class="podium" id="advmathPodium"></div>
+
+                <ul class="rank-list" id="advmathRankList"></ul>
+
+                <p class="leaderboard-status" id="advmathLeaderboardStatus" role="status"></p>
+            </div>
+
+            <div class="cta-row">
+                <button type="button" class="btn-playful btn-playful-primary btn-start-game"
+                    id="advmathOpenSoloButton">▶️ Main Sendiri</button>
+                <button type="button" class="btn-playful btn-playful-secondary btn-start-game"
+                    id="advmathOpenDuelButton">⚔️ Duel 1v1</button>
+            </div>
+        </section>
+        <!-- ================= ADVMATH DASHBOARD VIEW END ================= -->
+
+        <!-- ================= ADVMATH GAME VIEW ================= -->
+        <section id="advmathGameView" class="view">
+            <div class="game-topbar">
+                <button type="button" class="icon-button" id="advmathBackToDashboardButton" aria-label="Kembali ke dashboard">←</button>
+
+                <div class="progress-info">
+                    <span id="advmathProgressLabel">Skor: 0,0</span>
+                    <div class="progress-bar-track">
+                        <div class="progress-bar-fill" id="advmathTimerBarFill"></div>
+                    </div>
+                </div>
+
+                <span id="advmathTimer">01:00</span>
+            </div>
+
+            <div class="duel-opponent-bar" id="advmathDuelOpponentBar" style="display:none;">
+                <span class="duel-opponent-avatar" id="advmathDuelOpponentAvatar">👤</span>
+                <div class="duel-opponent-info">
+                    <span class="duel-opponent-name" id="advmathDuelOpponentName">Lawan</span>
+                    <div class="progress-bar-track duel-opponent-track">
+                        <div class="progress-bar-fill duel-opponent-fill" id="advmathDuelOpponentFill"></div>
+                    </div>
+                </div>
+                <span class="duel-opponent-count" id="advmathDuelOpponentCount">0,0 poin</span>
+            </div>
+
+            <div class="duel-disconnect-banner" id="advmathDuelDisconnectBanner" style="display:none;">
+                ⚠️ Koneksi lawan tidak terdeteksi.
+                <button type="button" class="duel-banner-link" id="advmathDuelLeaveDisconnectedButton">Kembali ke dashboard</button>
+            </div>
+
+            <div class="question-row">
+                <div id="advmathQuestionText" class="advmath-question-card"></div>
+            </div>
+
+            <div class="advmath-options-grid" id="advmathOptionsGrid">
+                <button type="button" class="advmath-option-btn" data-idx="0" disabled></button>
+                <button type="button" class="advmath-option-btn" data-idx="1" disabled></button>
+                <button type="button" class="advmath-option-btn" data-idx="2" disabled></button>
+                <button type="button" class="advmath-option-btn" data-idx="3" disabled></button>
+            </div>
+
+            <button type="button" class="btn-playful btn-playful-outline advmath-hint-button"
+                id="advmathHintButton" disabled>💡 Hint: hilangkan 2 opsi salah</button>
+        </section>
+        <!-- ================= ADVMATH GAME VIEW END ================= -->
 
     </div>
 
@@ -586,6 +681,287 @@
         </div>
     </div>
     <!-- INI MODAL AJAKAN REMATCH DARI LAWAN PENGETAHUAN DASAR END -->
+
+    <!-- INI MODAL BANTUAN PERKALIAN 1-10 LANJUTAN -->
+    <div class="modal fade" id="advmathHelpModal" tabindex="-1" aria-labelledby="advmathHelpModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content playful-modal">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="advmathHelpModalLabel">📚 Cara Bermain</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <ol class="help-list">
+                        <li>Kamu punya waktu <strong>60 detik</strong>. Tiap soal punya 4 pilihan jawaban.</li>
+                        <li>Poin tergantung <strong>klik ke berapa</strong> kamu menemukan jawaban benar: klik 1 = <strong>+1</strong>, klik 2 = <strong>+0,7</strong>, klik 3 = <strong>+0,3</strong>.</li>
+                        <li>Bingung? Tekan <strong>💡 Hint</strong> untuk menyisakan 2 opsi. Jawaban benar setelah hint bernilai maksimal <strong>+0,3</strong>.</li>
+                        <li>Salah 3 kali (tanpa hint), atau salah lagi setelah hint &rarr; soal <strong>hangus</strong> dan skor <strong>&minus;1</strong>.</li>
+                        <li>Skor akhir = jumlah semua poin dalam 60 detik. Kalau skor seri, lebih sedikit hint lalu lebih sedikit soal hangus menang.</li>
+                    </ol>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-playful btn-playful-primary" data-bs-dismiss="modal">Mengerti!</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- INI MODAL BANTUAN PERKALIAN 1-10 LANJUTAN END -->
+
+    <!-- INI MODAL KONFIRMASI KELUAR PERKALIAN 1-10 LANJUTAN -->
+    <div class="modal fade" id="advmathConfirmExitModal" tabindex="-1" aria-labelledby="advmathConfirmExitModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content playful-modal">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="advmathConfirmExitModalLabel">👀 Yakin mau keluar?</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    Progres permainan yang sedang berjalan akan hilang kalau kamu keluar sekarang.
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-playful btn-playful-outline" data-bs-dismiss="modal">Batal</button>
+                    <button type="button" class="btn-playful btn-playful-danger" id="advmathConfirmExitYesButton">Ya, Keluar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- INI MODAL KONFIRMASI KELUAR PERKALIAN 1-10 LANJUTAN END -->
+
+    <!-- INI MODAL HASIL RONDE SOLO PERKALIAN 1-10 LANJUTAN -->
+    <div class="modal fade" id="advmathEndModal" aria-hidden="true" aria-labelledby="advmathEndModalLabel" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content playful-modal">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="advmathEndModalLabel">⏰ Waktu Habis!</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <div class="end-game-stat end-game-stat-main">🏅 Skor: <span id="advmathFinalScore">0,0</span></div>
+                    <div class="end-game-stat">✅ Jawaban benar: <span id="advmathFinalCorrect">0</span></div>
+                    <div class="end-game-stat">💡 Hint dipakai: <span id="advmathFinalHints">0</span></div>
+                    <div class="end-game-stat">💀 Soal hangus: <span id="advmathFinalBurned">0</span></div>
+
+                    <div class="rank-insight" id="advmathRankInsight" style="display:none;" aria-live="polite">
+                        <div class="rank-insight-headline" id="advmathRankInsightHeadline"></div>
+                        <ul class="rank-insight-details" id="advmathRankInsightDetails"></ul>
+                    </div>
+                </div>
+
+                <div class="modal-footer flex-wrap justify-content-center gap-2">
+                    <button type="button" class="btn-playful btn-playful-success" id="advmathSaveScoreButton">💾 Simpan Skor</button>
+                    <button type="button" class="btn-playful btn-playful-secondary" id="advmathPlayAgainButton">🔁 Main Lagi</button>
+                    <button type="button" class="btn-playful btn-playful-outline" id="advmathEndBackToDashboardButton">🏠 Dashboard</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- INI MODAL HASIL RONDE SOLO PERKALIAN 1-10 LANJUTAN END -->
+
+    <!-- INI MODAL SIMPAN SKOR PERKALIAN 1-10 LANJUTAN -->
+    <div class="modal fade" id="advmathSaveRecordModal" aria-hidden="true" aria-labelledby="advmathSaveRecordModalLabel" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content playful-modal">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="advmathSaveRecordModalLabel">🏆 Simpan Skormu!</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <label for="advmathPlayerName" class="save-record-label">Nama Pemain</label>
+                    <input type="text" id="advmathPlayerName" class="form-control playful-input" placeholder="Nama Kamu" maxlength="20">
+
+                    <label class="save-record-label">Pilih Avatar</label>
+                    <div class="avatar-picker" id="advmathAvatarPicker"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-playful btn-playful-success" id="advmathButtonSavePlayerRecord">Simpan</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- INI MODAL SIMPAN SKOR PERKALIAN 1-10 LANJUTAN END -->
+
+    <!-- INI MODAL PILIH MODE DUEL PERKALIAN 1-10 LANJUTAN -->
+    <div class="modal fade" id="advmathDuelModal" tabindex="-1" aria-labelledby="advmathDuelModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content playful-modal">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="advmathDuelModalLabel">⚔️ Duel 1v1</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body count-option-list">
+                    <button type="button" class="count-option-button" id="advmathDuelCreateRoomButton">
+                        <span class="count-option-emoji">🆕</span>
+                        <span class="count-option-text">
+                            <strong>Buat Room</strong>
+                            <small>Dapatkan kode untuk dibagikan ke temanmu</small>
+                        </span>
+                    </button>
+                    <button type="button" class="count-option-button" id="advmathDuelJoinRoomButton">
+                        <span class="count-option-emoji">🔑</span>
+                        <span class="count-option-text">
+                            <strong>Gabung Room</strong>
+                            <small>Sudah punya kode dari temanmu? Masuk di sini</small>
+                        </span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- INI MODAL PILIH MODE DUEL PERKALIAN 1-10 LANJUTAN END -->
+
+    <!-- INI MODAL BUAT ROOM DUEL PERKALIAN 1-10 LANJUTAN -->
+    <div class="modal fade" id="advmathDuelCreateModal" tabindex="-1" aria-labelledby="advmathDuelCreateModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content playful-modal">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="advmathDuelCreateModalLabel">🆕 Buat Room Duel</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <label for="advmathDuelCreateName" class="save-record-label">Nama Kamu</label>
+                    <input type="text" id="advmathDuelCreateName" class="form-control playful-input" placeholder="Nama Kamu" maxlength="20">
+
+                    <label class="save-record-label">Pilih Avatar</label>
+                    <div class="avatar-picker" id="advmathDuelCreateAvatarPicker"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-playful btn-playful-success" id="advmathDuelCreateSubmitButton">Buat Room</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- INI MODAL BUAT ROOM DUEL PERKALIAN 1-10 LANJUTAN END -->
+
+    <!-- INI MODAL GABUNG ROOM DUEL PERKALIAN 1-10 LANJUTAN -->
+    <div class="modal fade" id="advmathDuelJoinModal" tabindex="-1" aria-labelledby="advmathDuelJoinModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content playful-modal">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="advmathDuelJoinModalLabel">🔑 Gabung Room</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <label for="advmathDuelJoinCode" class="save-record-label">Kode Room</label>
+                    <input type="text" id="advmathDuelJoinCode" class="form-control playful-input duel-code-input" placeholder="K7Q2" maxlength="4">
+
+                    <label for="advmathDuelJoinName" class="save-record-label">Nama Kamu</label>
+                    <input type="text" id="advmathDuelJoinName" class="form-control playful-input" placeholder="Nama Kamu" maxlength="20">
+
+                    <label class="save-record-label">Pilih Avatar</label>
+                    <div class="avatar-picker" id="advmathDuelJoinAvatarPicker"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-playful btn-playful-success" id="advmathDuelJoinSubmitButton">Gabung</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- INI MODAL GABUNG ROOM DUEL PERKALIAN 1-10 LANJUTAN END -->
+
+    <!-- INI MODAL RUANG TUNGGU DUEL PERKALIAN 1-10 LANJUTAN -->
+    <div class="modal fade" id="advmathDuelWaitingModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
+        aria-labelledby="advmathDuelWaitingModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content playful-modal text-center">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="advmathDuelWaitingModalLabel">⚔️ Room Dibuat!</h1>
+                </div>
+                <div class="modal-body">
+                    <p>Bagikan kode ini ke temanmu:</p>
+                    <div class="duel-room-code" id="advmathDuelRoomCodeDisplay">----</div>
+                    <button type="button" class="btn-playful btn-playful-outline" id="advmathDuelCopyCodeButton">📋 Salin Kode</button>
+                    <p class="duel-waiting-text">
+                        <span class="duel-spinner" aria-hidden="true"></span>
+                        Menunggu lawan bergabung...
+                    </p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-playful btn-playful-danger" id="advmathDuelCancelWaitingButton">Batalkan</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- INI MODAL RUANG TUNGGU DUEL PERKALIAN 1-10 LANJUTAN END -->
+
+    <!-- INI MODAL MENUNGGU LAWAN MENYELESAIKAN WAKTUNYA -->
+    <div class="modal fade" id="advmathDuelWaitingResultModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
+        aria-labelledby="advmathDuelWaitingResultModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content playful-modal text-center">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="advmathDuelWaitingResultModalLabel">⏰ Waktu Habis!</h1>
+                </div>
+                <div class="modal-body">
+                    <p class="duel-waiting-text">
+                        <span class="duel-spinner" aria-hidden="true"></span>
+                        Menunggu lawan menyelesaikan waktunya...
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- INI MODAL MENUNGGU LAWAN MENYELESAIKAN WAKTUNYA END -->
+
+    <!-- INI MODAL HASIL DUEL PERKALIAN 1-10 LANJUTAN -->
+    <div class="modal fade" id="advmathDuelResultModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
+        aria-labelledby="advmathDuelResultModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content playful-modal">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="advmathDuelResultModalLabel">⚔️ Hasil Duel</h1>
+                </div>
+                <div class="modal-body">
+                    <div class="duel-winner-banner" id="advmathDuelWinnerBanner"></div>
+                    <div class="duel-result-grid" id="advmathDuelResultGrid"></div>
+                </div>
+                <div class="modal-footer flex-wrap justify-content-center gap-2">
+                    <button type="button" class="btn-playful btn-playful-secondary" id="advmathDuelRematchButton">🔁 Main Lagi</button>
+                    <button type="button" class="btn-playful btn-playful-outline" id="advmathDuelResultDashboardButton">🏠 Dashboard</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- INI MODAL HASIL DUEL PERKALIAN 1-10 LANJUTAN END -->
+
+    <!-- INI MODAL MENUNGGU PERSETUJUAN REMATCH PERKALIAN 1-10 LANJUTAN -->
+    <div class="modal fade" id="advmathDuelRematchWaitingModal" data-bs-backdrop="static" data-bs-keyboard="false"
+        tabindex="-1" aria-labelledby="advmathDuelRematchWaitingModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content playful-modal text-center">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="advmathDuelRematchWaitingModalLabel">🔁 Ajakan Terkirim</h1>
+                </div>
+                <div class="modal-body">
+                    <p class="duel-waiting-text">
+                        <span class="duel-spinner" aria-hidden="true"></span>
+                        Menunggu persetujuan lawan untuk main lagi...
+                    </p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-playful btn-playful-danger" id="advmathDuelRematchCancelButton">Batalkan</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- INI MODAL MENUNGGU PERSETUJUAN REMATCH PERKALIAN 1-10 LANJUTAN END -->
+
+    <!-- INI MODAL AJAKAN REMATCH DARI LAWAN PERKALIAN 1-10 LANJUTAN -->
+    <div class="modal fade" id="advmathDuelRematchRequestModal" data-bs-backdrop="static" data-bs-keyboard="false"
+        tabindex="-1" aria-labelledby="advmathDuelRematchRequestModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content playful-modal text-center">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="advmathDuelRematchRequestModalLabel">🔁 Ajakan Main Lagi</h1>
+                </div>
+                <div class="modal-body" id="advmathDuelRematchRequestText">Lawan ingin main lagi. Setuju?</div>
+                <div class="modal-footer flex-wrap justify-content-center gap-2">
+                    <button type="button" class="btn-playful btn-playful-success" id="advmathDuelRematchAcceptButton">✅ Setuju</button>
+                    <button type="button" class="btn-playful btn-playful-outline" id="advmathDuelRematchDeclineButton">❌ Tolak</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- INI MODAL AJAKAN REMATCH DARI LAWAN PERKALIAN 1-10 LANJUTAN END -->
 
     <!-- INI MODAL PILIH JUMLAH SOAL -->
     <div class="modal fade" id="chooseCountModal" tabindex="-1" aria-labelledby="chooseCountModalLabel" aria-hidden="true">
@@ -903,13 +1279,14 @@
          Kalau belum dikonfigurasi, game otomatis memakai localStorage sebagai cadangan. -->
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-    <script src="firebase-config.js?v=20261010"></script>
+    <script src="firebase-config.js?v=20261011"></script>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/js/bootstrap.bundle.min.js"
         integrity="sha384-HwwvtgBNo3bZJJLYd8oVXjrBZt8cqVSpeBNS5n7C8IVInixGAoxmnlMuBnhbgrkm"
         crossorigin="anonymous"></script>
-    <script src="knowledge-questions.js?v=20261010"></script>
-    <script src="script.js?v=20261010"></script>
+    <script src="knowledge-questions.js?v=20261011"></script>
+    <script src="advmath-questions.js?v=20261011"></script>
+    <script src="script.js?v=20261011"></script>
 
 </body>
 
