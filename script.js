@@ -1610,6 +1610,113 @@ const KNOWLEDGE_DUEL_HEARTBEAT_INTERVAL_MS = 5000;
 const KNOWLEDGE_DUEL_HEARTBEAT_TIMEOUT_MS = 13000;
 
 let knowledgeUsedQuestionIds = [];
+let knowledgeLastResolved = null; // soal TERAKHIR yang selesai diproses {q, status:'correct'|'burned'} -> sumber panel pembahasan
+
+/* ---- Bank soal: penjelasan per opsi ----
+   Bentuk utama:  { id, category, question, options:[4 teks], correctIndex, explanations:[4 teks sejajar dengan options] }
+   Bentuk lain yang juga dikenali (supaya 2.000 soal Anda terbaca apa adanya):
+     - options berupa objek: [{ text|teks|label, explanation|penjelasan|pembahasan, isCorrect|benar }]
+     - penjelasan sejajar opsi: explanations / penjelasan / penjelasanOpsi / optionExplanations / pembahasan (array 4)
+     - penjelasan per huruf: explanationA..D / penjelasanA..D / penjelasan_a..d / explanation0..3
+     - penjelasan benar + pengecoh terpisah: penjelasanBenar | correctExplanation  +  penjelasanPengecoh | wrongExplanations (3, urutan pengecoh)
+     - answer|jawaban + distractors|pengecoh (opsi diacak otomatis, penjelasan ikut terhubung ke opsinya)
+   Awalan "Penjelasan:" di teks dibuang otomatis. */
+function knPick(raw, keys) {
+    for (const k of keys) {
+        if (raw[k] !== undefined && raw[k] !== null && String(raw[k]).trim() !== '') return raw[k];
+    }
+    return undefined;
+}
+
+function knCleanExplanation(v) {
+    if (v === undefined || v === null) return null;
+    const text = String(v).trim().replace(/^penjelasan\s*:\s*/i, '').trim();
+    return text === '' ? null : text;
+}
+
+function normalizeKnowledgeQuestion(raw, index) {
+    if (!raw || typeof raw !== 'object') return null;
+    const question = knPick(raw, ['question', 'pertanyaan', 'soal', 'q']);
+    if (question === undefined) return null;
+
+    const optsRaw = knPick(raw, ['options', 'pilihan', 'opsi', 'choices']);
+    let items = []; // {text, expl, correct}
+
+    if (Array.isArray(optsRaw) && optsRaw.length >= 2) {
+        optsRaw.forEach((o, j) => {
+            if (o && typeof o === 'object') {
+                items.push({
+                    text: String(knPick(o, ['text', 'teks', 'label', 'option', 'opsi', 'value', 'jawaban']) ?? ''),
+                    expl: knPick(o, ['explanation', 'penjelasan', 'pembahasan', 'alasan', 'reason']),
+                    correct: [o.isCorrect, o.benar, o.correct, o.is_correct].includes(true)
+                });
+            } else {
+                items.push({ text: String(o), expl: undefined, correct: false });
+            }
+        });
+    } else {
+        const answer = knPick(raw, ['answer', 'jawaban', 'jawabanBenar', 'correctAnswer']);
+        const distractors = knPick(raw, ['distractors', 'pengecoh', 'jawabanPengecoh', 'wrongAnswers']);
+        if (answer === undefined || !Array.isArray(distractors)) return null;
+        const answerExpl = knPick(raw, ['answerExplanation', 'penjelasanBenar', 'penjelasanJawaban', 'correctExplanation', 'explanationCorrect', 'pembahasanBenar']);
+        const wrongExpl = knPick(raw, ['distractorExplanations', 'penjelasanPengecoh', 'wrongExplanations', 'penjelasanSalah', 'explanationWrong']) || [];
+        items = [{ text: String(answer), expl: answerExpl, correct: true }].concat(
+            distractors.map((d, j) => ({ text: String(d), expl: Array.isArray(wrongExpl) ? wrongExpl[j] : undefined, correct: false })));
+        for (let i = items.length - 1; i > 0; i--) { // acak posisi; penjelasan ikut menempel pada opsinya
+            const j = Math.floor(Math.random() * (i + 1));
+            [items[i], items[j]] = [items[j], items[i]];
+        }
+    }
+
+    // indeks jawaban benar
+    let correctIndex = items.findIndex(it => it.correct);
+    if (correctIndex < 0) {
+        const ci = knPick(raw, ['correctIndex', 'answerIndex', 'indexJawaban', 'kunci']);
+        if (typeof ci === 'string' && /^[A-Da-d]$/.test(ci.trim())) correctIndex = ci.trim().toUpperCase().charCodeAt(0) - 65;
+        else if (ci !== undefined && Number.isInteger(Number(ci))) correctIndex = Number(ci);
+    }
+    if (correctIndex < 0) {
+        const ans = knPick(raw, ['answer', 'jawaban', 'jawabanBenar', 'correctAnswer']);
+        if (ans !== undefined) correctIndex = items.findIndex(it => it.text === String(ans));
+    }
+    if (!Number.isInteger(correctIndex) || correctIndex < 0 || correctIndex >= items.length) return null;
+
+    // penjelasan: sejajar-opsi (array), per-huruf, atau benar+pengecoh terpisah -- hanya mengisi yang masih kosong
+    const arr = knPick(raw, ['explanations', 'penjelasan', 'penjelasanOpsi', 'optionExplanations', 'pembahasan', 'penjelasan_opsi']);
+    if (Array.isArray(arr)) arr.forEach((e, j) => { if (items[j] && items[j].expl === undefined) items[j].expl = e; });
+    ['A', 'B', 'C', 'D'].forEach((L, j) => {
+        if (!items[j] || items[j].expl !== undefined) return;
+        const v = knPick(raw, [`explanation${L}`, `penjelasan${L}`, `penjelasan_${L.toLowerCase()}`, `explanation_${L.toLowerCase()}`, `explanation${j}`, `penjelasan${j}`]);
+        if (v !== undefined) items[j].expl = v;
+    });
+    const cExpl = knPick(raw, ['penjelasanBenar', 'correctExplanation', 'explanationCorrect', 'pembahasanBenar', 'penjelasanJawabanBenar']);
+    if (cExpl !== undefined && items[correctIndex].expl === undefined) items[correctIndex].expl = cExpl;
+    const wExpl = knPick(raw, ['penjelasanPengecoh', 'wrongExplanations', 'distractorExplanations', 'penjelasanSalah', 'explanationWrong']);
+    if (Array.isArray(wExpl)) {
+        let k = 0;
+        items.forEach((it, j) => { if (j !== correctIndex) { if (it.expl === undefined) it.expl = wExpl[k]; k++; } });
+    }
+
+    const id = raw.id !== undefined ? raw.id : index + 1;
+    const category = Number(knPick(raw, ['category', 'kategori'])) || 1;
+    return {
+        id, category, question: String(question),
+        options: items.map(it => it.text),
+        correctIndex,
+        explanations: items.map(it => knCleanExplanation(it.expl))
+    };
+}
+
+const KNOWLEDGE_BANK = (typeof KNOWLEDGE_QUESTIONS !== 'undefined' && Array.isArray(KNOWLEDGE_QUESTIONS))
+    ? KNOWLEDGE_QUESTIONS.map((raw, i) => normalizeKnowledgeQuestion(raw, i)).filter(Boolean)
+    : [];
+(function reportKnowledgeBankHealth() {
+    if (typeof KNOWLEDGE_QUESTIONS === 'undefined') return;
+    const skipped = KNOWLEDGE_QUESTIONS.length - KNOWLEDGE_BANK.length;
+    const noExpl = KNOWLEDGE_BANK.filter(q => q.explanations.some(e => !e)).length;
+    if (skipped > 0) console.warn(`[Pengetahuan Dasar] ${skipped} soal dilewati karena formatnya tidak dikenali.`);
+    if (noExpl > 0) console.warn(`[Pengetahuan Dasar] ${noExpl} soal punya opsi tanpa penjelasan (akan tampil "belum tersedia").`);
+})();
 let knowledgeSequence = [];
 let knowledgeSeqIndex = 0;
 let knowledgeCorrectCount = 0;
@@ -1637,18 +1744,18 @@ function nameToDocId(name) {
 
 /* ---- Soal: rotasi kategori 1,2,3,...,N,1,2,3,...  (N ikut jumlah kategori yang ADA di data) ---- */
 function getKnowledgeCategories() {
-    const set = new Set(KNOWLEDGE_QUESTIONS.map(q => q.category));
+    const set = new Set(KNOWLEDGE_BANK.map(q => q.category));
     return Array.from(set).sort((a, b) => a - b);
 }
 
 function generateKnowledgeSequence(count) {
     const categories = getKnowledgeCategories();
     const byCategory = {};
-    categories.forEach(c => { byCategory[c] = KNOWLEDGE_QUESTIONS.filter(q => q.category === c); });
+    categories.forEach(c => { byCategory[c] = KNOWLEDGE_BANK.filter(q => q.category === c); });
 
     // Reset riwayat soal yang sudah pernah keluar kalau sisa pool sudah hampir habis,
     // supaya tidak pernah terjebak (sama seperti pola di game Perkalian)
-    if (knowledgeUsedQuestionIds.length >= KNOWLEDGE_QUESTIONS.length - count) {
+    if (knowledgeUsedQuestionIds.length >= KNOWLEDGE_BANK.length - count) {
         knowledgeUsedQuestionIds = [];
     }
 
@@ -2027,6 +2134,8 @@ function prepareKnowledgeGameUI() {
     knowledgeBurnedCount = 0;
     knowledgeHintsUsed = 0;
     knowledgeSeqIndex = 0;
+    knowledgeLastResolved = null;
+    renderKnowledgeRecap();
 
     document.getElementById('knowledgeTimer').textContent = '01:00';
     document.getElementById('knowledgeTimerBarFill').style.width = '100%';
@@ -2034,10 +2143,8 @@ function prepareKnowledgeGameUI() {
     document.getElementById('knowledgeProgressLabel').textContent = 'Skor: 0,0';
     document.getElementById('knowledgeQuestionText').textContent = '';
     document.querySelectorAll('.knowledge-option-btn').forEach(btn => {
+        resetKnowledgeOptionButton(btn, '');
         btn.disabled = true;
-        btn.textContent = '';
-        btn.className = 'knowledge-option-btn';
-        btn.style.display = 'flex';
     });
     document.getElementById('knowledgeHintButton').disabled = true;
 
@@ -2090,6 +2197,67 @@ function stopKnowledgeRoundTimer() {
     knowledgeRoundTimerInterval = null;
 }
 
+/* ---- Tombol opsi: keadaan normal / salah (bisa dibuka penjelasannya) ---- */
+function resetKnowledgeOptionButton(btn, text) {
+    btn.innerHTML = '';
+    btn.className = 'knowledge-option-btn';
+    btn.style.display = 'flex';
+    btn.removeAttribute('data-state');
+    btn.removeAttribute('aria-expanded');
+    const label = document.createElement('span');
+    label.className = 'kn-opt-text';
+    label.textContent = text === undefined || text === null ? '' : text;
+    btn.appendChild(label);
+}
+
+// Opsi salah: merah + tidak dicoret, teks tetap terbaca, tombol berubah fungsi jadi pembuka penjelasan
+function markKnowledgeOptionWrong(btn, idx, q) {
+    btn.dataset.state = 'wrong';
+    btn.classList.add('is-wrong');
+    btn.setAttribute('aria-expanded', 'false');
+
+    const cue = document.createElement('span');
+    cue.className = 'kn-opt-cue';
+    cue.textContent = 'ⓘ Lihat penjelasan';
+    btn.appendChild(cue);
+
+    const explain = document.createElement('span');
+    explain.className = 'kn-opt-explain';
+    explain.hidden = true;
+    explain.textContent = q.explanations[idx] || 'Penjelasan untuk opsi ini belum tersedia.';
+    btn.appendChild(explain);
+}
+
+// Buka/tutup penjelasan opsi salah. TIDAK menilai jawaban dan TIDAK mengubah opsi lain.
+function toggleKnowledgeOptionExplanation(btn) {
+    const explain = btn.querySelector('.kn-opt-explain');
+    const cue = btn.querySelector('.kn-opt-cue');
+    if (!explain || !cue) return;
+    const willOpen = explain.hidden;
+    explain.hidden = !willOpen;
+    btn.classList.toggle('is-open', willOpen);
+    btn.setAttribute('aria-expanded', String(willOpen));
+    cue.textContent = willOpen ? '▴ Sembunyikan' : 'ⓘ Lihat penjelasan';
+}
+
+// Panel "Pembahasan soal sebelumnya": isi dari data soal yang BARU SAJA selesai, disimpan saat soal selesai diproses
+function renderKnowledgeRecap() {
+    const box = document.getElementById('knowledgeRecap');
+    if (!box) return;
+    if (!knowledgeLastResolved) {
+        box.style.display = 'none';
+        return;
+    }
+    const { q, status } = knowledgeLastResolved;
+    document.getElementById('knowledgeRecapStatus').textContent =
+        status === 'correct' ? '📖 Pembahasan soal sebelumnya · ✅ Dijawab benar' : '📖 Pembahasan soal sebelumnya · 💀 Soal hangus';
+    document.getElementById('knowledgeRecapQuestion').textContent = q.question;
+    document.getElementById('knowledgeRecapAnswer').textContent = q.options[q.correctIndex];
+    document.getElementById('knowledgeRecapExplanation').textContent =
+        q.explanations[q.correctIndex] || 'Penjelasan untuk jawaban ini belum tersedia.';
+    box.style.display = 'block';
+}
+
 function displayKnowledgeQuestion() {
     if (knowledgeSeqIndex >= knowledgeSequence.length) {
         knowledgeSequence = knowledgeSequence.concat(generateKnowledgeSequence(KNOWLEDGE_ROUND_BUFFER));
@@ -2101,12 +2269,11 @@ function displayKnowledgeQuestion() {
     document.getElementById('knowledgeQuestionText').textContent = q.question;
     const btns = document.querySelectorAll('.knowledge-option-btn');
     btns.forEach((btn, i) => {
-        btn.textContent = q.options[i];
+        resetKnowledgeOptionButton(btn, q.options[i]);
         btn.disabled = false;
-        btn.className = 'knowledge-option-btn';
-        btn.style.display = 'flex';
     });
     document.getElementById('knowledgeHintButton').disabled = false;
+    renderKnowledgeRecap(); // pembahasan soal TERAKHIR yang selesai (benar atau hangus); kosong di soal nomor 1
     document.getElementById('knowledgeProgressLabel').textContent = `Skor: ${formatKnowledgeScore(tenthsToScore(knowledgeScoreTenths))}`;
 }
 
@@ -2120,6 +2287,12 @@ function handleKnowledgeOptionClick(idx) {
     const btn = btns[idx];
     if (!btn || btn.disabled) return;
 
+    // Opsi yang sudah ditandai salah: tekan lagi = buka/tutup penjelasannya (bukan jawaban baru)
+    if (btn.dataset.state === 'wrong') {
+        toggleKnowledgeOptionExplanation(btn);
+        return;
+    }
+
     const q = knowledgeSequence[knowledgeSeqIndex];
 
     if (idx === q.correctIndex) {
@@ -2128,6 +2301,7 @@ function handleKnowledgeOptionClick(idx) {
         const gained = knowledgePointsForCorrect(knowledgeWrongClicksThisQuestion, knowledgeHintUsedThisQuestion);
         knowledgeScoreTenths += gained;
         knowledgeCorrectCount++;
+        knowledgeLastResolved = { q, status: 'correct' };
         showToast('success', `Benar! ${formatKnowledgeGain(gained)} poin 🎉`);
         document.getElementById('knowledgeProgressLabel').textContent = `Skor: ${formatKnowledgeScore(tenthsToScore(knowledgeScoreTenths))}`;
         btns.forEach(b => { b.disabled = true; });
@@ -2136,16 +2310,17 @@ function handleKnowledgeOptionClick(idx) {
         return;
     }
 
-    btn.disabled = true;
-    btn.classList.add('is-wrong');
+    markKnowledgeOptionWrong(btn, idx, q);
     playWrongSound();
     knowledgeWrongClicksThisQuestion++;
 
-    const visibleCount = btns.filter(b => b.style.display !== 'none').length;
-    if (knowledgeWrongClicksThisQuestion >= visibleCount - 1) {
-        // Sisa tinggal jawaban benar -> langsung hangus, jangan beri kesempatan asal tebak
+    // Hangus bila tidak ada lagi opsi salah yang masih bisa dipilih (tersisa jawaban benar saja)
+    const selectableDistractors = btns.filter((b, i) =>
+        i !== q.correctIndex && b.dataset.state !== 'wrong' && b.style.display !== 'none').length;
+    if (selectableDistractors === 0) {
         knowledgeBurnedCount++;
         knowledgeScoreTenths += KNOWLEDGE_POINTS_BURNED;
+        knowledgeLastResolved = { q, status: 'burned' };
         showToast('danger', `Soal hangus! ${formatKnowledgeGain(KNOWLEDGE_POINTS_BURNED)} poin 💀`, 1800);
         document.getElementById('knowledgeProgressLabel').textContent = `Skor: ${formatKnowledgeScore(tenthsToScore(knowledgeScoreTenths))}`;
         btns.forEach(b => { b.disabled = true; });
@@ -2167,9 +2342,10 @@ document.getElementById('knowledgeHintButton').addEventListener('click', () => {
     const q = knowledgeSequence[knowledgeSeqIndex];
     const btns = Array.from(document.querySelectorAll('.knowledge-option-btn'));
 
+    // Opsi yang masih "hidup" = bukan jawaban benar, belum ditandai salah, belum disembunyikan
     const viableDistractorIdx = btns
         .map((b, i) => i)
-        .filter(i => i !== q.correctIndex && !btns[i].disabled && btns[i].style.display !== 'none');
+        .filter(i => i !== q.correctIndex && btns[i].dataset.state !== 'wrong' && btns[i].style.display !== 'none');
 
     if (viableDistractorIdx.length === 0) return; // sudah tersisa 1 opsi (benar) saja, hint tak relevan lagi
 
@@ -2177,18 +2353,14 @@ document.getElementById('knowledgeHintButton').addEventListener('click', () => {
     knowledgeHintsUsed++;
     document.getElementById('knowledgeHintButton').disabled = true;
 
-    // Sembunyikan opsi salah yg sudah ketahuan (sudah dicoba & disabled) biar tidak mengotori tampilan
-    btns.forEach((b, i) => {
-        if (i !== q.correctIndex && b.disabled) b.style.display = 'none';
-    });
-
-    // Dari distraktor yang masih "hidup", sisakan 1 secara acak, sembunyikan sisanya
+    // Dari distraktor yang masih "hidup", sisakan 1 secara acak, sembunyikan sisanya.
+    // Opsi yang sudah ditandai salah TIDAK disembunyikan, supaya penjelasannya tetap bisa dibuka.
     const keepIndex = viableDistractorIdx[Math.floor(Math.random() * viableDistractorIdx.length)];
     viableDistractorIdx.forEach(i => {
         if (i !== keepIndex) btns[i].style.display = 'none';
     });
 
-    showToast('success', '💡 Hint dipakai! Tersisa 2 opsi (maks. +0,3 poin).');
+    showToast('success', '💡 Hint dipakai! Tinggal 2 opsi yang bisa dipilih (maks. +0,3 poin).');
 });
 
 /* ---- Insight peringkat (analog buildRankInsight milik game Perkalian, tapi "lebih tinggi = lebih baik") ---- */
