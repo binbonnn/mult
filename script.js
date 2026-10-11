@@ -402,6 +402,18 @@ function generateUniqueQuestions(count) {
 ===================================================================== */
 /* Tema warna & font: tiap halaman punya tema sendiri (lihat body[data-theme] di style.css).
    Modal ada di luar #app, jadi ikut tema halaman yang sedang aktif lewat atribut di <body>. */
+/* Salinan teks bergilir: satu suara brand, variasi kecil supaya tidak terasa seperti mesin */
+const COPY_VARIANTS = {
+    correct: ['Nice, tepat!', 'Yup, kamu benar.', 'Satu lagi berhasil.'],
+    wrong: ['Belum tepat. Coba lagi.', 'Hampir. Coba lihat sekali lagi.', 'Santai, masih ada kesempatan.']
+};
+const copyCounters = {};
+function copyNext(key) {
+    const list = COPY_VARIANTS[key];
+    copyCounters[key] = ((copyCounters[key] || 0) + 1) % list.length;
+    return list[copyCounters[key]];
+}
+
 const VIEW_THEMES = {
     hub: 'hub',
     dashboard: 'g1', game: 'g1',
@@ -460,7 +472,7 @@ document.getElementById('advmathBackToHubButton').addEventListener('click', () =
 
 function showGameComingSoonToast(btn) {
     const title = btn.querySelector('.game-card-title')?.textContent?.trim() || 'Game ini';
-    showToast('danger', `${title} belum tersedia. Tunggu ya.`, 3500);
+    showToast('danger', `${title} masih disiapkan. Sabar sebentar ya.`, 3500);
 }
 
 document.querySelectorAll('.game-card.is-coming-soon, .game-card-soon').forEach(btn => {
@@ -622,10 +634,10 @@ document.querySelectorAll('#chooseCountModal .count-option-button').forEach(btn 
    ALUR GAME
 ===================================================================== */
 const COUNTDOWN_STEPS = [
-    { text: '3', label: 'Siap-siap' },
-    { text: '2', label: 'Fokus' },
-    { text: '1', label: 'Tarik napas' },
-    { text: 'Mulai', label: 'Jawab secepat yang kamu bisa' }
+    { text: '3', label: 'Siap?' },
+    { text: '2', label: 'Tarik napas dulu' },
+    { text: '1', label: 'Coba satu dulu' },
+    { text: 'Mulai', label: 'Oke, kita mulai.' }
 ];
 
 function startGameWithCount(count) {
@@ -752,13 +764,13 @@ function checkAnswer() {
     if (userAnswer !== a * b) {
         mistakes++;
         playWrongSound();
-        showToast('danger', '❌ Belum tepat. Coba cek lagi jawabanmu.');
+        showToast('danger', '❌ ' + copyNext('wrong'));
         answerInput.classList.add('wiggle-animation');
         answerInput.value = '';
         setTimeout(() => answerInput.classList.remove('wiggle-animation'), 400);
     } else {
         playCorrectSound();
-        showToast('success', '✅ Benar');
+        showToast('success', '✅ ' + copyNext('correct'));
         correctAnswers++;
         currentQuestionIndex++;
         answerInput.value = '';
@@ -839,7 +851,7 @@ function buildRankInsight(timeTaken, mistakeCount, records) {
     details.push({ icon: '📉', text: `${timeTaken - lastPlace.time} detik lebih lambat dari peringkat ${MAX_LEADERBOARD_RECORDS}.` });
     details.push({ icon: '🎯', text: `${secondsToBeat(timeTaken, lastPlace)} detik lagi untuk masuk papan peringkat.` });
     details.push({ icon: '🥉', text: `${secondsToBeat(timeTaken, third)} detik lagi untuk masuk 3 besar.` });
-    return { rank, qualifies, tone: 'miss', headline: '💪 Belum masuk papan peringkat. Coba sekali lagi.', details };
+    return { rank, qualifies, tone: 'miss', headline: 'Belum masuk papan peringkat. Santai, coba lagi.', details };
 }
 
 function renderRankInsight(insight) {
@@ -1448,7 +1460,7 @@ function showDuelResult(room) {
     const opponent = duelState.role === 'host' ? room.guest : room.host;
 
     const banner = document.getElementById('duelWinnerBanner');
-    banner.textContent = amIWinner ? '🏆 Kamu menang' : `${opponent ? opponent.name : 'Lawan'} menang`;
+    banner.textContent = amIWinner ? '🏆 Kamu menang. Nice.' : `${opponent ? opponent.name : 'Lawan'} menang. Rematch?`;
     banner.className = `duel-winner-banner ${amIWinner ? 'is-win' : 'is-lose'}`;
 
     const renderPlayer = (label, player, isWinnerSide) => {
@@ -2312,7 +2324,7 @@ function handleKnowledgeOptionClick(idx) {
         knowledgeScoreTenths += gained;
         knowledgeCorrectCount++;
         knowledgeLastResolved = { q, status: 'correct' };
-        showToast('success', `✅ Benar. ${formatKnowledgeGain(gained)} poin`);
+        showToast('success', `✅ ${copyNext('correct')} ${formatKnowledgeGain(gained)} poin`);
         document.getElementById('knowledgeProgressLabel').textContent = `Skor: ${formatKnowledgeScore(tenthsToScore(knowledgeScoreTenths))}`;
         btns.forEach(b => { b.disabled = true; });
         if (knowledgeDuelState) reportKnowledgeDuelProgress();
@@ -2370,7 +2382,7 @@ document.getElementById('knowledgeHintButton').addEventListener('click', () => {
         if (i !== keepIndex) btns[i].style.display = 'none';
     });
 
-    showToast('success', '💡 Hint aktif. Tinggal 2 opsi, maksimal +0,3 poin.');
+    showToast('success', '💡 Oke, tinggal 2 opsi. Maksimal +0,3 poin.');
 });
 
 /* ---- Insight peringkat (analog buildRankInsight milik game Perkalian, tapi "lebih tinggi = lebih baik") ---- */
@@ -2416,7 +2428,7 @@ function buildKnowledgeRankInsight(score, hints, burned, records) {
 
     const last = sorted[MAX_KNOWLEDGE_LEADERBOARD - 1];
     details.push({ icon: '📉', text: `${gapText(knowledgeScoreTenthsOf(last) - myTenths + 1)} poin lagi untuk masuk papan peringkat.` });
-    return { rank, qualifies, tone: 'miss', headline: '💪 Belum masuk papan peringkat. Coba sekali lagi.', details };
+    return { rank, qualifies, tone: 'miss', headline: 'Belum masuk papan peringkat. Santai, coba lagi.', details };
 }
 
 function renderKnowledgeRankInsight(insight) {
@@ -2869,7 +2881,7 @@ async function showKnowledgeDuelResult(room) {
         banner.textContent = '🤝 Seri';
         banner.className = 'duel-winner-banner is-lose';
     } else {
-        banner.textContent = amIWinner ? '🏆 Kamu menang' : `${opponent ? opponent.name : 'Lawan'} menang`;
+        banner.textContent = amIWinner ? '🏆 Kamu menang. Nice.' : `${opponent ? opponent.name : 'Lawan'} menang. Rematch?`;
         banner.className = `duel-winner-banner ${amIWinner ? 'is-win' : 'is-lose'}`;
     }
 
@@ -3714,7 +3726,7 @@ function handleAdvmathOptionClick(idx) {
         btn.classList.add('is-correct');
         btns.forEach(b => { b.disabled = true; });
         playCorrectSound();
-        showToast('success', '✅ Benar');
+        showToast('success', '✅ ' + copyNext('correct'));
         advmathCorrectCount++;
         const isLast = advmathSeqIndex >= advmathCount - 1;
         if (isLast) lockAdvmathFinalTime(); // waktu berhenti tepat saat soal terakhir dijawab benar
@@ -3736,10 +3748,10 @@ function handleAdvmathOptionClick(idx) {
     applyAdvmathPenalty(penalty);
 
     if (advmathQ.wrong >= ADVMATH_MAX_WRONG) {
-        showToast('danger', `Salah ke-${advmathQ.wrong}. +${penalty} detik, soal hangus.`, 2200);
+        showToast('danger', `Belum tepat (salah ke-${advmathQ.wrong}). +${penalty} detik, soal hangus.`, 2200);
         burnAdvmathQuestion();
     } else {
-        showToast('danger', `Salah ke-${advmathQ.wrong}. +${penalty} detik ⏱️`, 1800);
+        showToast('danger', `Belum tepat (salah ke-${advmathQ.wrong}). +${penalty} detik ⏱️`, 1800);
     }
 }
 
@@ -4059,7 +4071,7 @@ function buildAdvmathRankInsight(timeTaken, mistakes, burned, hints, records) {
     details.push({ icon: '📉', text: `${formatAdvmathDuration(timeTaken - lastPlace.time)} lebih lambat dari peringkat ${MAX_ADVMATH_LEADERBOARD}.` });
     details.push({ icon: '🎯', text: `${formatAdvmathDuration(advmathSecondsToBeat(timeTaken, lastPlace))} lagi untuk masuk papan peringkat.` });
     details.push({ icon: '💡', text: 'Tip: salah, hint, dan soal hangus menambah waktu. Jawab dengan yakin.' });
-    return { rank, qualifies, tone: 'miss', headline: '💪 Belum masuk papan peringkat. Coba sekali lagi.', details };
+    return { rank, qualifies, tone: 'miss', headline: 'Belum masuk papan peringkat. Santai, coba lagi.', details };
 }
 
 function renderAdvmathRankInsight(insight) {
@@ -4521,7 +4533,7 @@ async function showAdvmathDuelResult(room) {
         banner.textContent = '🤝 Seri';
         banner.className = 'duel-winner-banner is-lose';
     } else {
-        banner.textContent = amIWinner ? '🏆 Kamu menang' : `${opponent ? opponent.name : 'Lawan'} menang`;
+        banner.textContent = amIWinner ? '🏆 Kamu menang. Nice.' : `${opponent ? opponent.name : 'Lawan'} menang. Rematch?`;
         banner.className = `duel-winner-banner ${amIWinner ? 'is-win' : 'is-lose'}`;
     }
 
