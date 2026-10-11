@@ -144,11 +144,11 @@ function setLeaderboardStatus(mode, detail) {
         if (!el) return;
         el.className = `leaderboard-status is-${mode}`;
         if (mode === 'online') {
-            el.textContent = '🌐 Online: skor terlihat oleh semua pemain';
+            el.textContent = 'Online · skor terlihat semua pemain';
         } else if (mode === 'local') {
-            el.textContent = `📴 Mode lokal: skor hanya tersimpan di perangkat ini${detail ? ` (${detail})` : ''}`;
+            el.textContent = `Mode lokal · skor hanya di perangkat ini${detail ? ` (${detail})` : ''}`;
         } else {
-            el.textContent = `⚠️ Belum bisa terhubung ke server${detail ? ` (${detail})` : ''}. Sementara pakai data lokal.`;
+            el.textContent = `Offline · pakai data lokal dulu${detail ? ` (${detail})` : ''}`;
         }
     });
 }
@@ -321,6 +321,7 @@ function updateSoundToggleButton() {
         btn.textContent = soundEnabled ? '🔊' : '🔇';
         btn.setAttribute('aria-label', label);
         btn.setAttribute('title', label);
+        btn.setAttribute('aria-pressed', soundEnabled ? 'true' : 'false');
     });
 }
 
@@ -404,8 +405,8 @@ function generateUniqueQuestions(count) {
    Modal ada di luar #app, jadi ikut tema halaman yang sedang aktif lewat atribut di <body>. */
 /* Salinan teks bergilir: satu suara brand, variasi kecil supaya tidak terasa seperti mesin */
 const COPY_VARIANTS = {
-    correct: ['Nice, tepat!', 'Yup, kamu benar.', 'Satu lagi berhasil.'],
-    wrong: ['Belum tepat. Coba lagi.', 'Hampir. Coba lihat sekali lagi.', 'Santai, masih ada kesempatan.']
+    correct: ['Yes!', 'Mantap!', 'Tepat!'],
+    wrong: ['Hampir!', 'Gapapa, lanjut!', 'Belum tepat. Coba lagi.']
 };
 const copyCounters = {};
 function copyNext(key) {
@@ -416,13 +417,13 @@ function copyNext(key) {
 
 const VIEW_THEMES = {
     hub: 'hub',
-    dashboard: 'g1', game: 'g1',
-    knowledgeDashboard: 'g2', knowledgeGame: 'g2',
-    advmathDashboard: 'g3', advmathGame: 'g3'
+    dashboard: 'mult', game: 'mult',
+    knowledgeDashboard: 'knowledge', knowledgeGame: 'knowledge',
+    advmathDashboard: 'advanced', advmathGame: 'advanced'
 };
 
 function switchView(viewName) {
-    document.body.setAttribute('data-theme', VIEW_THEMES[viewName] || 'hub');
+    document.body.setAttribute('data-game', VIEW_THEMES[viewName] || 'hub');
     hubView.classList.toggle('active', viewName === 'hub');
     dashboardView.classList.toggle('active', viewName === 'dashboard');
     gameView.classList.toggle('active', viewName === 'game');
@@ -472,7 +473,7 @@ document.getElementById('advmathBackToHubButton').addEventListener('click', () =
 
 function showGameComingSoonToast(btn) {
     const title = btn.querySelector('.game-card-title')?.textContent?.trim() || 'Game ini';
-    showToast('danger', `${title} masih disiapkan. Sabar sebentar ya.`, 3500);
+    showToast('danger', `${title} lagi dibikin ✨`, 3500);
 }
 
 document.querySelectorAll('.game-card.is-coming-soon, .game-card-soon').forEach(btn => {
@@ -764,13 +765,13 @@ function checkAnswer() {
     if (userAnswer !== a * b) {
         mistakes++;
         playWrongSound();
-        showToast('danger', '❌ ' + copyNext('wrong'));
+        showToast('danger', '✕ ' + copyNext('wrong'));
         answerInput.classList.add('wiggle-animation');
         answerInput.value = '';
         setTimeout(() => answerInput.classList.remove('wiggle-animation'), 400);
     } else {
         playCorrectSound();
-        showToast('success', '✅ ' + copyNext('correct'));
+        showToast('success', '✓ ' + copyNext('correct'));
         correctAnswers++;
         currentQuestionIndex++;
         answerInput.value = '';
@@ -948,7 +949,7 @@ async function savePlayerRecord() {
     lastSavedRecord = { count: currentQuestionCount, name: playerName, time: finalTimeSeconds, mistakes: mistakes };
 
     if (saveResult && saveResult.error) {
-        showToast('danger', `Belum bisa simpan online: ${saveResult.error}`, 6000);
+        showToast('danger', `Belum tersimpan online, skormu aman di perangkat ini. (${saveResult.error})`, 6000);
     }
 
     goToDashboard(currentQuestionCount);
@@ -2324,7 +2325,7 @@ function handleKnowledgeOptionClick(idx) {
         knowledgeScoreTenths += gained;
         knowledgeCorrectCount++;
         knowledgeLastResolved = { q, status: 'correct' };
-        showToast('success', `✅ ${copyNext('correct')} ${formatKnowledgeGain(gained)} poin`);
+        showToast('success', `✓ ${copyNext('correct')} ${formatKnowledgeGain(gained)} poin`);
         document.getElementById('knowledgeProgressLabel').textContent = `Skor: ${formatKnowledgeScore(tenthsToScore(knowledgeScoreTenths))}`;
         btns.forEach(b => { b.disabled = true; });
         if (knowledgeDuelState) reportKnowledgeDuelProgress();
@@ -2508,7 +2509,7 @@ async function saveKnowledgePlayerRecord() {
     knowledgeLastSavedRecord = { name: playerName, score: tenthsToScore(knowledgeScoreTenths), hints: knowledgeHintsUsed, burned: knowledgeBurnedCount };
 
     if (saveResult && saveResult.error) {
-        showToast('danger', `Belum bisa simpan online: ${saveResult.error}`, 6000);
+        showToast('danger', `Belum tersimpan online, skormu aman di perangkat ini. (${saveResult.error})`, 6000);
     }
 
     goToKnowledgeDashboard('solo');
@@ -3726,7 +3727,7 @@ function handleAdvmathOptionClick(idx) {
         btn.classList.add('is-correct');
         btns.forEach(b => { b.disabled = true; });
         playCorrectSound();
-        showToast('success', '✅ ' + copyNext('correct'));
+        showToast('success', '✓ ' + copyNext('correct'));
         advmathCorrectCount++;
         const isLast = advmathSeqIndex >= advmathCount - 1;
         if (isLast) lockAdvmathFinalTime(); // waktu berhenti tepat saat soal terakhir dijawab benar
@@ -4153,7 +4154,7 @@ async function saveAdvmathPlayerRecord() {
     advmathLastSavedRecord = { count: savedCount, name: playerName, time: record.time, mistakes: record.mistakes, hints: record.hints, burned: record.burned };
 
     if (saveResult && saveResult.error) {
-        showToast('danger', `Belum bisa simpan online: ${saveResult.error}`, 6000);
+        showToast('danger', `Belum tersimpan online, skormu aman di perangkat ini. (${saveResult.error})`, 6000);
     }
 
     goToAdvmathDashboard(String(savedCount));
