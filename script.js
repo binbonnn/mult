@@ -144,11 +144,11 @@ function setLeaderboardStatus(mode, detail) {
         if (!el) return;
         el.className = `leaderboard-status is-${mode}`;
         if (mode === 'online') {
-            el.textContent = '🌐 Papan peringkat online: dilihat semua pemain';
+            el.textContent = '🌐 Online: skor terlihat oleh semua pemain';
         } else if (mode === 'local') {
             el.textContent = `📴 Mode lokal: skor hanya tersimpan di perangkat ini${detail ? ` (${detail})` : ''}`;
         } else {
-            el.textContent = `⚠️ Gagal terhubung ke server${detail ? ` (${detail})` : ''}. Memakai data lokal.`;
+            el.textContent = `⚠️ Belum bisa terhubung ke server${detail ? ` (${detail})` : ''}. Sementara pakai data lokal.`;
         }
     });
 }
@@ -400,7 +400,17 @@ function generateUniqueQuestions(count) {
 /* =====================================================================
    VIEW SWITCHING (Hub <-> Dashboard <-> Game)
 ===================================================================== */
+/* Tema warna & font: tiap halaman punya tema sendiri (lihat body[data-theme] di style.css).
+   Modal ada di luar #app, jadi ikut tema halaman yang sedang aktif lewat atribut di <body>. */
+const VIEW_THEMES = {
+    hub: 'hub',
+    dashboard: 'g1', game: 'g1',
+    knowledgeDashboard: 'g2', knowledgeGame: 'g2',
+    advmathDashboard: 'g3', advmathGame: 'g3'
+};
+
 function switchView(viewName) {
+    document.body.setAttribute('data-theme', VIEW_THEMES[viewName] || 'hub');
     hubView.classList.toggle('active', viewName === 'hub');
     dashboardView.classList.toggle('active', viewName === 'dashboard');
     gameView.classList.toggle('active', viewName === 'game');
@@ -450,7 +460,7 @@ document.getElementById('advmathBackToHubButton').addEventListener('click', () =
 
 function showGameComingSoonToast(btn) {
     const title = btn.querySelector('.game-card-title')?.textContent?.trim() || 'Game ini';
-    showToast('danger', `🔒 ${title} segera hadir, nantikan ya!`, 3500);
+    showToast('danger', `${title} belum tersedia. Tunggu ya.`, 3500);
 }
 
 document.querySelectorAll('.game-card.is-coming-soon, .game-card-soon').forEach(btn => {
@@ -469,7 +479,7 @@ function setActiveLeaderboardTab(count) {
 }
 
 function showLeaderboardLoading() {
-    document.getElementById('podium').innerHTML = '<div class="leaderboard-loading">Memuat papan peringkat...</div>';
+    document.getElementById('podium').innerHTML = '<div class="leaderboard-loading">Memuat peringkat...</div>';
     document.getElementById('rankList').innerHTML = '';
 }
 
@@ -527,7 +537,7 @@ function renderPodium(records) {
                 <div class="podium-name" title="${escapeHtml(record.name)}">${escapeHtml(record.name)}</div>
                 <div class="podium-score">${formatTime(record.time)}</div>
                 <div class="podium-mistakes">${formatMistakes(record.mistakes)}</div>
-                ${isYou ? '<div class="you-chip">⭐ Kamu</div>' : ''}
+                ${isYou ? '<div class="you-chip">Kamu</div>' : ''}
                 ${base}
             </div>
         `;
@@ -538,7 +548,7 @@ function renderRankList(records) {
     const listEl = document.getElementById('rankList');
 
     if (records.length === 0) {
-        listEl.innerHTML = `<li class="rank-list-empty">Belum ada pemain di sini.<br>Jadilah yang pertama mencatat skor! 🏁</li>`;
+        listEl.innerHTML = `<li class="rank-list-empty">Belum ada pemain.<br>Jadilah yang pertama mencatat skor.</li>`;
         return;
     }
 
@@ -555,7 +565,7 @@ function renderRankList(records) {
             <li class="rank-list-row${isYou ? ' is-you' : ''}">
                 <span class="rank-list-position">${rank}</span>
                 <span class="rank-list-avatar">${avatarGlyph(record.avatar)}</span>
-                <span class="rank-list-name">${escapeHtml(record.name)}${isYou ? ' <span class="you-chip">⭐ Kamu</span>' : ''}</span>
+                <span class="rank-list-name">${escapeHtml(record.name)}${isYou ? ' <span class="you-chip">Kamu</span>' : ''}</span>
                 <span class="rank-list-dots" aria-hidden="true"></span>
                 <span class="rank-list-score">${formatTime(record.time)}<small>${formatMistakes(record.mistakes)}</small></span>
             </li>
@@ -612,10 +622,10 @@ document.querySelectorAll('#chooseCountModal .count-option-button').forEach(btn 
    ALUR GAME
 ===================================================================== */
 const COUNTDOWN_STEPS = [
-    { text: '3', label: 'Bersiap-siap...' },
-    { text: '2', label: 'Fokus...' },
-    { text: '1', label: 'Konsentrasi!' },
-    { text: 'Mulai!', label: 'Ayo jawab secepat mungkin!' }
+    { text: '3', label: 'Siap-siap' },
+    { text: '2', label: 'Fokus' },
+    { text: '1', label: 'Tarik napas' },
+    { text: 'Mulai', label: 'Jawab secepat yang kamu bisa' }
 ];
 
 function startGameWithCount(count) {
@@ -731,7 +741,7 @@ document.getElementById('buttonHint').addEventListener('click', function () {
 
 function checkAnswer() {
     if (!answerInput.value.trim()) { // jika input kosong
-        showToast('danger', 'Isi dulu jawabannya ya! 😉');
+        showToast('danger', 'Isi jawabannya dulu.');
         answerInput.focus();
         return;
     }
@@ -742,13 +752,13 @@ function checkAnswer() {
     if (userAnswer !== a * b) {
         mistakes++;
         playWrongSound();
-        showToast('danger', 'Salah! 😅');
+        showToast('danger', '❌ Belum tepat. Coba cek lagi jawabanmu.');
         answerInput.classList.add('wiggle-animation');
         answerInput.value = '';
         setTimeout(() => answerInput.classList.remove('wiggle-animation'), 400);
     } else {
         playCorrectSound();
-        showToast('success', 'Benar! 🎉');
+        showToast('success', '✅ Benar');
         correctAnswers++;
         currentQuestionIndex++;
         answerInput.value = '';
@@ -788,8 +798,8 @@ function buildRankInsight(timeTaken, mistakeCount, records) {
     if (sorted.length === 0) {
         return {
             rank: 1, qualifies: true, tone: 'top',
-            headline: '🏆 Kamu pemain pertama di level ini!',
-            details: [{ icon: '💾', text: 'Simpan skormu untuk jadi peringkat 1 di papan peringkat.' }]
+            headline: '🏆 Kamu yang pertama di level ini',
+            details: [{ icon: '💾', text: 'Simpan skormu, langsung jadi peringkat 1.' }]
         };
     }
 
@@ -800,7 +810,7 @@ function buildRankInsight(timeTaken, mistakeCount, records) {
         } else {
             details.push({ icon: '🎯', text: `Waktu sama dengan rekor sebelumnya, tapi kesalahanmu lebih sedikit.` });
         }
-        return { rank, qualifies, tone: 'top', headline: '👑 Rekor baru! Kamu peringkat 1', details };
+        return { rank, qualifies, tone: 'top', headline: '👑 Rekor baru. Kamu peringkat 1', details };
     }
 
     const gapToTop = timeTaken - top.time;
@@ -817,19 +827,19 @@ function buildRankInsight(timeTaken, mistakeCount, records) {
         }
         details.push({ icon: '🐢', text: topText });
         details.push({ icon: '🚀', text: `${secondsToBeat(timeTaken, above)} detik lagi untuk naik ke peringkat ${rank - 1}.` });
-        return { rank, qualifies, tone: 'top', headline: `${PODIUM_MEDALS[rank]} Kamu masuk 3 besar! Peringkat ${rank}`, details };
+        return { rank, qualifies, tone: 'top', headline: `${PODIUM_MEDALS[rank]} Masuk 3 besar, peringkat ${rank}`, details };
     }
 
     if (qualifies) {
         details.push({ icon: '🥉', text: `${secondsToBeat(timeTaken, third)} detik lagi untuk masuk 3 besar.` });
         details.push({ icon: '🐢', text: `${gapToTop} detik lebih lambat dari peringkat 1.` });
-        return { rank, qualifies, tone: 'ok', headline: `🎯 Kamu masuk papan peringkat! Peringkat ${rank}`, details };
+        return { rank, qualifies, tone: 'ok', headline: `🎯 Kamu masuk papan peringkat, peringkat ${rank}`, details };
     }
 
     details.push({ icon: '📉', text: `${timeTaken - lastPlace.time} detik lebih lambat dari peringkat ${MAX_LEADERBOARD_RECORDS}.` });
     details.push({ icon: '🎯', text: `${secondsToBeat(timeTaken, lastPlace)} detik lagi untuk masuk papan peringkat.` });
     details.push({ icon: '🥉', text: `${secondsToBeat(timeTaken, third)} detik lagi untuk masuk 3 besar.` });
-    return { rank, qualifies, tone: 'miss', headline: '💪 Belum masuk papan peringkat, ayo coba lagi!', details };
+    return { rank, qualifies, tone: 'miss', headline: '💪 Belum masuk papan peringkat. Coba sekali lagi.', details };
 }
 
 function renderRankInsight(insight) {
@@ -896,7 +906,7 @@ async function savePlayerRecord() {
     const playerNameInput = document.getElementById('playerName');
     const playerName = playerNameInput.value.trim();
     if (!playerName) {
-        alert('Isi dulu namamu ya!');
+        alert('Isi namamu dulu.');
         return;
     }
 
@@ -926,7 +936,7 @@ async function savePlayerRecord() {
     lastSavedRecord = { count: currentQuestionCount, name: playerName, time: finalTimeSeconds, mistakes: mistakes };
 
     if (saveResult && saveResult.error) {
-        showToast('danger', `Gagal simpan online: ${saveResult.error}`, 6000);
+        showToast('danger', `Belum bisa simpan online: ${saveResult.error}`, 6000);
     }
 
     goToDashboard(currentQuestionCount);
@@ -1058,7 +1068,7 @@ function generateRoomCode() {
 
 function requireFirebaseForDuel() {
     if (firebaseReady) return true;
-    showToast('danger', 'Fitur duel butuh koneksi ke server. Cek firebase-config.js sudah diisi & Firestore Rules sudah di-publish.', 6000);
+    showToast('danger', 'Duel butuh koneksi ke server. Cek firebase-config.js sudah diisi dan Firestore Rules sudah di-publish.', 6000);
     return false;
 }
 
@@ -1095,7 +1105,7 @@ async function createDuelRoom(count) {
     const nameInput = document.getElementById('duelCreateName');
     const name = nameInput.value.trim();
     if (!name) {
-        showToast('danger', 'Isi dulu namamu ya!');
+        showToast('danger', 'Isi namamu dulu.');
         nameInput.focus();
         return;
     }
@@ -1126,7 +1136,7 @@ async function createDuelRoom(count) {
             guest: null
         });
     } catch (e) {
-        showToast('danger', `Gagal membuat room: ${e.code || e.message}`, 5000);
+        showToast('danger', `Belum bisa membuat room: ${e.code || e.message}`, 5000);
         return;
     }
 
@@ -1141,7 +1151,7 @@ async function createDuelRoom(count) {
 document.getElementById('duelCopyCodeButton').addEventListener('click', () => {
     const code = document.getElementById('duelRoomCodeDisplay').textContent;
     if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(code).then(() => showToast('success', 'Kode disalin!')).catch(() => {});
+        navigator.clipboard.writeText(code).then(() => showToast('success', 'Kode disalin ✅')).catch(() => {});
     }
 });
 
@@ -1165,7 +1175,7 @@ async function joinDuelRoom() {
         return;
     }
     if (!name) {
-        showToast('danger', 'Isi dulu namamu ya!');
+        showToast('danger', 'Isi namamu dulu.');
         nameInput.focus();
         return;
     }
@@ -1178,7 +1188,7 @@ async function joinDuelRoom() {
         const ref = duelDocRef(code);
         const snap = await ref.get();
         if (!snap.exists) {
-            showToast('danger', 'Kode room tidak ditemukan.');
+            showToast('danger', 'Kode room tidak ditemukan. Cek lagi ya.');
             return;
         }
         const room = snap.data();
@@ -1202,7 +1212,7 @@ async function joinDuelRoom() {
         listenToDuelRoom(code);
         startDuelHeartbeat();
     } catch (e) {
-        showToast('danger', `Gagal gabung room: ${e.code || e.message}`, 5000);
+        showToast('danger', `Belum bisa gabung room: ${e.code || e.message}`, 5000);
     } finally {
         submitBtn.disabled = false;
         submitBtn.textContent = 'Gabung';
@@ -1425,7 +1435,7 @@ async function endDuelGame() {
             tx.update(roomRef, update);
         });
     } catch (e) {
-        showToast('danger', `Gagal mengirim hasil duel: ${e.code || e.message}`, 5000);
+        showToast('danger', `Hasil duel belum terkirim: ${e.code || e.message}`, 5000);
     }
     // Modal hasil akan muncul lewat listener (handleDuelRoomUpdate) begitu status 'finished' diterima,
     // supaya kedua pemain melihat hasil pada saat yang (hampir) bersamaan.
@@ -1438,7 +1448,7 @@ function showDuelResult(room) {
     const opponent = duelState.role === 'host' ? room.guest : room.host;
 
     const banner = document.getElementById('duelWinnerBanner');
-    banner.textContent = amIWinner ? '🏆 Kamu Menang!' : `😅 ${opponent ? opponent.name : 'Lawan'} Menang`;
+    banner.textContent = amIWinner ? '🏆 Kamu menang' : `${opponent ? opponent.name : 'Lawan'} menang`;
     banner.className = `duel-winner-banner ${amIWinner ? 'is-win' : 'is-lose'}`;
 
     const renderPlayer = (label, player, isWinnerSide) => {
@@ -1476,7 +1486,7 @@ document.getElementById('duelRematchButton').addEventListener('click', async () 
         });
         showModal('duelRematchWaitingModal');
     } catch (e) {
-        showToast('danger', `Gagal mengirim ajakan main lagi: ${e.code || e.message}`, 5000);
+        showToast('danger', `Ajakan main lagi belum terkirim: ${e.code || e.message}`, 5000);
         showModal('duelResultModal');
     }
 });
@@ -1512,7 +1522,7 @@ document.getElementById('duelRematchAcceptButton').addEventListener('click', asy
             'guest.progress': 0, 'guest.mistakes': 0, 'guest.time': null, 'guest.finishedAt': null, 'guest.lastSeen': Date.now()
         });
     } catch (e) {
-        showToast('danger', `Gagal memulai ulang duel: ${e.code || e.message}`, 5000);
+        showToast('danger', `Duel belum bisa dimulai ulang: ${e.code || e.message}`, 5000);
     }
 });
 
@@ -1927,7 +1937,7 @@ document.querySelectorAll('#knowledgeDashboardView .leaderboard-tab[data-klboard
 });
 
 function showKnowledgeLeaderboardLoading() {
-    document.getElementById('knowledgePodium').innerHTML = '<div class="leaderboard-loading">Memuat papan peringkat...</div>';
+    document.getElementById('knowledgePodium').innerHTML = '<div class="leaderboard-loading">Memuat peringkat...</div>';
     document.getElementById('knowledgeRankList').innerHTML = '';
 }
 
@@ -1982,7 +1992,7 @@ function renderKnowledgeSoloPodium(records) {
                 <div class="podium-name" title="${escapeHtml(record.name)}">${escapeHtml(record.name)}</div>
                 <div class="podium-score"><span>${formatKnowledgeScore(record.score)}</span> <span class="podium-score-unit">poin</span></div>
                 <div class="podium-mistakes">💡${record.hints} · 💀${record.burned}</div>
-                ${isYou ? '<div class="you-chip">⭐ Kamu</div>' : ''}
+                ${isYou ? '<div class="you-chip">Kamu</div>' : ''}
                 <div class="podium-base" aria-hidden="true"><span>${place}</span></div>
             </div>
         `;
@@ -1992,7 +2002,7 @@ function renderKnowledgeSoloPodium(records) {
 function renderKnowledgeSoloList(records) {
     const listEl = document.getElementById('knowledgeRankList');
     if (records.length === 0) {
-        listEl.innerHTML = `<li class="rank-list-empty">Belum ada pemain di sini.<br>Jadilah yang pertama mencatat skor! 🏁</li>`;
+        listEl.innerHTML = `<li class="rank-list-empty">Belum ada pemain.<br>Jadilah yang pertama mencatat skor.</li>`;
         return;
     }
     const rest = records.slice(3, MAX_KNOWLEDGE_LEADERBOARD);
@@ -2007,7 +2017,7 @@ function renderKnowledgeSoloList(records) {
             <li class="rank-list-row${isYou ? ' is-you' : ''}">
                 <span class="rank-list-position">${rank}</span>
                 <span class="rank-list-avatar">${avatarGlyph(record.avatar)}</span>
-                <span class="rank-list-name">${escapeHtml(record.name)}${isYou ? ' <span class="you-chip">⭐ Kamu</span>' : ''}</span>
+                <span class="rank-list-name">${escapeHtml(record.name)}${isYou ? ' <span class="you-chip">Kamu</span>' : ''}</span>
                 <span class="rank-list-dots" aria-hidden="true"></span>
                 <span class="rank-list-score">${formatKnowledgeScore(record.score)} poin<small>💡${record.hints} · 💀${record.burned}</small></span>
             </li>
@@ -2053,7 +2063,7 @@ function renderKnowledgeDuelWinsPodium(records) {
 function renderKnowledgeDuelWinsList(records) {
     const listEl = document.getElementById('knowledgeRankList');
     if (records.length === 0) {
-        listEl.innerHTML = `<li class="rank-list-empty">Belum ada duel yang dimenangkan di sini.<br>Jadilah yang pertama! 🏁</li>`;
+        listEl.innerHTML = `<li class="rank-list-empty">Belum ada duel yang dimenangkan.<br>Jadilah yang pertama.</li>`;
         return;
     }
     const rest = records.slice(3, MAX_KNOWLEDGE_LEADERBOARD);
@@ -2250,7 +2260,7 @@ function renderKnowledgeRecap() {
     }
     const { q, status } = knowledgeLastResolved;
     document.getElementById('knowledgeRecapStatus').textContent =
-        status === 'correct' ? '📖 Pembahasan soal sebelumnya · ✅ Dijawab benar' : '📖 Pembahasan soal sebelumnya · 💀 Soal hangus';
+        status === 'correct' ? 'Pembahasan soal sebelumnya · Dijawab benar' : 'Pembahasan soal sebelumnya · Soal hangus';
     document.getElementById('knowledgeRecapQuestion').textContent = q.question;
     document.getElementById('knowledgeRecapAnswer').textContent = q.options[q.correctIndex];
     document.getElementById('knowledgeRecapExplanation').textContent =
@@ -2302,7 +2312,7 @@ function handleKnowledgeOptionClick(idx) {
         knowledgeScoreTenths += gained;
         knowledgeCorrectCount++;
         knowledgeLastResolved = { q, status: 'correct' };
-        showToast('success', `Benar! ${formatKnowledgeGain(gained)} poin 🎉`);
+        showToast('success', `✅ Benar. ${formatKnowledgeGain(gained)} poin`);
         document.getElementById('knowledgeProgressLabel').textContent = `Skor: ${formatKnowledgeScore(tenthsToScore(knowledgeScoreTenths))}`;
         btns.forEach(b => { b.disabled = true; });
         if (knowledgeDuelState) reportKnowledgeDuelProgress();
@@ -2321,7 +2331,7 @@ function handleKnowledgeOptionClick(idx) {
         knowledgeBurnedCount++;
         knowledgeScoreTenths += KNOWLEDGE_POINTS_BURNED;
         knowledgeLastResolved = { q, status: 'burned' };
-        showToast('danger', `Soal hangus! ${formatKnowledgeGain(KNOWLEDGE_POINTS_BURNED)} poin 💀`, 1800);
+        showToast('danger', `Soal hangus. ${formatKnowledgeGain(KNOWLEDGE_POINTS_BURNED)} poin`, 1800);
         document.getElementById('knowledgeProgressLabel').textContent = `Skor: ${formatKnowledgeScore(tenthsToScore(knowledgeScoreTenths))}`;
         btns.forEach(b => { b.disabled = true; });
         if (knowledgeDuelState) reportKnowledgeDuelProgress();
@@ -2360,7 +2370,7 @@ document.getElementById('knowledgeHintButton').addEventListener('click', () => {
         if (i !== keepIndex) btns[i].style.display = 'none';
     });
 
-    showToast('success', '💡 Hint dipakai! Tinggal 2 opsi yang bisa dipilih (maks. +0,3 poin).');
+    showToast('success', '💡 Hint aktif. Tinggal 2 opsi, maksimal +0,3 poin.');
 });
 
 /* ---- Insight peringkat (analog buildRankInsight milik game Perkalian, tapi "lebih tinggi = lebih baik") ---- */
@@ -2378,8 +2388,8 @@ function buildKnowledgeRankInsight(score, hints, burned, records) {
     if (sorted.length === 0) {
         return {
             rank: 1, qualifies: true, tone: 'top',
-            headline: '🏆 Kamu pemain pertama di sini!',
-            details: [{ icon: '💾', text: 'Simpan skormu untuk jadi peringkat 1 di papan peringkat.' }]
+            headline: '🏆 Kamu yang pertama di sini',
+            details: [{ icon: '💾', text: 'Simpan skormu, langsung jadi peringkat 1.' }]
         };
     }
 
@@ -2388,25 +2398,25 @@ function buildKnowledgeRankInsight(score, hints, burned, records) {
 
     if (rank === 1) {
         const gap = myTenths - knowledgeScoreTenthsOf(top);
-        details.push({ icon: '⚡', text: gap > 0 ? `${gapText(gap)} poin lebih tinggi dari rekor sebelumnya.` : `Skor sama, tapi hint/hangus-mu lebih sedikit.` });
-        return { rank, qualifies, tone: 'top', headline: '👑 Rekor baru! Kamu peringkat 1', details };
+        details.push({ icon: '⚡', text: gap > 0 ? `${gapText(gap)} poin lebih tinggi dari rekor sebelumnya.` : `Skor sama, tapi hint dan soal hangusmu lebih sedikit.` });
+        return { rank, qualifies, tone: 'top', headline: '👑 Rekor baru. Kamu peringkat 1', details };
     }
 
     if (rank <= 3) {
         const gapToTop = knowledgeScoreTenthsOf(top) - myTenths;
         details.push({ icon: '🎯', text: `${gapText(gapToTop)} poin lagi untuk menyamai peringkat 1.` });
-        return { rank, qualifies, tone: 'top', headline: `${rank === 2 ? '🥈' : '🥉'} Kamu masuk 3 besar! Peringkat ${rank}`, details };
+        return { rank, qualifies, tone: 'top', headline: `${rank === 2 ? '🥈' : '🥉'} Masuk 3 besar, peringkat ${rank}`, details };
     }
 
     if (qualifies) {
         const third = sorted[2];
         details.push({ icon: '🥉', text: `${gapText(knowledgeScoreTenthsOf(third) - myTenths + 1)} poin lagi untuk masuk 3 besar.` });
-        return { rank, qualifies, tone: 'ok', headline: `🎯 Kamu masuk papan peringkat! Peringkat ${rank}`, details };
+        return { rank, qualifies, tone: 'ok', headline: `🎯 Kamu masuk papan peringkat, peringkat ${rank}`, details };
     }
 
     const last = sorted[MAX_KNOWLEDGE_LEADERBOARD - 1];
     details.push({ icon: '📉', text: `${gapText(knowledgeScoreTenthsOf(last) - myTenths + 1)} poin lagi untuk masuk papan peringkat.` });
-    return { rank, qualifies, tone: 'miss', headline: '💪 Belum masuk papan peringkat, ayo coba lagi!', details };
+    return { rank, qualifies, tone: 'miss', headline: '💪 Belum masuk papan peringkat. Coba sekali lagi.', details };
 }
 
 function renderKnowledgeRankInsight(insight) {
@@ -2457,7 +2467,7 @@ async function saveKnowledgePlayerRecord() {
     const nameInput = document.getElementById('knowledgePlayerName');
     const playerName = nameInput.value.trim();
     if (!playerName) {
-        showToast('danger', 'Isi dulu namamu ya!');
+        showToast('danger', 'Isi namamu dulu.');
         nameInput.focus();
         return;
     }
@@ -2486,7 +2496,7 @@ async function saveKnowledgePlayerRecord() {
     knowledgeLastSavedRecord = { name: playerName, score: tenthsToScore(knowledgeScoreTenths), hints: knowledgeHintsUsed, burned: knowledgeBurnedCount };
 
     if (saveResult && saveResult.error) {
-        showToast('danger', `Gagal simpan online: ${saveResult.error}`, 6000);
+        showToast('danger', `Belum bisa simpan online: ${saveResult.error}`, 6000);
     }
 
     goToKnowledgeDashboard('solo');
@@ -2540,7 +2550,7 @@ async function createKnowledgeDuelRoom() {
     const nameInput = document.getElementById('knowledgeDuelCreateName');
     const name = nameInput.value.trim();
     if (!name) {
-        showToast('danger', 'Isi dulu namamu ya!');
+        showToast('danger', 'Isi namamu dulu.');
         nameInput.focus();
         return;
     }
@@ -2570,7 +2580,7 @@ async function createKnowledgeDuelRoom() {
             guest: null
         });
     } catch (e) {
-        showToast('danger', `Gagal membuat room: ${e.code || e.message}`, 5000);
+        showToast('danger', `Belum bisa membuat room: ${e.code || e.message}`, 5000);
         return;
     }
 
@@ -2588,7 +2598,7 @@ async function createKnowledgeDuelRoom() {
 document.getElementById('knowledgeDuelCopyCodeButton').addEventListener('click', () => {
     const code = document.getElementById('knowledgeDuelRoomCodeDisplay').textContent;
     if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(code).then(() => showToast('success', 'Kode disalin!')).catch(() => {});
+        navigator.clipboard.writeText(code).then(() => showToast('success', 'Kode disalin ✅')).catch(() => {});
     }
 });
 
@@ -2611,7 +2621,7 @@ async function joinKnowledgeDuelRoom() {
         return;
     }
     if (!name) {
-        showToast('danger', 'Isi dulu namamu ya!');
+        showToast('danger', 'Isi namamu dulu.');
         nameInput.focus();
         return;
     }
@@ -2624,7 +2634,7 @@ async function joinKnowledgeDuelRoom() {
         const ref = knowledgeDuelDocRef(code);
         const snap = await ref.get();
         if (!snap.exists) {
-            showToast('danger', 'Kode room tidak ditemukan.');
+            showToast('danger', 'Kode room tidak ditemukan. Cek lagi ya.');
             return;
         }
         const room = snap.data();
@@ -2651,7 +2661,7 @@ async function joinKnowledgeDuelRoom() {
         listenToKnowledgeDuelRoom(code);
         startKnowledgeDuelHeartbeat();
     } catch (e) {
-        showToast('danger', `Gagal gabung room: ${e.code || e.message}`, 5000);
+        showToast('danger', `Belum bisa gabung room: ${e.code || e.message}`, 5000);
     } finally {
         submitBtn.disabled = false;
         submitBtn.textContent = 'Gabung';
@@ -2828,7 +2838,7 @@ async function endKnowledgeDuelRound() {
             tx.update(roomRef, update);
         });
     } catch (e) {
-        showToast('danger', `Gagal mengirim hasil duel: ${e.code || e.message}`, 5000);
+        showToast('danger', `Hasil duel belum terkirim: ${e.code || e.message}`, 5000);
     }
 
     if (!knowledgeDuelState.resultShown) {
@@ -2856,10 +2866,10 @@ async function showKnowledgeDuelResult(room) {
 
     const banner = document.getElementById('knowledgeDuelWinnerBanner');
     if (isDraw) {
-        banner.textContent = '🤝 Seri!';
+        banner.textContent = '🤝 Seri';
         banner.className = 'duel-winner-banner is-lose';
     } else {
-        banner.textContent = amIWinner ? '🏆 Kamu Menang!' : `😅 ${opponent ? opponent.name : 'Lawan'} Menang`;
+        banner.textContent = amIWinner ? '🏆 Kamu menang' : `${opponent ? opponent.name : 'Lawan'} menang`;
         banner.className = `duel-winner-banner ${amIWinner ? 'is-win' : 'is-lose'}`;
     }
 
@@ -2900,7 +2910,7 @@ document.getElementById('knowledgeDuelRematchButton').addEventListener('click', 
         });
         showModal('knowledgeDuelRematchWaitingModal');
     } catch (e) {
-        showToast('danger', `Gagal mengirim ajakan main lagi: ${e.code || e.message}`, 5000);
+        showToast('danger', `Ajakan main lagi belum terkirim: ${e.code || e.message}`, 5000);
         showModal('knowledgeDuelResultModal');
     }
 });
@@ -2935,7 +2945,7 @@ document.getElementById('knowledgeDuelRematchAcceptButton').addEventListener('cl
             'guest.score': 0, 'guest.correct': 0, 'guest.burned': 0, 'guest.hints': 0, 'guest.finishedAt': null, 'guest.lastSeen': Date.now()
         });
     } catch (e) {
-        showToast('danger', `Gagal memulai ulang duel: ${e.code || e.message}`, 5000);
+        showToast('danger', `Duel belum bisa dimulai ulang: ${e.code || e.message}`, 5000);
     }
 });
 
@@ -3129,7 +3139,7 @@ function normalizeAdvmathQuestion(raw, index) {
         const direct = advmathPick(raw, [`clue${n}`, `clue_${n}`, `Clue${n}`, `Clue_${n}`, `clue ${n}`, `hint${n}`, `hint_${n}`, `petunjuk${n}`, `petunjuk_${n}`]);
         if (direct !== undefined) return String(direct);
         if (Array.isArray(clueArray) && clueArray[n - 1] !== undefined) return String(clueArray[n - 1]);
-        return 'Clue untuk tingkat ini belum tersedia pada soal ini.';
+        return 'Clue untuk tingkat ini belum tersedia.';
     });
 
     const id = raw.id !== undefined ? raw.id : index + 1;
@@ -3302,7 +3312,7 @@ document.querySelectorAll('#advmathDashboardView .leaderboard-tab[data-alboard]'
 });
 
 function showAdvmathLeaderboardLoading() {
-    document.getElementById('advmathPodium').innerHTML = '<div class="leaderboard-loading">Memuat papan peringkat...</div>';
+    document.getElementById('advmathPodium').innerHTML = '<div class="leaderboard-loading">Memuat peringkat...</div>';
     document.getElementById('advmathRankList').innerHTML = '';
 }
 
@@ -3368,7 +3378,7 @@ function renderAdvmathSoloPodium(records) {
                 <div class="podium-name" title="${escapeHtml(record.name)}">${escapeHtml(record.name)}</div>
                 <div class="podium-score">${formatAdvmathDuration(record.time)}</div>
                 <div class="podium-mistakes">${advmathMetaText(record)}</div>
-                ${isYou ? '<div class="you-chip">⭐ Kamu</div>' : ''}
+                ${isYou ? '<div class="you-chip">Kamu</div>' : ''}
                 <div class="podium-base" aria-hidden="true"><span>${place}</span></div>
             </div>
         `;
@@ -3378,7 +3388,7 @@ function renderAdvmathSoloPodium(records) {
 function renderAdvmathSoloList(records) {
     const listEl = document.getElementById('advmathRankList');
     if (records.length === 0) {
-        listEl.innerHTML = `<li class="rank-list-empty">Belum ada pemain di sini.<br>Jadilah yang pertama mencatat waktu! 🏁</li>`;
+        listEl.innerHTML = `<li class="rank-list-empty">Belum ada pemain.<br>Jadilah yang pertama mencatat waktu.</li>`;
         return;
     }
     const rest = records.slice(3, MAX_ADVMATH_LEADERBOARD);
@@ -3393,7 +3403,7 @@ function renderAdvmathSoloList(records) {
             <li class="rank-list-row${isYou ? ' is-you' : ''}">
                 <span class="rank-list-position">${rank}</span>
                 <span class="rank-list-avatar">${avatarGlyph(record.avatar)}</span>
-                <span class="rank-list-name">${escapeHtml(record.name)}${isYou ? ' <span class="you-chip">⭐ Kamu</span>' : ''}</span>
+                <span class="rank-list-name">${escapeHtml(record.name)}${isYou ? ' <span class="you-chip">Kamu</span>' : ''}</span>
                 <span class="rank-list-dots" aria-hidden="true"></span>
                 <span class="rank-list-score">${formatAdvmathDuration(record.time)}<small>${advmathMetaText(record)}</small></span>
             </li>
@@ -3439,7 +3449,7 @@ function renderAdvmathDuelWinsPodium(records) {
 function renderAdvmathDuelWinsList(records) {
     const listEl = document.getElementById('advmathRankList');
     if (records.length === 0) {
-        listEl.innerHTML = `<li class="rank-list-empty">Belum ada duel yang dimenangkan di sini.<br>Jadilah yang pertama! 🏁</li>`;
+        listEl.innerHTML = `<li class="rank-list-empty">Belum ada duel yang dimenangkan.<br>Jadilah yang pertama.</li>`;
         return;
     }
     const rest = records.slice(3, MAX_ADVMATH_DUEL_LEADERBOARD);
@@ -3704,7 +3714,7 @@ function handleAdvmathOptionClick(idx) {
         btn.classList.add('is-correct');
         btns.forEach(b => { b.disabled = true; });
         playCorrectSound();
-        showToast('success', 'Benar! 🎉');
+        showToast('success', '✅ Benar');
         advmathCorrectCount++;
         const isLast = advmathSeqIndex >= advmathCount - 1;
         if (isLast) lockAdvmathFinalTime(); // waktu berhenti tepat saat soal terakhir dijawab benar
@@ -3726,10 +3736,10 @@ function handleAdvmathOptionClick(idx) {
     applyAdvmathPenalty(penalty);
 
     if (advmathQ.wrong >= ADVMATH_MAX_WRONG) {
-        showToast('danger', `Salah ke-${advmathQ.wrong}! +${penalty} detik · Soal hangus 💀`, 2200);
+        showToast('danger', `Salah ke-${advmathQ.wrong}. +${penalty} detik, soal hangus.`, 2200);
         burnAdvmathQuestion();
     } else {
-        showToast('danger', `Salah ke-${advmathQ.wrong}! +${penalty} detik ⏱️`, 1800);
+        showToast('danger', `Salah ke-${advmathQ.wrong}. +${penalty} detik ⏱️`, 1800);
     }
 }
 
@@ -3880,7 +3890,7 @@ async function openAdvmathHint(level) {
     if (h.deadline) {
         // Sudah pernah dibuka: tidak ada hukuman baru & countdown TIDAK di-reset
         if (now >= h.deadline) {
-            showToast('danger', `Hint ${level} sudah kedaluwarsa 🔥`);
+            showToast('danger', `Hint ${level} sudah hangus.`);
             return;
         }
         q.shownLevel = level;
@@ -3899,7 +3909,7 @@ async function openAdvmathHint(level) {
     applyAdvmathPenalty(cfg.penalty);
 
     if (level === 3) {
-        showToast('danger', `Hint 3: +${cfg.penalty} detik · Soal hangus 🔥`, 2200);
+        showToast('danger', `Hint 3: +${cfg.penalty} detik, soal langsung hangus.`, 2200);
         burnAdvmathQuestion(); // memakai countdown Hint 3 (sedang ditampilkan) sebagai acuan waktu tunggu
     } else {
         showToast('success', `💡 Hint ${level} dibuka: +${cfg.penalty} detik`, 1600);
@@ -3940,7 +3950,7 @@ function updateAdvmathHintModalUI() {
     const remainingMs = h.deadline ? h.deadline - now : 0;
 
     document.getElementById('advmathHintCountdownText').textContent =
-        remainingMs > 0 ? `Sisa akses: ${Math.ceil(remainingMs / 1000)} detik` : 'Akses hint habis 🔥';
+        remainingMs > 0 ? `Sisa akses: ${Math.ceil(remainingMs / 1000)} detik` : 'Akses hint habis';
     document.getElementById('advmathHintCountdownFill').style.width =
         `${Math.max(0, Math.min(100, (remainingMs / (cfg.durationSec * 1000)) * 100))}%`;
     modal.classList.toggle('is-level-3', level === 3);
@@ -4016,8 +4026,8 @@ function buildAdvmathRankInsight(timeTaken, mistakes, burned, hints, records) {
     if (sorted.length === 0) {
         return {
             rank: 1, qualifies: true, tone: 'top',
-            headline: '🏆 Kamu pemain pertama di level ini!',
-            details: [{ icon: '💾', text: 'Simpan waktumu untuk jadi peringkat 1 di papan peringkat.' }]
+            headline: '🏆 Kamu yang pertama di level ini',
+            details: [{ icon: '💾', text: 'Simpan waktumu, langsung jadi peringkat 1.' }]
         };
     }
 
@@ -4025,8 +4035,8 @@ function buildAdvmathRankInsight(timeTaken, mistakes, burned, hints, records) {
         const gap = top.time - timeTaken;
         details.push({ icon: gap > 0 ? '⚡' : '🎯', text: gap > 0
             ? `${formatAdvmathDuration(gap)} lebih cepat dari rekor sebelumnya (${top.name}).`
-            : 'Waktu sama dengan rekor sebelumnya, tapi soal hangus/hint/salahmu lebih sedikit.' });
-        return { rank, qualifies, tone: 'top', headline: '👑 Rekor baru! Kamu peringkat 1', details };
+            : 'Waktu sama dengan rekor sebelumnya, tapi soal hangus, hint, dan salahmu lebih sedikit.' });
+        return { rank, qualifies, tone: 'top', headline: '👑 Rekor baru. Kamu peringkat 1', details };
     }
 
     const gapToTop = timeTaken - top.time;
@@ -4035,21 +4045,21 @@ function buildAdvmathRankInsight(timeTaken, mistakes, burned, hints, records) {
         const above = sorted[rank - 2];
         details.push({ icon: '🐢', text: gapToTop > 0
             ? `${formatAdvmathDuration(gapToTop)} lebih lambat dari peringkat 1.`
-            : 'Waktu sama dengan peringkat 1, tapi kalah di soal hangus/hint/salah.' });
+            : 'Waktu sama dengan peringkat 1, tapi kalah di soal hangus, hint, dan salah.' });
         details.push({ icon: '🚀', text: `${formatAdvmathDuration(advmathSecondsToBeat(timeTaken, above))} lagi untuk naik ke peringkat ${rank - 1}.` });
-        return { rank, qualifies, tone: 'top', headline: `${medals[rank]} Kamu masuk 3 besar! Peringkat ${rank}`, details };
+        return { rank, qualifies, tone: 'top', headline: `${medals[rank]} Masuk 3 besar, peringkat ${rank}`, details };
     }
 
     if (qualifies) {
         details.push({ icon: '🥉', text: `${formatAdvmathDuration(advmathSecondsToBeat(timeTaken, third))} lagi untuk masuk 3 besar.` });
         details.push({ icon: '🐢', text: `${formatAdvmathDuration(gapToTop)} lebih lambat dari peringkat 1.` });
-        return { rank, qualifies, tone: 'ok', headline: `🎯 Kamu masuk papan peringkat! Peringkat ${rank}`, details };
+        return { rank, qualifies, tone: 'ok', headline: `🎯 Kamu masuk papan peringkat, peringkat ${rank}`, details };
     }
 
     details.push({ icon: '📉', text: `${formatAdvmathDuration(timeTaken - lastPlace.time)} lebih lambat dari peringkat ${MAX_ADVMATH_LEADERBOARD}.` });
     details.push({ icon: '🎯', text: `${formatAdvmathDuration(advmathSecondsToBeat(timeTaken, lastPlace))} lagi untuk masuk papan peringkat.` });
-    details.push({ icon: '💡', text: 'Tip: setiap salah, hint, dan soal hangus menambah waktu. Jawab yakin supaya waktumu singkat.' });
-    return { rank, qualifies, tone: 'miss', headline: '💪 Belum masuk papan peringkat, ayo coba lagi!', details };
+    details.push({ icon: '💡', text: 'Tip: salah, hint, dan soal hangus menambah waktu. Jawab dengan yakin.' });
+    return { rank, qualifies, tone: 'miss', headline: '💪 Belum masuk papan peringkat. Coba sekali lagi.', details };
 }
 
 function renderAdvmathRankInsight(insight) {
@@ -4098,7 +4108,7 @@ async function saveAdvmathPlayerRecord() {
     const nameInput = document.getElementById('advmathPlayerName');
     const playerName = nameInput.value.trim();
     if (!playerName) {
-        showToast('danger', 'Isi dulu namamu ya!');
+        showToast('danger', 'Isi namamu dulu.');
         nameInput.focus();
         return;
     }
@@ -4131,7 +4141,7 @@ async function saveAdvmathPlayerRecord() {
     advmathLastSavedRecord = { count: savedCount, name: playerName, time: record.time, mistakes: record.mistakes, hints: record.hints, burned: record.burned };
 
     if (saveResult && saveResult.error) {
-        showToast('danger', `Gagal simpan online: ${saveResult.error}`, 6000);
+        showToast('danger', `Belum bisa simpan online: ${saveResult.error}`, 6000);
     }
 
     goToAdvmathDashboard(String(savedCount));
@@ -4188,7 +4198,7 @@ async function createAdvmathDuelRoom(count) {
     const nameInput = document.getElementById('advmathDuelCreateName');
     const name = nameInput.value.trim();
     if (!name) {
-        showToast('danger', 'Isi dulu namamu ya!');
+        showToast('danger', 'Isi namamu dulu.');
         nameInput.focus();
         return;
     }
@@ -4223,7 +4233,7 @@ async function createAdvmathDuelRoom(count) {
             guest: null
         });
     } catch (e) {
-        showToast('danger', `Gagal membuat room: ${e.code || e.message}`, 5000);
+        showToast('danger', `Belum bisa membuat room: ${e.code || e.message}`, 5000);
         return;
     }
 
@@ -4241,7 +4251,7 @@ async function createAdvmathDuelRoom(count) {
 document.getElementById('advmathDuelCopyCodeButton').addEventListener('click', () => {
     const code = document.getElementById('advmathDuelRoomCodeDisplay').textContent;
     if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(code).then(() => showToast('success', 'Kode disalin!')).catch(() => {});
+        navigator.clipboard.writeText(code).then(() => showToast('success', 'Kode disalin ✅')).catch(() => {});
     }
 });
 
@@ -4264,7 +4274,7 @@ async function joinAdvmathDuelRoom() {
         return;
     }
     if (!name) {
-        showToast('danger', 'Isi dulu namamu ya!');
+        showToast('danger', 'Isi namamu dulu.');
         nameInput.focus();
         return;
     }
@@ -4277,7 +4287,7 @@ async function joinAdvmathDuelRoom() {
         const ref = advmathDuelDocRef(code);
         const snap = await ref.get();
         if (!snap.exists) {
-            showToast('danger', 'Kode room tidak ditemukan.');
+            showToast('danger', 'Kode room tidak ditemukan. Cek lagi ya.');
             return;
         }
         const room = snap.data();
@@ -4304,7 +4314,7 @@ async function joinAdvmathDuelRoom() {
         listenToAdvmathDuelRoom(code);
         startAdvmathDuelHeartbeat();
     } catch (e) {
-        showToast('danger', `Gagal gabung room: ${e.code || e.message}`, 5000);
+        showToast('danger', `Belum bisa gabung room: ${e.code || e.message}`, 5000);
     } finally {
         submitBtn.disabled = false;
         submitBtn.textContent = 'Gabung';
@@ -4481,7 +4491,7 @@ async function endAdvmathDuelGame() {
             tx.update(roomRef, update);
         });
     } catch (e) {
-        showToast('danger', `Gagal mengirim hasil duel: ${e.code || e.message}`, 5000);
+        showToast('danger', `Hasil duel belum terkirim: ${e.code || e.message}`, 5000);
     }
 
     if (!advmathDuelState.resultShown) {
@@ -4508,10 +4518,10 @@ async function showAdvmathDuelResult(room) {
 
     const banner = document.getElementById('advmathDuelWinnerBanner');
     if (isDraw) {
-        banner.textContent = '🤝 Seri!';
+        banner.textContent = '🤝 Seri';
         banner.className = 'duel-winner-banner is-lose';
     } else {
-        banner.textContent = amIWinner ? '🏆 Kamu Menang!' : `😅 ${opponent ? opponent.name : 'Lawan'} Menang`;
+        banner.textContent = amIWinner ? '🏆 Kamu menang' : `${opponent ? opponent.name : 'Lawan'} menang`;
         banner.className = `duel-winner-banner ${amIWinner ? 'is-win' : 'is-lose'}`;
     }
 
@@ -4552,7 +4562,7 @@ document.getElementById('advmathDuelRematchButton').addEventListener('click', as
         });
         showModal('advmathDuelRematchWaitingModal');
     } catch (e) {
-        showToast('danger', `Gagal mengirim ajakan main lagi: ${e.code || e.message}`, 5000);
+        showToast('danger', `Ajakan main lagi belum terkirim: ${e.code || e.message}`, 5000);
         showModal('advmathDuelResultModal');
     }
 });
@@ -4588,7 +4598,7 @@ document.getElementById('advmathDuelRematchAcceptButton').addEventListener('clic
             'guest.progress': 0, 'guest.time': null, 'guest.mistakes': 0, 'guest.burned': 0, 'guest.hints': 0, 'guest.finishedAt': null, 'guest.lastSeen': Date.now()
         });
     } catch (e) {
-        showToast('danger', `Gagal memulai ulang duel: ${e.code || e.message}`, 5000);
+        showToast('danger', `Duel belum bisa dimulai ulang: ${e.code || e.message}`, 5000);
     }
 });
 
