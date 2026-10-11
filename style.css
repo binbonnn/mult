@@ -1,26 +1,79 @@
+/* =====================================================================
+   SISTEM TEMA (satu ekosistem, enam karakter)
+   - Putih tunggal --white: identik di hub dan semua game.
+   - Setiap halaman memakai tepat tiga warna pendamping (--main, --pale, --soft)
+     yang diatur lewat atribut body[data-theme] (diganti oleh switchView()).
+   - Warna status (benar/salah/peringatan) adalah warna fungsional, bukan warna identitas.
+   - Tema Game 4 & 5 disimpan di bagian paling bawah file ini (PENDING, belum dipakai halaman).
+===================================================================== */
 :root {
-    --color-primary: #8b6cff;
-    --color-primary-dark: #5b3ccf;
-    --color-secondary: #ff7ad9;
-    --color-secondary-dark: #c93fb0;
-    --color-accent: #ffd166;
-    --color-success: #34d399;
-    --color-success-dark: #047857;
-    --color-danger: #ff6b6b;
-    --color-danger-dark: #b91c1c;
-    --color-text: #2e1065;
-    --color-text-on-space: #eae6ff;
-    --color-card-bg: #fffdf7;
-    --color-space-1: #05061c;
-    --color-space-2: #12103a;
-    --color-space-3: #2a1a5e;
-    --color-space-4: #4a2a8a;
-    --radius-lg: 24px;
+    --white: #FCFDFE;
+    --ink: #1F2A3A;
+    --ink-soft: #4B596B;
+    --ok: #277A5C;
+    --ok-dark: #1F6B50;
+    --ok-bg: #DDF1E8;
+    --bad: #AE3F3A;
+    --bad-dark: #9A3631;
+    --bad-bg: #FBE6E3;
+    --warn: #7A4C12;
+    --warn-bg: #FBEBD3;
+    --radius-lg: 22px;
     --radius-md: 16px;
     --radius-sm: 10px;
-    --shadow-playful: 0 8px 24px rgba(139, 108, 255, 0.4);
-    --shadow-soft: 0 4px 10px rgba(0, 0, 0, 0.3);
-    --font-playful: 'Baloo 2', system-ui, -apple-system, sans-serif;
+    --shadow-soft: 0 1px 2px rgba(31, 42, 58, 0.06), 0 4px 14px rgba(31, 42, 58, 0.07);
+    --shadow-playful: 0 6px 22px rgba(31, 42, 58, 0.14);
+    --font-stack-fallback: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+/* Tema bawaan (sebelum JS jalan) = hub */
+body,
+body[data-theme="hub"] {
+    --main: #64748B;
+    --pale: #DCE6F1;
+    --soft: #B8D4CF;
+    --on-main: #FFFFFF;
+    --font-playful: 'Plus Jakarta Sans', var(--font-stack-fallback);
+}
+
+body[data-theme="g1"] {
+    --main: #43A88C;
+    --pale: #D9F2E8;
+    --soft: #A9D9C5;
+    --on-main: var(--ink);
+    --font-playful: 'Nunito', var(--font-stack-fallback);
+}
+
+body[data-theme="g2"] {
+    --main: #5796CC;
+    --pale: #DCECF9;
+    --soft: #B9C9EE;
+    --on-main: var(--ink);
+    --font-playful: 'Atkinson Hyperlegible', var(--font-stack-fallback);
+}
+
+body[data-theme="g3"] {
+    --main: #6969B8;
+    --pale: #E5E4F8;
+    --soft: #B8B7E4;
+    --on-main: #FFFFFF;
+    --font-playful: 'Rubik', var(--font-stack-fallback);
+}
+
+/* Nama variabel lama dipetakan ke token baru agar aturan lama ikut berganti warna */
+body {
+    --color-primary: var(--main);
+    --color-primary-dark: var(--ink);
+    --color-secondary: var(--soft);
+    --color-secondary-dark: var(--ink-soft);
+    --color-accent: var(--main);
+    --color-success: var(--ok);
+    --color-success-dark: var(--ok-dark);
+    --color-danger: var(--bad);
+    --color-danger-dark: var(--bad-dark);
+    --color-text: var(--ink);
+    --color-text-on-space: var(--ink);
+    --color-card-bg: var(--pale);
 }
 
 * {
@@ -38,24 +91,10 @@ html {
 }
 
 body {
-    background-color: var(--color-space-1);
-    background-image:
-        radial-gradient(1.6px 1.6px at 10% 15%, #ffffff 100%, transparent 100%),
-        radial-gradient(1.2px 1.2px at 25% 45%, #ffffff 100%, transparent 100%),
-        radial-gradient(1.8px 1.8px at 40% 8%, #ffffff 100%, transparent 100%),
-        radial-gradient(1.2px 1.2px at 60% 30%, #ffffff 100%, transparent 100%),
-        radial-gradient(2px 2px at 78% 60%, #ffffff 100%, transparent 100%),
-        radial-gradient(1.3px 1.3px at 92% 20%, #ffffff 100%, transparent 100%),
-        radial-gradient(1.5px 1.5px at 15% 75%, #ffffff 100%, transparent 100%),
-        radial-gradient(1.1px 1.1px at 50% 85%, #ffffff 100%, transparent 100%),
-        radial-gradient(1.8px 1.8px at 85% 90%, #ffffff 100%, transparent 100%),
-        radial-gradient(1.4px 1.4px at 33% 65%, #ffffff 100%, transparent 100%),
-        radial-gradient(2.2px 2.2px at 70% 12%, #ffe9a8 100%, transparent 100%),
-        radial-gradient(2.2px 2.2px at 5% 55%, #ffe9a8 100%, transparent 100%),
-        linear-gradient(160deg, var(--color-space-1) 0%, var(--color-space-2) 45%, var(--color-space-3) 78%, var(--color-space-4) 100%);
-    background-repeat: repeat, repeat, repeat, repeat, repeat, repeat, repeat, repeat, repeat, repeat, repeat, repeat, no-repeat;
-    background-size: 220px 220px, 220px 220px, 220px 220px, 220px 220px, 220px 220px, 220px 220px, 220px 220px, 220px 220px, 220px 220px, 220px 220px, 220px 220px, 220px 220px, cover;
-    background-attachment: fixed;
+    background-color: var(--white);
+    color: var(--ink);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
 }
 
 @keyframes twinkle {
@@ -68,23 +107,6 @@ body {
     50% {
         opacity: 1;
     }
-}
-
-body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    z-index: -1;
-    pointer-events: none;
-    background-image:
-        radial-gradient(1.4px 1.4px at 18% 22%, #ffffff 100%, transparent 100%),
-        radial-gradient(1.6px 1.6px at 55% 50%, #ffffff 100%, transparent 100%),
-        radial-gradient(1.2px 1.2px at 80% 35%, #ffffff 100%, transparent 100%),
-        radial-gradient(1.5px 1.5px at 30% 90%, #ffffff 100%, transparent 100%),
-        radial-gradient(1.3px 1.3px at 95% 70%, #ffffff 100%, transparent 100%);
-    background-repeat: repeat;
-    background-size: 260px 260px;
-    animation: twinkle 3.2s ease-in-out infinite;
 }
 
 #app {
@@ -162,58 +184,6 @@ body::before {
     display: flex;
     gap: 8px;
     flex-shrink: 0;
-}
-
-.deco-moon {
-    position: absolute;
-    top: -26px;
-    right: -6px;
-    width: 74px;
-    height: 74px;
-    border-radius: 50%;
-    background: radial-gradient(circle at 32% 30%, #fdfdfd, #d8d8e6 55%, #b7b7cc 100%);
-    box-shadow:
-        inset -8px -8px 14px rgba(90, 90, 120, 0.35),
-        14px 14px 6px -8px rgba(120, 100, 20, 0.25),
-        20px 24px 4px -10px rgba(150, 140, 60, 0.2),
-        0 10px 5px -4px rgba(150, 140, 60, 0.18),
-        0 0 30px rgba(255, 255, 255, 0.25);
-    z-index: 0;
-    opacity: 0.9;
-}
-
-.deco-planet {
-    position: absolute;
-    bottom: -18px;
-    left: 6px;
-    width: 30px;
-    height: 30px;
-    border-radius: 50%;
-    background: radial-gradient(circle at 35% 30%, #ffb37a, #d9662f 60%, #a03e14 100%);
-    z-index: 0;
-    opacity: 0.85;
-}
-
-.deco-planet::after {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 52px;
-    height: 14px;
-    border: 2px solid rgba(255, 210, 150, 0.55);
-    border-radius: 50%;
-    transform: translate(-50%, -50%) rotate(-18deg);
-}
-
-.deco-constellation {
-    position: absolute;
-    top: 2px;
-    right: 54px;
-    width: 130px;
-    height: auto;
-    z-index: 0;
-    opacity: 0.8;
 }
 
 .dashboard-heading h1 {
@@ -1708,169 +1678,7 @@ button,
     }
 }
 
-/* ============ HUB: PILIH GAME ============ */
-.hub-header {
-    margin-bottom: 22px;
-}
-
-.game-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 14px;
-}
-
-.game-card {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    min-height: 148px;
-    border: 1px solid rgba(255, 255, 255, 0.14);
-    border-radius: var(--radius-lg);
-    padding: 22px 12px;
-    cursor: pointer;
-    text-align: center;
-    font-family: var(--font-playful);
-    color: var(--color-text-on-space);
-    background: linear-gradient(160deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.02));
-    box-shadow: var(--shadow-soft);
-    transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
-}
-
-.game-card:hover {
-    transform: translateY(-3px);
-}
-
-.game-card:active {
-    transform: scale(0.97);
-}
-
-.game-card-icon {
-    font-size: 38px;
-    line-height: 1;
-}
-
-.game-card-title {
-    font-size: 14px;
-    font-weight: 800;
-    line-height: 1.25;
-}
-
-.game-card-subtitle {
-    font-size: 11px;
-    color: #cfc5ff;
-    font-weight: 600;
-}
-
-.game-card-badge {
-    margin-top: 2px;
-    font-size: 9.5px;
-    font-weight: 800;
-    letter-spacing: 0.4px;
-    text-transform: uppercase;
-    padding: 3px 10px;
-    border-radius: 999px;
-    background: rgba(255, 255, 255, 0.12);
-    color: #cfc5ff;
-}
-
-/* Kartu game yang sudah aktif (bisa dimainkan): tampil lebar penuh, menonjol */
-.game-card-active {
-    grid-column: span 2;
-    flex-direction: row;
-    justify-content: center;
-    gap: 16px;
-    min-height: 100px;
-}
-
-.game-card-active .game-card-icon {
-    font-size: 46px;
-}
-
-.game-card-active .game-card-title {
-    font-size: 17px;
-}
-
-.game-card-multiply {
-    border-color: rgba(255, 209, 102, 0.55);
-    background: linear-gradient(135deg, rgba(255, 209, 102, 0.22), rgba(139, 108, 255, 0.16));
-    box-shadow: 0 10px 26px rgba(255, 209, 102, 0.2);
-}
-
-.game-card-multiply .game-card-icon {
-    filter: drop-shadow(0 4px 10px rgba(255, 209, 102, 0.45));
-}
-
-.game-card-knowledge.game-card-active, .game-card-advmath.game-card-active {
-    border-color: rgba(56, 189, 248, 0.55);
-    background: linear-gradient(135deg, rgba(56, 189, 248, 0.22), rgba(139, 108, 255, 0.16));
-    box-shadow: 0 10px 26px rgba(56, 189, 248, 0.2);
-}
-
-.game-card-knowledge.game-card-active .game-card-icon, .game-card-advmath.game-card-active .game-card-icon {
-    filter: drop-shadow(0 4px 10px rgba(56, 189, 248, 0.45));
-}
-
-/* Kartu-kartu yang belum tersedia: warna aksen beda per game, tapi tetap terlihat "belum aktif" */
-.game-card.is-coming-soon,
-.game-card-soon {
-    opacity: 0.8;
-    border-style: dashed;
-}
-
-.game-card.is-coming-soon:hover,
-.game-card-soon:hover {
-    opacity: 1;
-}
-
-.game-card.is-coming-soon .game-card-icon,
-.game-card-soon .game-card-icon {
-    filter: grayscale(0.2);
-    opacity: 0.85;
-}
-
-.game-card-advanced {
-    border-color: rgba(255, 122, 217, 0.4);
-}
-
-.game-card-advanced .game-card-badge {
-    background: rgba(255, 122, 217, 0.18);
-    color: #ffd1ef;
-}
-
-@media (min-width: 768px) {
-    .game-grid {
-        grid-template-columns: repeat(4, 1fr);
-        gap: 18px;
-    }
-
-    .game-card {
-        min-height: 180px;
-        padding: 28px 16px;
-    }
-
-    .game-card-icon {
-        font-size: 46px;
-    }
-
-    .game-card-title {
-        font-size: 16px;
-    }
-
-    .game-card-active {
-        grid-column: span 4;
-        min-height: 120px;
-    }
-
-    .game-card-active .game-card-icon {
-        font-size: 56px;
-    }
-
-    .game-card-active .game-card-title {
-        font-size: 20px;
-    }
-}
+/* HUB: lihat bagian "HUB BARU" di akhir file */
 
 /* ============ BREADCRUMB KEMBALI KE HUB ============ */
 .breadcrumb-back {
@@ -2084,18 +1892,6 @@ button,
     .score-rules-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
     .score-rule.is-loss { grid-column: auto; }
     .score-rule-text { font-size: 14px; }
-}
-
-
-/* Kartu hub Perkalian 1-10 Lanjutan: aksen hijau supaya mudah dibedakan dari dua game lain */
-.game-card-advmath.game-card-active {
-    border-color: rgba(52, 211, 153, 0.55);
-    background: linear-gradient(135deg, rgba(52, 211, 153, 0.22), rgba(139, 108, 255, 0.16));
-    box-shadow: 0 10px 26px rgba(52, 211, 153, 0.2);
-}
-
-.game-card-advmath.game-card-active .game-card-icon {
-    filter: drop-shadow(0 4px 10px rgba(52, 211, 153, 0.45));
 }
 
 
@@ -2504,4 +2300,1353 @@ button,
 
 @media (prefers-reduced-motion: reduce) {
     .kn-opt-explain { animation: none; }
+}
+
+
+/* =====================================================================
+   LAPISAN TEMA BARU: warna, font, dan bentuk permukaan
+   (hanya tampilan; mekanisme game tidak disentuh)
+   Aturan di bawah ini sengaja ditaruh paling akhir agar menggantikan
+   gaya lama bertema gelap di atasnya.
+===================================================================== */
+
+/* ---- Teks & judul ---- */
+.dashboard-heading h1 {
+    color: var(--ink);
+    text-shadow: none;
+    letter-spacing: -0.01em;
+    font-weight: 800;
+}
+
+.dashboard-heading h1::after {
+    content: '';
+    display: block;
+    width: 44px;
+    height: 5px;
+    border-radius: 999px;
+    background: var(--main);
+    margin: 10px 0 8px;
+}
+
+.subtitle {
+    color: var(--ink-soft);
+    opacity: 1;
+    font-size: 15px;
+}
+
+.breadcrumb-back {
+    color: var(--ink-soft);
+    font-size: 14px;
+    min-height: 44px;
+    padding: 8px 4px;
+    margin-bottom: 2px;
+}
+
+.breadcrumb-back:hover {
+    color: var(--ink);
+}
+
+/* ---- Tombol ikon ---- */
+.icon-button {
+    background: var(--pale);
+    color: var(--ink);
+    border: 1px solid var(--soft);
+    box-shadow: none;
+}
+
+.icon-button:hover {
+    background: var(--soft);
+    box-shadow: none;
+}
+
+/* ---- Panel papan peringkat ---- */
+.leaderboard-panel {
+    background: var(--pale);
+    border: 1px solid var(--soft);
+    box-shadow: none;
+}
+
+.leaderboard-tabs {
+    background: var(--white);
+    border: 1px solid var(--soft);
+}
+
+.leaderboard-tab {
+    color: var(--ink-soft);
+}
+
+.leaderboard-tab:hover:not(.is-active) {
+    background: var(--pale);
+    color: var(--ink);
+}
+
+.leaderboard-tab.is-active {
+    background: var(--main);
+    color: var(--on-main);
+    box-shadow: none;
+}
+
+/* podium: peringkat dibedakan oleh tinggi alas, angka, dan medali, bukan hanya warna */
+.podium-medal {
+    filter: none;
+}
+
+.podium-first .podium-avatar {
+    background: var(--white);
+    border-color: var(--main);
+    animation: goldGlow 2.4s ease-in-out infinite;
+}
+
+.podium-second .podium-avatar {
+    background: var(--white);
+    border-color: var(--soft);
+    box-shadow: none;
+}
+
+.podium-third .podium-avatar {
+    background: var(--white);
+    border-color: var(--soft);
+    border-style: dashed;
+    box-shadow: none;
+}
+
+.podium-avatar {
+    font-size: calc(var(--avatar-size) * 0.5);
+}
+
+.podium-first .podium-avatar-wrap::before,
+.podium-first .podium-avatar-wrap::after {
+    color: var(--main);
+    text-shadow: none;
+}
+
+.podium-name {
+    color: var(--ink);
+}
+
+.podium-first .podium-score,
+.podium-second .podium-score,
+.podium-third .podium-score {
+    color: var(--ink);
+    text-shadow: none;
+}
+
+.podium-mistakes {
+    color: var(--ink-soft);
+}
+
+.podium-base {
+    box-shadow: none;
+}
+
+.podium-base span {
+    color: var(--ink);
+    opacity: 0.7;
+}
+
+.podium-first .podium-base {
+    background: var(--main);
+}
+
+.podium-first .podium-base span {
+    color: var(--on-main);
+    opacity: 0.9;
+}
+
+.podium-second .podium-base {
+    background: var(--soft);
+}
+
+.podium-third .podium-base {
+    background: var(--white);
+    border: 1px solid var(--soft);
+    border-bottom: none;
+}
+
+.you-chip {
+    background: var(--main);
+    color: var(--on-main);
+}
+
+@keyframes goldGlow {
+
+    0%,
+    100% {
+        box-shadow: 0 0 0 3px var(--soft);
+    }
+
+    50% {
+        box-shadow: 0 0 0 7px var(--soft);
+    }
+}
+
+.leaderboard-loading,
+.rank-list-empty {
+    color: var(--ink-soft);
+}
+
+.rank-list-row {
+    background: var(--white);
+    border: 1px solid var(--soft);
+}
+
+.rank-list-row.is-you {
+    border-color: var(--main);
+    border-width: 2px;
+    background: var(--white);
+}
+
+.rank-list-position {
+    color: var(--ink-soft);
+}
+
+.rank-list-avatar {
+    background: var(--pale);
+}
+
+.rank-list-name,
+.rank-list-score {
+    color: var(--ink);
+}
+
+.rank-list-dots {
+    border-bottom-color: var(--soft);
+}
+
+.rank-list-score small {
+    color: var(--ink-soft);
+}
+
+/* ---- Form & avatar ---- */
+.save-record-label {
+    color: var(--ink-soft);
+    font-size: 13px;
+}
+
+.avatar-option {
+    border: 2px solid var(--soft);
+    background: var(--white);
+}
+
+.avatar-option.is-selected {
+    border-color: var(--main);
+    background: var(--pale);
+    box-shadow: 0 0 0 3px var(--soft);
+}
+
+.playful-input {
+    background: var(--white);
+    color: var(--ink);
+    border: 2px solid var(--soft);
+}
+
+.playful-input:focus {
+    background: var(--white);
+    color: var(--ink);
+    border-color: var(--main);
+    box-shadow: 0 0 0 3px var(--soft);
+    outline: none;
+}
+
+.playful-input::placeholder {
+    color: #5F6B7C;
+    opacity: 1;
+}
+
+/* ---- Tombol ---- */
+.btn-playful {
+    box-shadow: none;
+    letter-spacing: 0.005em;
+}
+
+.btn-playful:hover {
+    filter: brightness(0.95);
+}
+
+.btn-playful-primary,
+.btn-playful-success {
+    background: var(--main);
+    color: var(--on-main);
+}
+
+.btn-playful-secondary {
+    background: var(--soft);
+    color: var(--ink);
+}
+
+.btn-playful-danger {
+    background: var(--bad);
+    color: #fff;
+}
+
+.btn-playful-outline {
+    background: transparent;
+    border: 2px solid var(--main);
+    color: var(--ink);
+}
+
+.btn-playful-outline:hover {
+    background: var(--pale);
+    filter: none;
+}
+
+.btn-start-game {
+    box-shadow: 0 0 0 5px var(--white);
+}
+
+/* ---- Pilihan jumlah soal / mode duel ---- */
+.count-option-button {
+    background: var(--pale);
+    border: 2px solid var(--soft);
+    color: var(--ink);
+}
+
+.count-option-button:hover {
+    border-color: var(--main);
+    background: var(--white);
+}
+
+.count-option-emoji {
+    font-size: 26px;
+    width: 34px;
+    text-align: center;
+    color: var(--main);
+}
+
+.count-option-text strong {
+    color: var(--ink);
+}
+
+.count-option-text small {
+    color: var(--ink-soft);
+    opacity: 1;
+    font-size: 13px;
+}
+
+/* ---- Layar game: topbar, progres, soal, keypad ---- */
+#progressLabel {
+    color: var(--ink);
+}
+
+.progress-bar-track {
+    background: var(--pale);
+    border: 1px solid var(--soft);
+}
+
+.progress-bar-fill {
+    background: var(--main);
+}
+
+.duel-opponent-fill {
+    background: var(--ink-soft);
+}
+
+#stopwatch,
+.advmath-timer {
+    background-color: var(--pale);
+    color: var(--ink);
+    border: 1px solid var(--soft);
+    box-shadow: none;
+}
+
+#question {
+    background: var(--pale);
+    color: var(--ink);
+    border: 2px solid var(--soft);
+    box-shadow: none;
+}
+
+.answer-input {
+    background: var(--white);
+    color: var(--ink);
+    border: 2px solid var(--soft);
+    box-shadow: none;
+}
+
+.answer-input:focus {
+    border-color: var(--main);
+    box-shadow: 0 0 0 3px var(--soft);
+}
+
+.answer-input::placeholder {
+    color: #5F6B7C;
+    opacity: 1;
+}
+
+.keypad-btn {
+    background: var(--pale);
+    color: var(--ink);
+    border: 1px solid var(--soft);
+    box-shadow: none;
+}
+
+.keypad-btn:hover:not(:disabled) {
+    background: var(--soft);
+}
+
+.keypad-btn-delete {
+    background: var(--bad-bg);
+    color: var(--bad-dark);
+    border-color: transparent;
+}
+
+.keypad-btn-delete:hover:not(:disabled) {
+    background: var(--bad-bg);
+    filter: brightness(0.96);
+}
+
+.keypad-btn-submit {
+    background: var(--main);
+    color: var(--on-main);
+    border-color: transparent;
+}
+
+.keypad-btn-submit:hover:not(:disabled) {
+    background: var(--main);
+    filter: brightness(0.95);
+}
+
+/* ---- Countdown ---- */
+.countdown-overlay {
+    background: rgba(252, 253, 254, 0.96);
+    backdrop-filter: blur(6px);
+}
+
+.countdown-content {
+    color: var(--ink);
+}
+
+.countdown-number {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.7em;
+    padding: 0.08em 0.4em;
+    border-radius: 999px;
+    background: var(--pale);
+    border: 6px solid var(--main);
+    color: var(--ink);
+    font-size: clamp(56px, 22vw, 96px);
+    line-height: 1.15;
+    text-shadow: none;
+}
+
+.countdown-label {
+    color: var(--ink-soft);
+    font-size: 18px;
+    font-weight: 700;
+}
+
+/* ---- Toast ---- */
+.toast-alert {
+    background: var(--white);
+    color: var(--ink);
+    border: 2px solid var(--soft);
+    box-shadow: var(--shadow-playful);
+    white-space: normal;
+    text-align: center;
+    max-width: min(92vw, 440px);
+    border-radius: 18px;
+    line-height: 1.35;
+}
+
+.toast-alert.toast-success {
+    color: var(--ok-dark);
+    border-color: var(--ok);
+}
+
+.toast-alert.toast-danger {
+    color: var(--bad-dark);
+    border-color: var(--bad);
+}
+
+/* ---- Modal ---- */
+.modal-backdrop {
+    --bs-backdrop-bg: #1F2A3A;
+    --bs-backdrop-opacity: 0.45;
+}
+
+.playful-modal {
+    background: var(--white);
+    color: var(--ink);
+    border: 1px solid var(--soft);
+    border-top: 5px solid var(--main);
+    box-shadow: var(--shadow-playful);
+}
+
+.playful-modal .modal-header,
+.playful-modal .modal-footer {
+    border-color: var(--pale);
+}
+
+.playful-modal .modal-title {
+    font-weight: 800;
+    color: var(--ink);
+}
+
+.playful-modal .btn-close {
+    filter: none;
+    opacity: 0.7;
+}
+
+.multiplication-cell {
+    border: 1px solid var(--soft);
+    background: var(--pale);
+}
+
+.multiplication-title {
+    color: var(--ink);
+}
+
+.multiplication-line strong {
+    color: var(--ink);
+}
+
+.rank-insight {
+    background: var(--pale);
+    border: 1px solid var(--soft);
+}
+
+.rank-insight.is-top {
+    border: 2px solid var(--main);
+    background: var(--pale);
+}
+
+.rank-insight.is-miss {
+    border: 1px dashed var(--ink-soft);
+}
+
+/* ---- Status koneksi papan peringkat ---- */
+.leaderboard-status {
+    color: var(--ink-soft);
+    font-size: 12px;
+}
+
+.leaderboard-status.is-online {
+    color: var(--ok-dark);
+}
+
+.leaderboard-status.is-local {
+    color: var(--warn);
+}
+
+.leaderboard-status.is-error {
+    color: var(--bad-dark);
+}
+
+/* ---- Duel ---- */
+.duel-room-code {
+    background: var(--white);
+    border: 2px dashed var(--main);
+    color: var(--ink);
+}
+
+.duel-waiting-text {
+    color: var(--ink-soft);
+}
+
+.duel-spinner {
+    border-color: var(--soft);
+    border-top-color: var(--main);
+}
+
+.duel-opponent-bar {
+    background: var(--white);
+    border: 1px solid var(--soft);
+}
+
+.duel-opponent-avatar {
+    background: var(--pale);
+}
+
+.duel-opponent-name {
+    color: var(--ink-soft);
+    font-size: 12px;
+}
+
+.duel-opponent-count {
+    color: var(--ink);
+}
+
+.duel-disconnect-banner {
+    background: var(--bad-bg);
+    border: 1px solid var(--bad);
+    color: var(--bad-dark);
+}
+
+.duel-banner-link {
+    color: var(--ink);
+}
+
+.duel-winner-banner.is-win {
+    background: var(--pale);
+    border: 2px solid var(--main);
+    color: var(--ink);
+}
+
+.duel-winner-banner.is-lose {
+    background: var(--pale);
+    color: var(--ink);
+}
+
+.duel-result-card {
+    background: var(--white);
+    border: 1px solid var(--soft);
+}
+
+.duel-result-card.is-winner {
+    border: 2px solid var(--main);
+    background: var(--pale);
+}
+
+.duel-result-name,
+.duel-result-stat {
+    color: var(--ink);
+}
+
+.duel-result-label {
+    color: var(--ink-soft);
+    font-size: 11.5px;
+}
+
+/* ---- Aturan skor / waktu ---- */
+.score-rules {
+    background: var(--pale);
+    border: 1px solid var(--soft);
+}
+
+.score-rules-title {
+    color: var(--ink);
+}
+
+.score-rule {
+    background: var(--white);
+    border-left-color: var(--ok);
+}
+
+.score-rule-points {
+    color: var(--ok-dark);
+}
+
+.score-rule.is-loss {
+    border-left-color: var(--bad);
+}
+
+.score-rule.is-loss .score-rule-points {
+    color: var(--bad-dark);
+}
+
+.score-rule.is-hint {
+    border-left-color: var(--warn);
+}
+
+.score-rule.is-hint .score-rule-points {
+    color: var(--warn);
+}
+
+.score-rules-note,
+.score-rules-sub {
+    color: var(--ink-soft);
+    opacity: 1;
+}
+
+/* ---- Game 2 & 3: kartu soal & opsi ---- */
+.knowledge-question-card,
+.advmath-question-card {
+    background: var(--pale);
+    color: var(--ink);
+    border: 2px solid var(--soft);
+    box-shadow: none;
+}
+
+.knowledge-option-btn,
+.advmath-option-btn {
+    background: var(--white);
+    color: var(--ink);
+    border: 2px solid var(--soft);
+    box-shadow: none;
+}
+
+.knowledge-option-btn:hover:not(:disabled),
+.advmath-option-btn:hover:not(:disabled) {
+    border-color: var(--main);
+    background: var(--pale);
+}
+
+.knowledge-option-btn:disabled,
+.advmath-option-btn:disabled {
+    color: var(--ink);
+    opacity: 0.75;
+}
+
+.knowledge-option-btn.is-correct,
+.advmath-option-btn.is-correct {
+    background: var(--ok);
+    border-color: var(--ok);
+    color: #fff;
+    opacity: 1;
+    box-shadow: none;
+}
+
+.knowledge-option-btn.is-wrong,
+.advmath-option-btn.is-wrong {
+    background: var(--bad);
+    border-color: var(--bad);
+    color: #fff;
+    text-decoration: none;
+    box-shadow: none;
+}
+
+.advmath-option-btn.is-wrong {
+    opacity: 0.85;
+}
+
+.knowledge-option-btn.is-wrong:hover:not(:disabled) {
+    background: var(--bad);
+    border-color: var(--bad-dark);
+}
+
+.knowledge-option-btn.is-wrong .kn-opt-text {
+    opacity: 0.95;
+}
+
+.kn-opt-cue {
+    background: rgba(0, 0, 0, 0.22);
+}
+
+.kn-opt-explain {
+    background: var(--white);
+    color: var(--ink);
+    border-left: 4px solid var(--bad);
+}
+
+.knowledge-recap {
+    background: var(--pale);
+    border: 1px solid var(--soft);
+    border-left: 5px solid var(--main);
+}
+
+.knowledge-recap-title {
+    color: var(--ink);
+}
+
+.knowledge-recap-a b {
+    color: var(--ok-dark);
+}
+
+.knowledge-recap-q {
+    opacity: 1;
+    color: var(--ink-soft);
+}
+
+/* ---- Game 3: hint, hangus, hukuman ---- */
+.advmath-penalty-chip {
+    background: var(--bad);
+    color: #fff;
+}
+
+.advmath-option-btn.is-reveal {
+    outline: 3px dashed var(--ok);
+    background: var(--ok-bg);
+    color: var(--ink);
+}
+
+.advmath-burn-banner {
+    background: var(--bad-bg);
+    border: 1px solid var(--bad);
+    color: var(--ink);
+}
+
+.advmath-hint-btn {
+    --hint-color: var(--main);
+    --hint-glow: transparent;
+    background: var(--white);
+    color: var(--ink);
+    box-shadow: none;
+    border: 1px solid var(--soft);
+}
+
+.advmath-hint-btn::before {
+    background: conic-gradient(from 0deg, var(--hint-color) calc(var(--p) * 360deg), var(--soft) 0);
+}
+
+.advmath-hint-btn[data-level="2"] {
+    --hint-color: var(--warn);
+    --hint-glow: rgba(154, 100, 32, 0.28);
+    box-shadow: 0 0 10px var(--hint-glow);
+}
+
+.advmath-hint-btn[data-level="3"] {
+    --hint-color: var(--bad);
+    --hint-glow: rgba(174, 63, 58, 0.4);
+    background: var(--bad-bg);
+    animation: advmath-flame 1.1s ease-in-out infinite alternate;
+}
+
+@keyframes advmath-flame {
+    from { box-shadow: 0 0 8px rgba(174, 63, 58, 0.30), 0 -2px 12px rgba(154, 100, 32, 0.25); }
+    to { box-shadow: 0 0 16px rgba(174, 63, 58, 0.50), 0 -5px 20px rgba(154, 100, 32, 0.38); }
+}
+
+.advmath-hint-cost {
+    color: var(--bad-dark);
+}
+
+.advmath-hint-btn.is-active .advmath-hint-status {
+    color: var(--ink);
+}
+
+.advmath-hint-btn.is-locked {
+    opacity: 0.6;
+}
+
+.advmath-hint-btn.is-expired {
+    background: #2B3140;
+    border-color: #2B3140;
+    color: #E4E8EF;
+    box-shadow: none;
+}
+
+.advmath-hint-btn.is-expired .advmath-hint-cost {
+    color: #C9D0DB;
+}
+
+.advmath-hint-btn.is-expired .advmath-hint-status {
+    color: #F2C79A;
+    text-shadow: none;
+}
+
+.advmath-hint-note,
+.advmath-hint-penalty-info {
+    color: var(--ink-soft);
+    opacity: 1;
+}
+
+.advmath-hint-clue {
+    background: var(--pale);
+    color: var(--ink);
+    border-left: 5px solid var(--main);
+}
+
+.advmath-hint-modal.is-level-3 .advmath-hint-clue {
+    background: var(--bad-bg);
+    border-left-color: var(--bad);
+}
+
+.advmath-hint-modal.is-level-3 .modal-content {
+    box-shadow: 0 0 0 3px rgba(174, 63, 58, 0.35);
+}
+
+.advmath-hint-burn-note {
+    color: var(--bad-dark);
+}
+
+@keyframes advmath-timer-hit {
+    0% { background-color: var(--bad); color: #fff; transform: scale(1.15); }
+    100% { background-color: var(--pale); color: var(--ink); transform: scale(1); }
+}
+
+/* ---- Fokus keyboard: cincin gelap yang terlihat di semua tema ---- */
+.icon-button:focus-visible,
+.leaderboard-tab:focus-visible,
+.btn-playful:focus-visible,
+.keypad-btn:focus-visible,
+.count-option-button:focus-visible,
+.avatar-option:focus-visible,
+.knowledge-option-btn:focus-visible,
+.advmath-option-btn:focus-visible,
+.advmath-hint-btn:focus-visible,
+.breadcrumb-back:focus-visible,
+.game-card:focus-visible,
+.score-rules-title:focus-visible,
+.knowledge-recap-title:focus-visible,
+.duel-banner-link:focus-visible {
+    outline: 3px solid var(--ink);
+    outline-offset: 3px;
+}
+
+@media (max-width: 380px) {
+    .countdown-label {
+        font-size: 16px;
+    }
+}
+
+.advmath-hint-btn.is-locked,
+.advmath-hint-btn.is-expired {
+    animation: none;
+}
+
+
+/* =====================================================================
+   HUB BARU: banner judul + lima tombol game ber-dekorasi
+   Setiap tombol membawa palet & font-nya sendiri lewat variabel --c-*,
+   sehingga Game 4 & 5 sudah tampil di hub tanpa mengubah halaman lain.
+   Dekorasi (.gc-decor) berada di dalam tombol (overflow hidden) dan tidak
+   menerima klik, jadi tidak menutupi tombol lain.
+===================================================================== */
+.hub-header {
+    position: relative;
+    overflow: hidden;
+    isolation: isolate;
+    margin-bottom: 20px;
+    padding: 22px 20px 20px;
+    border-radius: var(--radius-lg);
+    background: var(--pale);
+    border: 1px solid var(--soft);
+}
+
+.hub-header::before,
+.hub-header::after {
+    content: '';
+    position: absolute;
+    z-index: -1;
+    border-radius: 50%;
+    pointer-events: none;
+}
+
+.hub-header::before {
+    width: 150px;
+    height: 150px;
+    right: -40px;
+    top: -56px;
+    background: var(--soft);
+    opacity: 0.8;
+}
+
+.hub-header::after {
+    width: 70px;
+    height: 70px;
+    right: 60px;
+    bottom: -34px;
+    border: 6px solid var(--main);
+    opacity: 0.35;
+}
+
+.hub-header .dashboard-heading h1 {
+    font-size: 30px;
+}
+
+.game-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+}
+
+.game-card {
+    --c-main: #64748B;
+    --c-pale: #DCE6F1;
+    --c-soft: #B8D4CF;
+    --c-on: #fff;
+    position: relative;
+    overflow: hidden;
+    isolation: isolate;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-height: 168px;
+    padding: 22px 14px 18px;
+    border: 2px solid var(--c-soft);
+    border-radius: var(--radius-lg);
+    background: var(--c-pale);
+    color: var(--ink);
+    text-align: center;
+    cursor: pointer;
+    font-family: var(--font-playful);
+    box-shadow: none;
+    transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+}
+
+.game-card:hover {
+    transform: translateY(-3px);
+    border-color: var(--c-main);
+    box-shadow: 0 10px 22px rgba(31, 42, 58, 0.10);
+}
+
+.game-card:active {
+    transform: scale(0.98);
+}
+
+.game-card > *:not(.gc-decor) {
+    position: relative;
+    z-index: 1;
+}
+
+/* palet & font per game */
+.game-card-multiply {
+    --c-main: #43A88C;
+    --c-pale: #D9F2E8;
+    --c-soft: #A9D9C5;
+    --c-on: var(--ink);
+    font-family: 'Nunito', var(--font-stack-fallback);
+}
+
+.game-card-knowledge {
+    --c-main: #5796CC;
+    --c-pale: #DCECF9;
+    --c-soft: #B9C9EE;
+    --c-on: var(--ink);
+    font-family: 'Atkinson Hyperlegible', var(--font-stack-fallback);
+}
+
+.game-card-advmath {
+    --c-main: #6969B8;
+    --c-pale: #E5E4F8;
+    --c-soft: #B8B7E4;
+    --c-on: #fff;
+    font-family: 'Rubik', var(--font-stack-fallback);
+}
+
+.game-card-soon-4 {
+    --c-main: #C58B45;
+    --c-pale: #F8EBD5;
+    --c-soft: #EAC9A0;
+    --c-on: var(--ink);
+    font-family: 'DM Sans', var(--font-stack-fallback);
+}
+
+.game-card-soon-5 {
+    --c-main: #419B9A;
+    --c-pale: #D8F0ED;
+    --c-soft: #E9C8C0;
+    --c-on: var(--ink);
+    font-family: 'Manrope', var(--font-stack-fallback);
+}
+
+/* isi tombol */
+.game-card-icon {
+    font-size: 40px;
+    line-height: 1;
+    display: grid;
+    place-items: center;
+    width: 64px;
+    height: 64px;
+    border-radius: 20px;
+    background: var(--white);
+    border: 2px solid var(--c-soft);
+    flex-shrink: 0;
+}
+
+.game-card-body {
+    display: flex;
+    flex-direction: column;
+    align-items: inherit;
+    gap: 3px;
+    min-width: 0;
+}
+
+.game-card-title {
+    font-size: 16px;
+    font-weight: 800;
+    line-height: 1.2;
+    color: var(--ink);
+}
+
+.game-card-subtitle {
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.35;
+    color: var(--ink-soft);
+}
+
+.game-card-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 6px;
+}
+
+.gc-tag {
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1;
+    padding: 5px 10px;
+    border-radius: 999px;
+    background: var(--white);
+    border: 1px solid var(--c-soft);
+    color: var(--ink);
+}
+
+.game-card-arrow {
+    display: grid;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--c-main);
+    color: var(--c-on);
+    font-size: 20px;
+    font-weight: 800;
+    flex-shrink: 0;
+    transition: transform 0.18s ease;
+}
+
+.game-card:hover .game-card-arrow {
+    transform: translateX(3px);
+}
+
+.game-card-badge {
+    margin-top: 4px;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    padding: 5px 12px;
+    border-radius: 999px;
+    background: var(--white);
+    border: 1px dashed var(--c-main);
+    color: var(--ink);
+    opacity: 1;
+}
+
+/* tombol aktif: lebar penuh, mendatar */
+.game-card-active {
+    grid-column: span 2;
+    flex-direction: row;
+    justify-content: flex-start;
+    text-align: left;
+    gap: 14px;
+    min-height: 118px;
+    padding: 18px 16px;
+}
+
+.game-card-active .game-card-body {
+    align-items: flex-start;
+    flex: 1 1 auto;
+}
+
+.game-card-active .game-card-title {
+    font-size: 18px;
+}
+
+/* belum tersedia: garis putus-putus + lencana, bukan sekadar warna pudar */
+.game-card.is-coming-soon,
+.game-card-soon {
+    opacity: 1;
+    border-style: dashed;
+}
+
+.game-card.is-coming-soon .game-card-icon,
+.game-card-soon .game-card-icon {
+    filter: none;
+    opacity: 1;
+}
+
+/* ---- dekorasi ---- */
+.gc-decor {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    overflow: hidden;
+    border-radius: inherit;
+    pointer-events: none;
+}
+
+.gc-decor i {
+    position: absolute;
+    display: block;
+    font-style: normal;
+    transition: transform 0.4s ease;
+}
+
+.gc-blob {
+    width: 130px;
+    height: 130px;
+    right: -34px;
+    top: -46px;
+    border-radius: 50%;
+    background: var(--c-soft);
+    opacity: 0.85;
+}
+
+.gc-blob-2 {
+    width: 84px;
+    height: 84px;
+    left: -26px;
+    bottom: -30px;
+    border-radius: 50%;
+    background: var(--c-soft);
+    opacity: 0.55;
+}
+
+.gc-ring {
+    width: 58px;
+    height: 58px;
+    right: 18%;
+    bottom: -20px;
+    border-radius: 50%;
+    border: 5px solid var(--c-main);
+    opacity: 0.28;
+}
+
+.gc-dots {
+    width: 74px;
+    height: 56px;
+    left: 38%;
+    top: 8px;
+    background-image: radial-gradient(var(--c-main) 1.8px, transparent 2.2px);
+    background-size: 12px 12px;
+    opacity: 0.35;
+}
+
+.gc-stripes {
+    width: 80px;
+    height: 34px;
+    right: 8px;
+    bottom: 8px;
+    border-radius: 10px;
+    background: repeating-linear-gradient(135deg, var(--c-soft) 0 6px, transparent 6px 12px);
+    opacity: 0.9;
+}
+
+.gc-glyph {
+    font-weight: 800;
+    line-height: 1;
+    color: var(--c-main);
+    opacity: 0.3;
+}
+
+.gc-glyph-a { font-size: 34px; right: 14px; top: 10px; transform: rotate(12deg); }
+.gc-glyph-b { font-size: 24px; right: 30%; bottom: 8px; transform: rotate(-10deg); }
+.gc-glyph-c { font-size: 28px; left: 8px; top: 8px; transform: rotate(-8deg); }
+.gc-glyph-d { font-size: 20px; left: 42%; bottom: 10px; transform: rotate(8deg); }
+
+.game-card:hover .gc-blob { transform: scale(1.1); }
+.game-card:hover .gc-ring { transform: scale(1.15) rotate(20deg); }
+.game-card:hover .gc-glyph-a { transform: rotate(22deg) scale(1.1); }
+.game-card:hover .gc-glyph-c { transform: rotate(-18deg) scale(1.1); }
+
+@media (min-width: 768px) {
+    .game-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 18px;
+    }
+
+    .game-card {
+        min-height: 200px;
+        padding: 28px 18px 22px;
+    }
+
+    .game-card-active {
+        grid-column: span 2;
+        min-height: 132px;
+        padding: 22px 24px;
+        gap: 20px;
+    }
+
+    .game-card-icon {
+        width: 76px;
+        height: 76px;
+        font-size: 46px;
+    }
+
+    .game-card-title {
+        font-size: 17px;
+    }
+
+    .game-card-active .game-card-title {
+        font-size: 21px;
+    }
+
+    .game-card-subtitle {
+        font-size: 14px;
+    }
+
+    .hub-header .dashboard-heading h1 {
+        font-size: 36px;
+    }
+}
+
+@media (max-width: 340px) {
+    .game-card-active {
+        padding: 16px 12px;
+        gap: 10px;
+    }
+
+    .game-card-icon {
+        width: 54px;
+        height: 54px;
+        font-size: 32px;
+    }
+
+    .game-card-arrow {
+        width: 34px;
+        height: 34px;
+    }
+}
+
+/* =====================================================================
+   TEMA GAME 4 & 5 (DISIMPAN, PENDING)
+   Belum dipakai oleh halaman mana pun. Saat Game 4/5 dibangun, cukup beri
+   <body data-theme="g4"> / "g5" (lewat switchView) dan hapus komentar ini.
+
+   body[data-theme="g4"] {
+       --main: #C58B45; --pale: #F8EBD5; --soft: #EAC9A0; --on-main: var(--ink);
+       --font-playful: 'DM Sans', var(--font-stack-fallback);
+   }
+   body[data-theme="g5"] {
+       --main: #419B9A; --pale: #D8F0ED; --soft: #E9C8C0; --on-main: var(--ink);
+       --font-playful: 'Manrope', var(--font-stack-fallback);
+   }
+===================================================================== */
+
+/* ikon bantuan berupa huruf "?" (lebih terbaca daripada emoji pucat) */
+.dashboard-header-actions .icon-button {
+    font-size: 20px;
+    font-weight: 800;
+}
+
+/* titik-titik dekorasi pada tombol aktif dipindah ke sisi kanan supaya tidak menempel di teks */
+.game-card-active .gc-dots {
+    left: auto;
+    right: 64px;
+    top: 8px;
+    width: 52px;
+    height: 40px;
+    opacity: 0.28;
+}
+
+/* indikator level (bukan hanya warna): lingkaran terisi 1/3, 2/3, penuh */
+.level-dot {
+    display: block;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    border: 2px solid var(--main);
+    background: conic-gradient(var(--main) var(--fill, 100%), transparent 0);
+    flex-shrink: 0;
+}
+
+.level-l1 { --fill: 33%; }
+.level-l2 { --fill: 66%; }
+.level-l3 { --fill: 100%; }
+
+.toast-alert {
+    width: max-content;
+}
+
+#knowledgeTimer {
+    background-color: var(--pale);
+    color: var(--ink);
+    border: 1px solid var(--soft);
+    padding: 8px 16px;
+    border-radius: 999px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    flex-shrink: 0;
+}
+
+/* slot podium kosong: tetap terbaca, hanya lebih redup */
+.podium-spot.is-empty {
+    opacity: 0.8;
+    filter: none;
+}
+
+.podium-spot.is-empty .podium-avatar {
+    border-style: dashed;
+}
+
+.score-rules-title,
+.knowledge-recap-title {
+    gap: 10px;
 }
