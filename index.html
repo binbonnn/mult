@@ -7,14 +7,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=DM+Sans:wght@500;700&family=Manrope:wght@500;700;800&family=Nunito:wght@500;700;800&family=Plus+Jakarta+Sans:wght@500;700;800&family=Rubik:wght@500;700;800&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/css/bootstrap.min.css" rel="stylesheet"
         integrity="sha384-4bw+/aepP/YC94hEpVNVgiZdgIC5+VKNBQNGCHeKRQN+PtmoHDEXuppvnDJzQIu9" crossorigin="anonymous">
-    <link rel="stylesheet" href="style.css?v=20261013">
-    <title>Game Perkalian Seru</title>
+    <link rel="stylesheet" href="style.css?v=20261014">
+    <title>Game Hub</title>
 </head>
 
-<body>
+<body data-theme="hub">
 
     <div id="app">
 
@@ -22,40 +22,78 @@
         <section id="hubView" class="view active">
             <header class="dashboard-header hub-header">
                 <div class="dashboard-heading">
-                    <h1>🕹️ Pilih Game</h1>
-                    <p class="subtitle">Semua game kuis kumpulan kami dalam satu tempat!</p>
+                    <h1>Pilih game</h1>
+                    <p class="subtitle">Tiga kuis siap dimainkan, solo atau lawan temanmu.</p>
                 </div>
             </header>
 
             <div class="game-grid">
                 <button type="button" class="game-card game-card-active game-card-multiply" id="hubOpenMultiplyButton">
+                    <span class="gc-decor" aria-hidden="true">
+                        <i class="gc-blob"></i><i class="gc-blob-2"></i><i class="gc-ring"></i><i class="gc-dots"></i>
+                        <i class="gc-glyph gc-glyph-a">×</i><i class="gc-glyph gc-glyph-b">÷</i><i class="gc-glyph gc-glyph-c">+</i><i class="gc-glyph gc-glyph-d">=</i>
+                    </span>
                     <span class="game-card-icon">🎯</span>
-                    <span class="game-card-title">Perkalian 1-10</span>
-                    <span class="game-card-subtitle">Kuis &amp; Duel 1v1</span>
+                    <span class="game-card-body">
+                        <span class="game-card-title">Perkalian 1-10</span>
+                        <span class="game-card-subtitle">Hitung cepat, tanpa ribet.</span>
+                        <span class="game-card-tags"><span class="gc-tag">Solo</span><span class="gc-tag">Duel 1v1</span></span>
+                    </span>
+                    <span class="game-card-arrow" aria-hidden="true">→</span>
                 </button>
 
                 <button type="button" class="game-card game-card-active game-card-knowledge" id="hubOpenKnowledgeButton">
+                    <span class="gc-decor" aria-hidden="true">
+                        <i class="gc-blob"></i><i class="gc-blob-2"></i><i class="gc-stripes"></i><i class="gc-dots"></i>
+                        <i class="gc-glyph gc-glyph-a">?</i><i class="gc-glyph gc-glyph-b">!</i><i class="gc-glyph gc-glyph-c">✦</i><i class="gc-glyph gc-glyph-d">◎</i>
+                    </span>
                     <span class="game-card-icon">🧠</span>
-                    <span class="game-card-title">Pengetahuan Dasar</span>
-                    <span class="game-card-subtitle">Kuis &amp; Duel 1v1</span>
+                    <span class="game-card-body">
+                        <span class="game-card-title">Pengetahuan Dasar</span>
+                        <span class="game-card-subtitle">60 detik, kumpulkan poin sebanyak mungkin.</span>
+                        <span class="game-card-tags"><span class="gc-tag">Solo</span><span class="gc-tag">Duel 1v1</span></span>
+                    </span>
+                    <span class="game-card-arrow" aria-hidden="true">→</span>
                 </button>
 
                 <button type="button" class="game-card game-card-active game-card-advmath" id="hubOpenAdvmathButton">
+                    <span class="gc-decor" aria-hidden="true">
+                        <i class="gc-blob"></i><i class="gc-blob-2"></i><i class="gc-ring"></i><i class="gc-stripes"></i>
+                        <i class="gc-glyph gc-glyph-a">√</i><i class="gc-glyph gc-glyph-b">²</i><i class="gc-glyph gc-glyph-c">∞</i><i class="gc-glyph gc-glyph-d">×</i>
+                    </span>
                     <span class="game-card-icon">✖️</span>
-                    <span class="game-card-title">Perkalian 1-10 Lanjutan</span>
-                    <span class="game-card-subtitle">Kuis &amp; Duel 1v1</span>
+                    <span class="game-card-body">
+                        <span class="game-card-title">Perkalian 1-10 Lanjutan</span>
+                        <span class="game-card-subtitle">Lebih teliti. Total waktu terpendek menang.</span>
+                        <span class="game-card-tags"><span class="gc-tag">Solo</span><span class="gc-tag">Duel 1v1</span></span>
+                    </span>
+                    <span class="game-card-arrow" aria-hidden="true">→</span>
                 </button>
 
-                <button type="button" class="game-card game-card-soon" id="hubComingSoon1">
+                <button type="button" class="game-card game-card-soon game-card-soon-4" id="hubComingSoon1">
+                    <span class="gc-decor" aria-hidden="true">
+                        <i class="gc-blob"></i><i class="gc-blob-2"></i><i class="gc-dots"></i>
+                        <i class="gc-glyph gc-glyph-a">★</i><i class="gc-glyph gc-glyph-c">◆</i><i class="gc-glyph gc-glyph-d">●</i>
+                    </span>
                     <span class="game-card-icon">🌟</span>
-                    <span class="game-card-title">Game Akan Datang</span>
-                    <span class="game-card-badge">Segera Hadir</span>
+                    <span class="game-card-body">
+                        <span class="game-card-title">Game 4</span>
+                        <span class="game-card-subtitle">Masih dikerjakan.</span>
+                    </span>
+                    <span class="game-card-badge">Segera hadir</span>
                 </button>
 
-                <button type="button" class="game-card game-card-soon" id="hubComingSoon2">
+                <button type="button" class="game-card game-card-soon game-card-soon-5" id="hubComingSoon2">
+                    <span class="gc-decor" aria-hidden="true">
+                        <i class="gc-blob"></i><i class="gc-blob-2"></i><i class="gc-stripes"></i>
+                        <i class="gc-glyph gc-glyph-a">≈</i><i class="gc-glyph gc-glyph-c">◐</i><i class="gc-glyph gc-glyph-d">~</i>
+                    </span>
                     <span class="game-card-icon">🎲</span>
-                    <span class="game-card-title">Game Akan Datang</span>
-                    <span class="game-card-badge">Segera Hadir</span>
+                    <span class="game-card-body">
+                        <span class="game-card-title">Game 5</span>
+                        <span class="game-card-subtitle">Masih dikerjakan.</span>
+                    </span>
+                    <span class="game-card-badge">Segera hadir</span>
                 </button>
             </div>
         </section>
@@ -63,39 +101,24 @@
 
         <!-- ================= DASHBOARD VIEW (Game Perkalian 1-10) ================= -->
         <section id="dashboardView" class="view">
-            <button type="button" class="breadcrumb-back" id="backToHubButton">← Semua Game</button>
+            <button type="button" class="breadcrumb-back" id="backToHubButton">← Semua game</button>
             <header class="dashboard-header">
                 <div class="dashboard-heading">
-                    <h1>🎯 Kuis Perkalian</h1>
-                    <p class="subtitle">Asah kecepatan berhitungmu &amp; kumpulkan skor terbaik!</p>
+                    <h1>Perkalian 1-10</h1>
+                    <p class="subtitle">Latih hitung cepat, lalu kejar skor terbaikmu.</p>
                 </div>
                 <div class="dashboard-header-actions">
                     <button type="button" class="icon-button" id="soundToggleButton" aria-label="Matikan suara">🔊</button>
-                    <button type="button" class="icon-button" id="helpButton" aria-label="Cara bermain">❔</button>
+                    <button type="button" class="icon-button" id="helpButton" aria-label="Cara bermain">?</button>
                 </div>
 
-                <div class="deco-moon" aria-hidden="true"></div>
-                <div class="deco-planet" aria-hidden="true"></div>
-                <svg class="deco-constellation" viewBox="0 0 160 60" aria-hidden="true">
-                    <g stroke="rgba(255,255,255,0.35)" stroke-width="1" fill="none">
-                        <path d="M8 40 L35 15 L62 30 L95 8 L128 22 L150 12" />
-                    </g>
-                    <g fill="#ffe9a8">
-                        <circle cx="8" cy="40" r="2" />
-                        <circle cx="35" cy="15" r="1.6" />
-                        <circle cx="62" cy="30" r="2.2" />
-                        <circle cx="95" cy="8" r="1.6" />
-                        <circle cx="128" cy="22" r="2" />
-                        <circle cx="150" cy="12" r="1.6" />
-                    </g>
-                </svg>
             </header>
 
             <div class="leaderboard-panel">
                 <div class="leaderboard-tabs" id="leaderboardTabs">
-                    <button type="button" class="leaderboard-tab" data-count="10">10 Soal</button>
-                    <button type="button" class="leaderboard-tab" data-count="20">20 Soal</button>
-                    <button type="button" class="leaderboard-tab" data-count="30">30 Soal</button>
+                    <button type="button" class="leaderboard-tab" data-count="10">10 soal</button>
+                    <button type="button" class="leaderboard-tab" data-count="20">20 soal</button>
+                    <button type="button" class="leaderboard-tab" data-count="30">30 soal</button>
                 </div>
 
                 <div class="podium" id="podium"></div>
@@ -107,9 +130,9 @@
 
             <div class="cta-row">
                 <button type="button" class="btn-playful btn-playful-primary btn-start-game"
-                    id="openStartModalButton">▶️ Main Sendiri</button>
+                    id="openStartModalButton">Main sendiri</button>
                 <button type="button" class="btn-playful btn-playful-secondary btn-start-game"
-                    id="openDuelModalButton">⚔️ Duel 1v1</button>
+                    id="openDuelModalButton">Duel 1v1</button>
             </div>
         </section>
         <!-- ================= DASHBOARD VIEW END ================= -->
@@ -144,7 +167,7 @@
             </div>
 
             <div class="duel-disconnect-banner" id="duelDisconnectBanner" style="display:none;">
-                ⚠️ Koneksi lawan tidak terdeteksi.
+                Koneksi lawan terputus.
                 <button type="button" class="duel-banner-link" id="duelLeaveDisconnectedButton">Kembali ke dashboard</button>
             </div>
 
@@ -158,7 +181,7 @@
 
             <div class="keypad-wrapper">
                 <input class="answer-input" type="text" inputmode="none" autocomplete="off"
-                    placeholder="Jawabanmu..." aria-label="Jawaban" disabled>
+                    placeholder="Ketik jawabanmu" aria-label="Jawaban" disabled>
 
                 <div class="keypad">
                     <button type="button" class="keypad-btn buttonKeypad" data-digit="1" disabled>1</button>
@@ -180,34 +203,34 @@
 
         <!-- ================= KNOWLEDGE DASHBOARD VIEW (Game Pengetahuan Dasar) ================= -->
         <section id="knowledgeDashboardView" class="view">
-            <button type="button" class="breadcrumb-back" id="knowledgeBackToHubButton">← Semua Game</button>
+            <button type="button" class="breadcrumb-back" id="knowledgeBackToHubButton">← Semua game</button>
             <header class="dashboard-header">
                 <div class="dashboard-heading">
-                    <h1>🧠 Pengetahuan Dasar</h1>
-                    <p class="subtitle">Kumpulkan poin sebanyak mungkin dalam 60 detik!</p>
+                    <h1>Pengetahuan Dasar</h1>
+                    <p class="subtitle">Kumpulkan poin sebanyak mungkin dalam 60 detik.</p>
                 </div>
                 <div class="dashboard-header-actions">
                     <button type="button" class="icon-button" id="knowledgeSoundToggleButton" aria-label="Matikan suara">🔊</button>
-                    <button type="button" class="icon-button" id="knowledgeHelpButton" aria-label="Cara bermain">❔</button>
+                    <button type="button" class="icon-button" id="knowledgeHelpButton" aria-label="Cara bermain">?</button>
                 </div>
             </header>
 
             <details class="score-rules" id="knowledgeScoreRules" open>
-                <summary class="score-rules-title">📋 Aturan Skor <span class="score-rules-hint" aria-hidden="true"></span></summary>
+                <summary class="score-rules-title">Aturan skor <span class="score-rules-hint" aria-hidden="true"></span></summary>
                 <ul class="score-rules-grid">
-                    <li class="score-rule is-gain"><span class="score-rule-points">+1</span><span class="score-rule-text">Benar di <b>klik 1</b></span></li>
-                    <li class="score-rule is-gain"><span class="score-rule-points">+0,7</span><span class="score-rule-text">Benar di <b>klik 2</b></span></li>
-                    <li class="score-rule is-gain"><span class="score-rule-points">+0,3</span><span class="score-rule-text">Benar di <b>klik 3</b></span></li>
+                    <li class="score-rule is-gain"><span class="score-rule-points">+1</span><span class="score-rule-text">Benar di <b>klik ke-1</b></span></li>
+                    <li class="score-rule is-gain"><span class="score-rule-points">+0,7</span><span class="score-rule-text">Benar di <b>klik ke-2</b></span></li>
+                    <li class="score-rule is-gain"><span class="score-rule-points">+0,3</span><span class="score-rule-text">Benar di <b>klik ke-3</b></span></li>
                     <li class="score-rule is-gain"><span class="score-rule-points">+0,3</span><span class="score-rule-text">Benar setelah <b>💡 Hint</b></span></li>
-                    <li class="score-rule is-loss"><span class="score-rule-points">−1</span><span class="score-rule-text"><b>Soal hangus</b> 💀</span></li>
+                    <li class="score-rule is-loss"><span class="score-rule-points">−1</span><span class="score-rule-text"><b>Soal hangus</b></span></li>
                 </ul>
-                <p class="score-rules-note">Skor akhir = jumlah poin selama 60 detik. Asal tekan cepat-cepat bikin soal hangus dan skor turun, jadi jawab dengan yakin!</p>
+                <p class="score-rules-note">Skor akhir = total poin selama 60 detik. Tekan asal-asalan bikin soal hangus dan skor turun, jadi pilih dengan yakin.</p>
             </details>
 
             <div class="leaderboard-panel">
                 <div class="leaderboard-tabs" id="knowledgeLeaderboardTabs">
-                    <button type="button" class="leaderboard-tab" data-klboard="solo">🧠 Main Sendiri</button>
-                    <button type="button" class="leaderboard-tab" data-klboard="duel">⚔️ Duel</button>
+                    <button type="button" class="leaderboard-tab" data-klboard="solo">Main sendiri</button>
+                    <button type="button" class="leaderboard-tab" data-klboard="duel">Duel</button>
                 </div>
 
                 <div class="podium" id="knowledgePodium"></div>
@@ -219,9 +242,9 @@
 
             <div class="cta-row">
                 <button type="button" class="btn-playful btn-playful-primary btn-start-game"
-                    id="knowledgeOpenSoloButton">▶️ Main Sendiri</button>
+                    id="knowledgeOpenSoloButton">Main sendiri</button>
                 <button type="button" class="btn-playful btn-playful-secondary btn-start-game"
-                    id="knowledgeOpenDuelButton">⚔️ Duel 1v1</button>
+                    id="knowledgeOpenDuelButton">Duel 1v1</button>
             </div>
         </section>
         <!-- ================= KNOWLEDGE DASHBOARD VIEW END ================= -->
@@ -253,7 +276,7 @@
             </div>
 
             <div class="duel-disconnect-banner" id="knowledgeDuelDisconnectBanner" style="display:none;">
-                ⚠️ Koneksi lawan tidak terdeteksi.
+                Koneksi lawan terputus.
                 <button type="button" class="duel-banner-link" id="knowledgeDuelLeaveDisconnectedButton">Kembali ke dashboard</button>
             </div>
 
@@ -269,10 +292,10 @@
             </div>
 
             <button type="button" class="btn-playful btn-playful-outline knowledge-hint-button"
-                id="knowledgeHintButton" disabled>💡 Hint: hilangkan 2 opsi salah</button>
+                id="knowledgeHintButton" disabled>💡 Hint: sisakan 2 opsi</button>
 
             <details class="knowledge-recap" id="knowledgeRecap" open style="display:none;">
-                <summary class="knowledge-recap-title"><span id="knowledgeRecapStatus">📖 Pembahasan soal sebelumnya</span><span class="knowledge-recap-toggle" aria-hidden="true"></span></summary>
+                <summary class="knowledge-recap-title"><span id="knowledgeRecapStatus">Pembahasan soal sebelumnya</span><span class="knowledge-recap-toggle" aria-hidden="true"></span></summary>
                 <div class="knowledge-recap-body">
                     <p class="knowledge-recap-q" id="knowledgeRecapQuestion"></p>
                     <p class="knowledge-recap-a"><span class="knowledge-recap-label">Jawaban benar:</span> <b id="knowledgeRecapAnswer"></b></p>
@@ -284,38 +307,38 @@
 
         <!-- ================= ADVMATH DASHBOARD VIEW (Game Perkalian 1-10 Lanjutan) ================= -->
         <section id="advmathDashboardView" class="view">
-            <button type="button" class="breadcrumb-back" id="advmathBackToHubButton">← Semua Game</button>
+            <button type="button" class="breadcrumb-back" id="advmathBackToHubButton">← Semua game</button>
             <header class="dashboard-header">
                 <div class="dashboard-heading">
-                    <h1>✖️ Perkalian 1-10 Lanjutan</h1>
-                    <p class="subtitle">Selesaikan soal secepat &amp; seteliti mungkin. Waktu tersingkat menang!</p>
+                    <h1>Perkalian 1-10 Lanjutan</h1>
+                    <p class="subtitle">Selesaikan secepat dan seteliti mungkin. Total waktu terpendek menang.</p>
                 </div>
                 <div class="dashboard-header-actions">
                     <button type="button" class="icon-button" id="advmathSoundToggleButton" aria-label="Matikan suara">🔊</button>
-                    <button type="button" class="icon-button" id="advmathHelpButton" aria-label="Cara bermain">❔</button>
+                    <button type="button" class="icon-button" id="advmathHelpButton" aria-label="Cara bermain">?</button>
                 </div>
             </header>
 
             <details class="score-rules" id="advmathScoreRules" open>
-                <summary class="score-rules-title">📋 Aturan Waktu &amp; Hukuman <span class="score-rules-hint" aria-hidden="true"></span></summary>
-                <p class="score-rules-sub">Peringkat = <b>total waktu</b> (waktu aktual + semua hukuman). Makin singkat makin baik.</p>
+                <summary class="score-rules-title">Aturan waktu dan hukuman <span class="score-rules-hint" aria-hidden="true"></span></summary>
+                <p class="score-rules-sub">Peringkat ditentukan <b>total waktu</b> (waktu aktual + semua hukuman). Makin singkat, makin tinggi.</p>
                 <ul class="score-rules-grid">
                     <li class="score-rule is-loss"><span class="score-rule-points">+60</span><span class="score-rule-text">Salah <b>ke-1</b></span></li>
                     <li class="score-rule is-loss"><span class="score-rule-points">+180</span><span class="score-rule-text">Salah <b>ke-2</b></span></li>
-                    <li class="score-rule is-loss"><span class="score-rule-points">+300</span><span class="score-rule-text">Salah <b>ke-3</b> &rarr; soal hangus 💀</span></li>
+                    <li class="score-rule is-loss"><span class="score-rule-points">+300</span><span class="score-rule-text">Salah <b>ke-3</b> &rarr; soal hangus</span></li>
                     <li class="score-rule is-hint"><span class="score-rule-points">+100</span><span class="score-rule-text"><b>💡 Hint 1</b> · akses 30 dtk</span></li>
                     <li class="score-rule is-hint"><span class="score-rule-points">+200</span><span class="score-rule-text"><b>💡 Hint 2</b> · akses 30 dtk</span></li>
                     <li class="score-rule is-hint"><span class="score-rule-points">+300</span><span class="score-rule-text"><b>🔥 Hint 3</b> · akses 45 dtk &rarr; soal hangus</span></li>
                 </ul>
-                <p class="score-rules-note">Satuan hukuman = detik, langsung ditambahkan ke timer. Soal hangus tetap dihitung sebagai bagian dari jumlah soal.</p>
+                <p class="score-rules-note">Hukuman dihitung dalam detik dan langsung masuk ke timer. Soal hangus tetap dihitung sebagai satu soal.</p>
             </details>
 
             <div class="leaderboard-panel">
                 <div class="leaderboard-tabs" id="advmathLeaderboardTabs">
-                    <button type="button" class="leaderboard-tab" data-alboard="10">10 Soal</button>
-                    <button type="button" class="leaderboard-tab" data-alboard="20">20 Soal</button>
-                    <button type="button" class="leaderboard-tab" data-alboard="30">30 Soal</button>
-                    <button type="button" class="leaderboard-tab" data-alboard="duel">⚔️ Duel</button>
+                    <button type="button" class="leaderboard-tab" data-alboard="10">10 soal</button>
+                    <button type="button" class="leaderboard-tab" data-alboard="20">20 soal</button>
+                    <button type="button" class="leaderboard-tab" data-alboard="30">30 soal</button>
+                    <button type="button" class="leaderboard-tab" data-alboard="duel">Duel</button>
                 </div>
 
                 <div class="podium" id="advmathPodium"></div>
@@ -327,9 +350,9 @@
 
             <div class="cta-row">
                 <button type="button" class="btn-playful btn-playful-primary btn-start-game"
-                    id="advmathOpenSoloButton">▶️ Main Sendiri</button>
+                    id="advmathOpenSoloButton">Main sendiri</button>
                 <button type="button" class="btn-playful btn-playful-secondary btn-start-game"
-                    id="advmathOpenDuelButton">⚔️ Duel 1v1</button>
+                    id="advmathOpenDuelButton">Duel 1v1</button>
             </div>
         </section>
         <!-- ================= ADVMATH DASHBOARD VIEW END ================= -->
@@ -362,7 +385,7 @@
             </div>
 
             <div class="duel-disconnect-banner" id="advmathDuelDisconnectBanner" style="display:none;">
-                ⚠️ Koneksi lawan tidak terdeteksi.
+                Koneksi lawan terputus.
                 <button type="button" class="duel-banner-link" id="advmathDuelLeaveDisconnectedButton">Kembali ke dashboard</button>
             </div>
 
@@ -378,11 +401,11 @@
             </div>
 
             <div class="advmath-burn-banner" id="advmathBurnBanner" style="display:none;" role="status">
-                <span class="advmath-burn-text">💀 Soal hangus. Pindah otomatis dalam <b id="advmathBurnCountdown">0</b> dtk</span>
-                <button type="button" class="btn-playful btn-playful-primary advmath-next-btn" id="advmathNextButton">Lanjut ke Soal Berikutnya ▶</button>
+                <span class="advmath-burn-text">Soal hangus. Lanjut otomatis dalam <b id="advmathBurnCountdown">0</b> dtk</span>
+                <button type="button" class="btn-playful btn-playful-primary advmath-next-btn" id="advmathNextButton">Lanjut ke soal berikutnya ▶</button>
             </div>
 
-            <div class="advmath-hint-row" id="advmathHintRow" role="group" aria-label="Petunjuk (menambah waktu)">
+            <div class="advmath-hint-row" id="advmathHintRow" role="group" aria-label="Hint (menambah waktu)">
                 <button type="button" class="advmath-hint-btn" data-level="1" disabled>
                     <span class="advmath-hint-title">💡 Hint 1</span>
                     <span class="advmath-hint-cost">+100 detik</span>
@@ -399,7 +422,7 @@
                     <span class="advmath-hint-status"></span>
                 </button>
             </div>
-            <p class="advmath-hint-note">Hint menambah waktu &amp; ada batas akses. Hint 3 = pembahasan, soal langsung hangus.</p>
+            <p class="advmath-hint-note">Hint menambah waktu dan akses-nya terbatas. Hint 3 berisi pembahasan lengkap, jadi soal langsung hangus.</p>
         </section>
         <!-- ================= ADVMATH GAME VIEW END ================= -->
 
@@ -410,7 +433,7 @@
             <div class="countdown-overlay" id="countdownOverlay" aria-live="assertive" role="status">
                 <div class="countdown-content">
                     <div class="countdown-number" id="countdownNumber">3</div>
-                    <div class="countdown-label" id="countdownLabel">Siap-siap!</div>
+                    <div class="countdown-label" id="countdownLabel">Siap-siap</div>
                 </div>
             </div>
             <!-- INI COUNTDOWN OVERLAY END -->
@@ -420,7 +443,7 @@
         <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-xl">
             <div class="modal-content playful-modal">
                 <div class="modal-header">
-                    <h1 class="modal-title fs-5" id="hintModalLabel">📖 Tabel Perkalian 1-10</h1>
+                    <h1 class="modal-title fs-5" id="hintModalLabel">Tabel perkalian 1-10</h1>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
                 </div>
                 <div class="modal-body">
@@ -441,20 +464,21 @@
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content playful-modal">
                 <div class="modal-header">
-                    <h1 class="modal-title fs-5" id="knowledgeHelpModalLabel">📚 Cara Bermain</h1>
+                    <h1 class="modal-title fs-5" id="knowledgeHelpModalLabel">Cara bermain</h1>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     <ol class="help-list">
                         <li>Kamu punya waktu <strong>60 detik</strong>. Tiap soal punya 4 pilihan jawaban.</li>
-                        <li>Poin tergantung <strong>klik ke berapa</strong> kamu menemukan jawaban benar: klik 1 = <strong>+1</strong>, klik 2 = <strong>+0,7</strong>, klik 3 = <strong>+0,3</strong>.</li>
-                        <li>Bingung? Tekan <strong>💡 Hint</strong> untuk menyisakan 2 opsi. Jawaban benar setelah hint bernilai maksimal <strong>+0,3</strong>.</li>
-                        <li>Salah 3 kali (tanpa hint), atau salah lagi setelah hint &rarr; soal <strong>hangus</strong> dan skor <strong>&minus;1</strong>.</li>
-                        <li>Skor akhir = jumlah semua poin dalam 60 detik. Kalau skor seri, lebih sedikit hint lalu lebih sedikit soal hangus menang.</li>
+                        <li>Poin tergantung <strong>klik ke berapa</strong> kamu menemukan jawaban yang benar: klik 1 = <strong>+1</strong>, klik 2 = <strong>+0,7</strong>, klik 3 = <strong>+0,3</strong>.</li>
+                        <li>Mentok? Tekan <strong>💡 Hint</strong> untuk menyisakan 2 opsi. Benar setelah hint bernilai maksimal <strong>+0,3</strong>.</li>
+                        <li>Salah 3 kali tanpa hint, atau salah lagi setelah hint, soalnya <strong>hangus</strong> dan skor <strong>&minus;1</strong>.</li>
+                        <li>Opsi yang salah bisa diketuk lagi untuk membaca penjelasannya.</li>
+                        <li>Skor akhir = total poin dalam 60 detik. Kalau seri, yang lebih sedikit pakai hint, lalu yang lebih sedikit soal hangus, menang.</li>
                     </ol>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn-playful btn-playful-primary" data-bs-dismiss="modal">Mengerti!</button>
+                    <button type="button" class="btn-playful btn-playful-primary" data-bs-dismiss="modal">Oke, paham</button>
                 </div>
             </div>
         </div>
@@ -466,15 +490,15 @@
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content playful-modal">
                 <div class="modal-header">
-                    <h1 class="modal-title fs-5" id="knowledgeConfirmExitModalLabel">👀 Yakin mau keluar?</h1>
+                    <h1 class="modal-title fs-5" id="knowledgeConfirmExitModalLabel">Yakin mau keluar?</h1>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    Progres permainan yang sedang berjalan akan hilang kalau kamu keluar sekarang.
+                    Progres permainan akan hilang kalau kamu keluar sekarang.
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn-playful btn-playful-outline" data-bs-dismiss="modal">Batal</button>
-                    <button type="button" class="btn-playful btn-playful-danger" id="knowledgeConfirmExitYesButton">Ya, Keluar</button>
+                    <button type="button" class="btn-playful btn-playful-danger" id="knowledgeConfirmExitYesButton">Ya, keluar</button>
                 </div>
             </div>
         </div>
@@ -486,14 +510,14 @@
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content playful-modal">
                 <div class="modal-header">
-                    <h1 class="modal-title fs-5" id="knowledgeEndModalLabel">⏰ Waktu Habis!</h1>
+                    <h1 class="modal-title fs-5" id="knowledgeEndModalLabel">Waktu habis</h1>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body text-center">
-                    <div class="end-game-stat end-game-stat-main">🏅 Skor: <span id="knowledgeFinalScore">0,0</span></div>
-                    <div class="end-game-stat">✅ Jawaban benar: <span id="knowledgeFinalCorrect">0</span></div>
-                    <div class="end-game-stat">💡 Hint dipakai: <span id="knowledgeFinalHints">0</span></div>
-                    <div class="end-game-stat">💀 Soal hangus: <span id="knowledgeFinalBurned">0</span></div>
+                    <div class="end-game-stat end-game-stat-main">Skor: <span id="knowledgeFinalScore">0,0</span></div>
+                    <div class="end-game-stat">Jawaban benar: <span id="knowledgeFinalCorrect">0</span></div>
+                    <div class="end-game-stat">Hint dipakai: <span id="knowledgeFinalHints">0</span></div>
+                    <div class="end-game-stat">Soal hangus: <span id="knowledgeFinalBurned">0</span></div>
 
                     <div class="rank-insight" id="knowledgeRankInsight" style="display:none;" aria-live="polite">
                         <div class="rank-insight-headline" id="knowledgeRankInsightHeadline"></div>
@@ -502,9 +526,9 @@
                 </div>
 
                 <div class="modal-footer flex-wrap justify-content-center gap-2">
-                    <button type="button" class="btn-playful btn-playful-success" id="knowledgeSaveScoreButton">💾 Simpan Skor</button>
-                    <button type="button" class="btn-playful btn-playful-secondary" id="knowledgePlayAgainButton">🔁 Main Lagi</button>
-                    <button type="button" class="btn-playful btn-playful-outline" id="knowledgeEndBackToDashboardButton">🏠 Dashboard</button>
+                    <button type="button" class="btn-playful btn-playful-success" id="knowledgeSaveScoreButton">Simpan skor</button>
+                    <button type="button" class="btn-playful btn-playful-secondary" id="knowledgePlayAgainButton">Main lagi</button>
+                    <button type="button" class="btn-playful btn-playful-outline" id="knowledgeEndBackToDashboardButton">Dashboard</button>
                 </div>
             </div>
         </div>
@@ -516,14 +540,14 @@
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content playful-modal">
                 <div class="modal-header">
-                    <h1 class="modal-title fs-5" id="knowledgeSaveRecordModalLabel">🏆 Simpan Skormu!</h1>
+                    <h1 class="modal-title fs-5" id="knowledgeSaveRecordModalLabel">Simpan skormu</h1>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <label for="knowledgePlayerName" class="save-record-label">Nama Pemain</label>
-                    <input type="text" id="knowledgePlayerName" class="form-control playful-input" placeholder="Nama Kamu" maxlength="20">
+                    <label for="knowledgePlayerName" class="save-record-label">Nama pemain</label>
+                    <input type="text" id="knowledgePlayerName" class="form-control playful-input" placeholder="Nama kamu" maxlength="20">
 
-                    <label class="save-record-label">Pilih Avatar</label>
+                    <label class="save-record-label">Pilih avatar</label>
                     <div class="avatar-picker" id="knowledgeAvatarPicker"></div>
                 </div>
                 <div class="modal-footer">
@@ -539,22 +563,22 @@
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content playful-modal">
                 <div class="modal-header">
-                    <h1 class="modal-title fs-5" id="knowledgeDuelModalLabel">⚔️ Duel 1v1</h1>
+                    <h1 class="modal-title fs-5" id="knowledgeDuelModalLabel">Duel 1v1</h1>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body count-option-list">
                     <button type="button" class="count-option-button" id="knowledgeDuelCreateRoomButton">
                         <span class="count-option-emoji">🆕</span>
                         <span class="count-option-text">
-                            <strong>Buat Room</strong>
-                            <small>Dapatkan kode untuk dibagikan ke temanmu</small>
+                            <strong>Buat room</strong>
+                            <small>Dapat kode untuk dibagikan ke temanmu</small>
                         </span>
                     </button>
                     <button type="button" class="count-option-button" id="knowledgeDuelJoinRoomButton">
                         <span class="count-option-emoji">🔑</span>
                         <span class="count-option-text">
-                            <strong>Gabung Room</strong>
-                            <small>Sudah punya kode dari temanmu? Masuk di sini</small>
+                            <strong>Gabung room</strong>
+                            <small>Punya kode dari temanmu? Masukkan di sini</small>
                         </span>
                     </button>
                 </div>
@@ -568,18 +592,18 @@
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content playful-modal">
                 <div class="modal-header">
-                    <h1 class="modal-title fs-5" id="knowledgeDuelCreateModalLabel">🆕 Buat Room Duel</h1>
+                    <h1 class="modal-title fs-5" id="knowledgeDuelCreateModalLabel">Buat room duel</h1>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <label for="knowledgeDuelCreateName" class="save-record-label">Nama Kamu</label>
-                    <input type="text" id="knowledgeDuelCreateName" class="form-control playful-input" placeholder="Nama Kamu" maxlength="20">
+                    <label for="knowledgeDuelCreateName" class="save-record-label">Nama kamu</label>
+                    <input type="text" id="knowledgeDuelCreateName" class="form-control playful-input" placeholder="Nama kamu" maxlength="20">
 
-                    <label class="save-record-label">Pilih Avatar</label>
+                    <label class="save-record-label">Pilih avatar</label>
                     <div class="avatar-picker" id="knowledgeDuelCreateAvatarPicker"></div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn-playful btn-playful-success" id="knowledgeDuelCreateSubmitButton">Buat Room</button>
+                    <button type="button" class="btn-playful btn-playful-success" id="knowledgeDuelCreateSubmitButton">Buat room</button>
                 </div>
             </div>
         </div>
@@ -591,17 +615,17 @@
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content playful-modal">
                 <div class="modal-header">
-                    <h1 class="modal-title fs-5" id="knowledgeDuelJoinModalLabel">🔑 Gabung Room</h1>
+                    <h1 class="modal-title fs-5" id="knowledgeDuelJoinModalLabel">Gabung room</h1>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <label for="knowledgeDuelJoinCode" class="save-record-label">Kode Room</label>
+                    <label for="knowledgeDuelJoinCode" class="save-record-label">Kode room</label>
                     <input type="text" id="knowledgeDuelJoinCode" class="form-control playful-input duel-code-input" placeholder="K7Q2" maxlength="4">
 
-                    <label for="knowledgeDuelJoinName" class="save-record-label">Nama Kamu</label>
-                    <input type="text" id="knowledgeDuelJoinName" class="form-control playful-input" placeholder="Nama Kamu" maxlength="20">
+                    <label for="knowledgeDuelJoinName" class="save-record-label">Nama kamu</label>
+                    <input type="text" id="knowledgeDuelJoinName" class="form-control playful-input" placeholder="Nama kamu" maxlength="20">
 
-                    <label class="save-record-label">Pilih Avatar</label>
+                    <label class="save-record-label">Pilih avatar</label>
                     <div class="avatar-picker" id="knowledgeDuelJoinAvatarPicker"></div>
                 </div>
                 <div class="modal-footer">
@@ -618,12 +642,12 @@
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content playful-modal text-center">
                 <div class="modal-header">
-                    <h1 class="modal-title fs-5" id="knowledgeDuelWaitingModalLabel">⚔️ Room Dibuat!</h1>
+                    <h1 class="modal-title fs-5" id="knowledgeDuelWaitingModalLabel">Room siap</h1>
                 </div>
                 <div class="modal-body">
                     <p>Bagikan kode ini ke temanmu:</p>
                     <div class="duel-room-code" id="knowledgeDuelRoomCodeDisplay">----</div>
-                    <button type="button" class="btn-playful btn-playful-outline" id="knowledgeDuelCopyCodeButton">📋 Salin Kode</button>
+                    <button type="button" class="btn-playful btn-playful-outline" id="knowledgeDuelCopyCodeButton">Salin kode</button>
                     <p class="duel-waiting-text">
                         <span class="duel-spinner" aria-hidden="true"></span>
                         Menunggu lawan bergabung...
@@ -643,7 +667,7 @@
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content playful-modal text-center">
                 <div class="modal-header">
-                    <h1 class="modal-title fs-5" id="knowledgeDuelWaitingResultModalLabel">⏰ Waktu Habis!</h1>
+                    <h1 class="modal-title fs-5" id="knowledgeDuelWaitingResultModalLabel">Waktu habis</h1>
                 </div>
                 <div class="modal-body">
                     <p class="duel-waiting-text">
@@ -662,15 +686,15 @@
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content playful-modal">
                 <div class="modal-header">
-                    <h1 class="modal-title fs-5" id="knowledgeDuelResultModalLabel">⚔️ Hasil Duel</h1>
+                    <h1 class="modal-title fs-5" id="knowledgeDuelResultModalLabel">Hasil duel</h1>
                 </div>
                 <div class="modal-body">
                     <div class="duel-winner-banner" id="knowledgeDuelWinnerBanner"></div>
                     <div class="duel-result-grid" id="knowledgeDuelResultGrid"></div>
                 </div>
                 <div class="modal-footer flex-wrap justify-content-center gap-2">
-                    <button type="button" class="btn-playful btn-playful-secondary" id="knowledgeDuelRematchButton">🔁 Main Lagi</button>
-                    <button type="button" class="btn-playful btn-playful-outline" id="knowledgeDuelResultDashboardButton">🏠 Dashboard</button>
+                    <button type="button" class="btn-playful btn-playful-secondary" id="knowledgeDuelRematchButton">Main lagi</button>
+                    <button type="button" class="btn-playful btn-playful-outline" id="knowledgeDuelResultDashboardButton">Dashboard</button>
                 </div>
             </div>
         </div>
@@ -683,12 +707,12 @@
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content playful-modal text-center">
                 <div class="modal-header">
-                    <h1 class="modal-title fs-5" id="knowledgeDuelRematchWaitingModalLabel">🔁 Ajakan Terkirim</h1>
+                    <h1 class="modal-title fs-5" id="knowledgeDuelRematchWaitingModalLabel">Ajakan terkirim</h1>
                 </div>
                 <div class="modal-body">
                     <p class="duel-waiting-text">
                         <span class="duel-spinner" aria-hidden="true"></span>
-                        Menunggu persetujuan lawan untuk main lagi...
+                        Menunggu lawan setuju untuk main lagi...
                     </p>
                 </div>
                 <div class="modal-footer">
@@ -705,12 +729,12 @@
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content playful-modal text-center">
                 <div class="modal-header">
-                    <h1 class="modal-title fs-5" id="knowledgeDuelRematchRequestModalLabel">🔁 Ajakan Main Lagi</h1>
+                    <h1 class="modal-title fs-5" id="knowledgeDuelRematchRequestModalLabel">Ajakan main lagi</h1>
                 </div>
                 <div class="modal-body" id="knowledgeDuelRematchRequestText">Lawan ingin main lagi. Setuju?</div>
                 <div class="modal-footer flex-wrap justify-content-center gap-2">
-                    <button type="button" class="btn-playful btn-playful-success" id="knowledgeDuelRematchAcceptButton">✅ Setuju</button>
-                    <button type="button" class="btn-playful btn-playful-outline" id="knowledgeDuelRematchDeclineButton">❌ Tolak</button>
+                    <button type="button" class="btn-playful btn-playful-success" id="knowledgeDuelRematchAcceptButton">Setuju</button>
+                    <button type="button" class="btn-playful btn-playful-outline" id="knowledgeDuelRematchDeclineButton">Tolak</button>
                 </div>
             </div>
         </div>
@@ -722,21 +746,21 @@
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content playful-modal">
                 <div class="modal-header">
-                    <h1 class="modal-title fs-5" id="advmathHelpModalLabel">📚 Cara Bermain</h1>
+                    <h1 class="modal-title fs-5" id="advmathHelpModalLabel">Cara bermain</h1>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     <ol class="help-list">
-                        <li>Pilih <strong>10, 20, atau 30 soal</strong>. Setelah countdown, timer berjalan sampai semua soal selesai (dijawab benar atau hangus).</li>
-                        <li><strong>Total waktu = waktu aktual + hukuman.</strong> Total waktu terkecil menempati peringkat teratas.</li>
+                        <li>Pilih <strong>10, 20, atau 30 soal</strong>. Setelah countdown, timer jalan sampai semua soal selesai (dijawab benar atau hangus).</li>
+                        <li><strong>Total waktu = waktu aktual + hukuman.</strong> Total waktu terkecil ada di peringkat teratas.</li>
                         <li>Jawaban salah menambah waktu: <strong>+60</strong> detik (ke-1), <strong>+180</strong> (ke-2), <strong>+300</strong> (ke-3, soal hangus).</li>
-                        <li>Hint menambah waktu sekali per tingkat: <strong>Hint 1 +100</strong>, <strong>Hint 2 +200</strong>, <strong>Hint 3 +300</strong>. Akses clue dibatasi 30 / 30 / 45 detik, lalu hangus.</li>
-                        <li><strong>Hint 3</strong> berisi pembahasan lengkap, jadi soal langsung hangus. Tekan <strong>Lanjut ke Soal Berikutnya</strong> atau tunggu countdown selesai.</li>
-                        <li>Soal hangus tidak bisa dijawab lagi dan tetap dihitung dalam jumlah soal. Tidak ada hukuman tambahan di luar yang sudah disebut.</li>
+                        <li>Tiap tingkat hint menambah waktu satu kali: <strong>Hint 1 +100</strong>, <strong>Hint 2 +200</strong>, <strong>Hint 3 +300</strong>. Akses clue dibatasi 30 / 30 / 45 detik, setelah itu hangus.</li>
+                        <li><strong>Hint 3</strong> berisi pembahasan lengkap, jadi soal langsung hangus. Tekan <strong>Lanjut ke soal berikutnya</strong> atau tunggu countdown selesai.</li>
+                        <li>Soal hangus tidak bisa dijawab lagi dan tetap dihitung sebagai satu soal. Tidak ada hukuman tambahan di luar yang disebut di atas.</li>
                     </ol>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn-playful btn-playful-primary" data-bs-dismiss="modal">Mengerti!</button>
+                    <button type="button" class="btn-playful btn-playful-primary" data-bs-dismiss="modal">Oke, paham</button>
                 </div>
             </div>
         </div>
@@ -748,15 +772,15 @@
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content playful-modal">
                 <div class="modal-header">
-                    <h1 class="modal-title fs-5" id="advmathConfirmExitModalLabel">👀 Yakin mau keluar?</h1>
+                    <h1 class="modal-title fs-5" id="advmathConfirmExitModalLabel">Yakin mau keluar?</h1>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    Progres permainan yang sedang berjalan akan hilang kalau kamu keluar sekarang.
+                    Progres permainan akan hilang kalau kamu keluar sekarang.
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn-playful btn-playful-outline" data-bs-dismiss="modal">Batal</button>
-                    <button type="button" class="btn-playful btn-playful-danger" id="advmathConfirmExitYesButton">Ya, Keluar</button>
+                    <button type="button" class="btn-playful btn-playful-danger" id="advmathConfirmExitYesButton">Ya, keluar</button>
                 </div>
             </div>
         </div>
@@ -768,16 +792,16 @@
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content playful-modal">
                 <div class="modal-header">
-                    <h1 class="modal-title fs-5" id="advmathEndModalLabel">🏁 Selesai!</h1>
+                    <h1 class="modal-title fs-5" id="advmathEndModalLabel">Selesai</h1>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body text-center">
-                    <div class="end-game-stat end-game-stat-main">⏱ Total waktu: <span id="advmathFinalTime">00:00</span> <small>(<span id="advmathEndCountLabel">20 soal</span>)</small></div>
-                    <div class="end-game-stat">🕒 Waktu aktual: <span id="advmathFinalActual">00:00</span></div>
-                    <div class="end-game-stat">⛔ Total hukuman: <span id="advmathFinalPenalty">+00:00</span></div>
-                    <div class="end-game-stat">✖ Jawaban salah: <span id="advmathFinalMistakes">0</span></div>
-                    <div class="end-game-stat">💡 Hint dibuka: <span id="advmathFinalHints">0</span></div>
-                    <div class="end-game-stat">💀 Soal hangus: <span id="advmathFinalBurned">0</span></div>
+                    <div class="end-game-stat end-game-stat-main">Total waktu: <span id="advmathFinalTime">00:00</span> <small>(<span id="advmathEndCountLabel">20 soal</span>)</small></div>
+                    <div class="end-game-stat">Waktu aktual: <span id="advmathFinalActual">00:00</span></div>
+                    <div class="end-game-stat">Total hukuman: <span id="advmathFinalPenalty">+00:00</span></div>
+                    <div class="end-game-stat">Jawaban salah: <span id="advmathFinalMistakes">0</span></div>
+                    <div class="end-game-stat">Hint dibuka: <span id="advmathFinalHints">0</span></div>
+                    <div class="end-game-stat">Soal hangus: <span id="advmathFinalBurned">0</span></div>
 
                     <div class="rank-insight" id="advmathRankInsight" style="display:none;" aria-live="polite">
                         <div class="rank-insight-headline" id="advmathRankInsightHeadline"></div>
@@ -786,9 +810,9 @@
                 </div>
 
                 <div class="modal-footer flex-wrap justify-content-center gap-2">
-                    <button type="button" class="btn-playful btn-playful-success" id="advmathSaveScoreButton">💾 Simpan Waktu</button>
-                    <button type="button" class="btn-playful btn-playful-secondary" id="advmathPlayAgainButton">🔁 Main Lagi</button>
-                    <button type="button" class="btn-playful btn-playful-outline" id="advmathEndBackToDashboardButton">🏠 Dashboard</button>
+                    <button type="button" class="btn-playful btn-playful-success" id="advmathSaveScoreButton">Simpan waktu</button>
+                    <button type="button" class="btn-playful btn-playful-secondary" id="advmathPlayAgainButton">Main lagi</button>
+                    <button type="button" class="btn-playful btn-playful-outline" id="advmathEndBackToDashboardButton">Dashboard</button>
                 </div>
             </div>
         </div>
@@ -800,14 +824,14 @@
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content playful-modal">
                 <div class="modal-header">
-                    <h1 class="modal-title fs-5" id="advmathSaveRecordModalLabel">🏆 Simpan Waktumu!</h1>
+                    <h1 class="modal-title fs-5" id="advmathSaveRecordModalLabel">Simpan waktumu</h1>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <label for="advmathPlayerName" class="save-record-label">Nama Pemain</label>
-                    <input type="text" id="advmathPlayerName" class="form-control playful-input" placeholder="Nama Kamu" maxlength="20">
+                    <label for="advmathPlayerName" class="save-record-label">Nama pemain</label>
+                    <input type="text" id="advmathPlayerName" class="form-control playful-input" placeholder="Nama kamu" maxlength="20">
 
-                    <label class="save-record-label">Pilih Avatar</label>
+                    <label class="save-record-label">Pilih avatar</label>
                     <div class="avatar-picker" id="advmathAvatarPicker"></div>
                 </div>
                 <div class="modal-footer">
@@ -823,22 +847,22 @@
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content playful-modal">
                 <div class="modal-header">
-                    <h1 class="modal-title fs-5" id="advmathDuelModalLabel">⚔️ Duel 1v1</h1>
+                    <h1 class="modal-title fs-5" id="advmathDuelModalLabel">Duel 1v1</h1>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body count-option-list">
                     <button type="button" class="count-option-button" id="advmathDuelCreateRoomButton">
                         <span class="count-option-emoji">🆕</span>
                         <span class="count-option-text">
-                            <strong>Buat Room</strong>
-                            <small>Dapatkan kode untuk dibagikan ke temanmu</small>
+                            <strong>Buat room</strong>
+                            <small>Dapat kode untuk dibagikan ke temanmu</small>
                         </span>
                     </button>
                     <button type="button" class="count-option-button" id="advmathDuelJoinRoomButton">
                         <span class="count-option-emoji">🔑</span>
                         <span class="count-option-text">
-                            <strong>Gabung Room</strong>
-                            <small>Sudah punya kode dari temanmu? Masuk di sini</small>
+                            <strong>Gabung room</strong>
+                            <small>Punya kode dari temanmu? Masukkan di sini</small>
                         </span>
                     </button>
                 </div>
@@ -852,29 +876,29 @@
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content playful-modal">
                 <div class="modal-header">
-                    <h1 class="modal-title fs-5" id="advmathDuelCreateModalLabel">🆕 Buat Room Duel</h1>
+                    <h1 class="modal-title fs-5" id="advmathDuelCreateModalLabel">Buat room duel</h1>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <label for="advmathDuelCreateName" class="save-record-label">Nama Kamu</label>
-                    <input type="text" id="advmathDuelCreateName" class="form-control playful-input" placeholder="Nama Kamu" maxlength="20">
+                    <label for="advmathDuelCreateName" class="save-record-label">Nama kamu</label>
+                    <input type="text" id="advmathDuelCreateName" class="form-control playful-input" placeholder="Nama kamu" maxlength="20">
 
-                    <label class="save-record-label">Pilih Avatar</label>
+                    <label class="save-record-label">Pilih avatar</label>
                     <div class="avatar-picker" id="advmathDuelCreateAvatarPicker"></div>
 
-                    <label class="save-record-label">Pilih Jumlah Soal &amp; Buat Room</label>
+                    <label class="save-record-label">Pilih jumlah soal dan buat room</label>
                     <div class="count-option-list">
                         <button type="button" class="count-option-button" data-count="10">
-                            <span class="count-option-emoji">🟢</span>
-                            <span class="count-option-text"><strong>10 Soal — Mudah</strong><small>Cocok buat pemanasan</small></span>
+                            <span class="count-option-emoji level-dot level-l1" aria-hidden="true"></span>
+                            <span class="count-option-text"><strong>10 soal · Ringan</strong><small>Pas buat pemanasan</small></span>
                         </button>
                         <button type="button" class="count-option-button" data-count="20">
-                            <span class="count-option-emoji">🟡</span>
-                            <span class="count-option-text"><strong>20 Soal — Sedang</strong><small>Level standar, seru dan pas</small></span>
+                            <span class="count-option-emoji level-dot level-l2" aria-hidden="true"></span>
+                            <span class="count-option-text"><strong>20 soal · Sedang</strong><small>Level standar</small></span>
                         </button>
                         <button type="button" class="count-option-button" data-count="30">
-                            <span class="count-option-emoji">🔴</span>
-                            <span class="count-option-text"><strong>30 Soal — Sulit</strong><small>Menantang, buktikan kamu jagoannya!</small></span>
+                            <span class="count-option-emoji level-dot level-l3" aria-hidden="true"></span>
+                            <span class="count-option-text"><strong>30 soal · Sulit</strong><small>Buat yang mau menantang diri</small></span>
                         </button>
                     </div>
                 </div>
@@ -888,17 +912,17 @@
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content playful-modal">
                 <div class="modal-header">
-                    <h1 class="modal-title fs-5" id="advmathDuelJoinModalLabel">🔑 Gabung Room</h1>
+                    <h1 class="modal-title fs-5" id="advmathDuelJoinModalLabel">Gabung room</h1>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <label for="advmathDuelJoinCode" class="save-record-label">Kode Room</label>
+                    <label for="advmathDuelJoinCode" class="save-record-label">Kode room</label>
                     <input type="text" id="advmathDuelJoinCode" class="form-control playful-input duel-code-input" placeholder="K7Q2" maxlength="4">
 
-                    <label for="advmathDuelJoinName" class="save-record-label">Nama Kamu</label>
-                    <input type="text" id="advmathDuelJoinName" class="form-control playful-input" placeholder="Nama Kamu" maxlength="20">
+                    <label for="advmathDuelJoinName" class="save-record-label">Nama kamu</label>
+                    <input type="text" id="advmathDuelJoinName" class="form-control playful-input" placeholder="Nama kamu" maxlength="20">
 
-                    <label class="save-record-label">Pilih Avatar</label>
+                    <label class="save-record-label">Pilih avatar</label>
                     <div class="avatar-picker" id="advmathDuelJoinAvatarPicker"></div>
                 </div>
                 <div class="modal-footer">
@@ -915,12 +939,12 @@
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content playful-modal text-center">
                 <div class="modal-header">
-                    <h1 class="modal-title fs-5" id="advmathDuelWaitingModalLabel">⚔️ Room Dibuat!</h1>
+                    <h1 class="modal-title fs-5" id="advmathDuelWaitingModalLabel">Room siap</h1>
                 </div>
                 <div class="modal-body">
                     <p>Bagikan kode ini ke temanmu:</p>
                     <div class="duel-room-code" id="advmathDuelRoomCodeDisplay">----</div>
-                    <button type="button" class="btn-playful btn-playful-outline" id="advmathDuelCopyCodeButton">📋 Salin Kode</button>
+                    <button type="button" class="btn-playful btn-playful-outline" id="advmathDuelCopyCodeButton">Salin kode</button>
                     <p class="duel-waiting-text">
                         <span class="duel-spinner" aria-hidden="true"></span>
                         Menunggu lawan bergabung...
@@ -940,12 +964,12 @@
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content playful-modal text-center">
                 <div class="modal-header">
-                    <h1 class="modal-title fs-5" id="advmathDuelWaitingResultModalLabel">🏁 Kamu Selesai!</h1>
+                    <h1 class="modal-title fs-5" id="advmathDuelWaitingResultModalLabel">Kamu sudah selesai</h1>
                 </div>
                 <div class="modal-body">
                     <p class="duel-waiting-text">
                         <span class="duel-spinner" aria-hidden="true"></span>
-                        Menunggu lawan menyelesaikan waktunya...
+                        Menunggu lawan menyelesaikan soalnya...
                     </p>
                 </div>
             </div>
@@ -959,15 +983,15 @@
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content playful-modal">
                 <div class="modal-header">
-                    <h1 class="modal-title fs-5" id="advmathDuelResultModalLabel">⚔️ Hasil Duel</h1>
+                    <h1 class="modal-title fs-5" id="advmathDuelResultModalLabel">Hasil duel</h1>
                 </div>
                 <div class="modal-body">
                     <div class="duel-winner-banner" id="advmathDuelWinnerBanner"></div>
                     <div class="duel-result-grid" id="advmathDuelResultGrid"></div>
                 </div>
                 <div class="modal-footer flex-wrap justify-content-center gap-2">
-                    <button type="button" class="btn-playful btn-playful-secondary" id="advmathDuelRematchButton">🔁 Main Lagi</button>
-                    <button type="button" class="btn-playful btn-playful-outline" id="advmathDuelResultDashboardButton">🏠 Dashboard</button>
+                    <button type="button" class="btn-playful btn-playful-secondary" id="advmathDuelRematchButton">Main lagi</button>
+                    <button type="button" class="btn-playful btn-playful-outline" id="advmathDuelResultDashboardButton">Dashboard</button>
                 </div>
             </div>
         </div>
@@ -980,12 +1004,12 @@
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content playful-modal text-center">
                 <div class="modal-header">
-                    <h1 class="modal-title fs-5" id="advmathDuelRematchWaitingModalLabel">🔁 Ajakan Terkirim</h1>
+                    <h1 class="modal-title fs-5" id="advmathDuelRematchWaitingModalLabel">Ajakan terkirim</h1>
                 </div>
                 <div class="modal-body">
                     <p class="duel-waiting-text">
                         <span class="duel-spinner" aria-hidden="true"></span>
-                        Menunggu persetujuan lawan untuk main lagi...
+                        Menunggu lawan setuju untuk main lagi...
                     </p>
                 </div>
                 <div class="modal-footer">
@@ -1002,12 +1026,12 @@
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content playful-modal text-center">
                 <div class="modal-header">
-                    <h1 class="modal-title fs-5" id="advmathDuelRematchRequestModalLabel">🔁 Ajakan Main Lagi</h1>
+                    <h1 class="modal-title fs-5" id="advmathDuelRematchRequestModalLabel">Ajakan main lagi</h1>
                 </div>
                 <div class="modal-body" id="advmathDuelRematchRequestText">Lawan ingin main lagi. Setuju?</div>
                 <div class="modal-footer flex-wrap justify-content-center gap-2">
-                    <button type="button" class="btn-playful btn-playful-success" id="advmathDuelRematchAcceptButton">✅ Setuju</button>
-                    <button type="button" class="btn-playful btn-playful-outline" id="advmathDuelRematchDeclineButton">❌ Tolak</button>
+                    <button type="button" class="btn-playful btn-playful-success" id="advmathDuelRematchAcceptButton">Setuju</button>
+                    <button type="button" class="btn-playful btn-playful-outline" id="advmathDuelRematchDeclineButton">Tolak</button>
                 </div>
             </div>
         </div>
@@ -1019,21 +1043,21 @@
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content playful-modal">
                 <div class="modal-header">
-                    <h1 class="modal-title fs-5" id="advmathChooseCountModalLabel">🎯 Pilih Jumlah Soal</h1>
+                    <h1 class="modal-title fs-5" id="advmathChooseCountModalLabel">Pilih jumlah soal</h1>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body count-option-list">
                     <button type="button" class="count-option-button" data-count="10">
-                        <span class="count-option-emoji">🟢</span>
-                        <span class="count-option-text"><strong>10 Soal — Mudah</strong><small>Cocok buat pemanasan</small></span>
+                        <span class="count-option-emoji level-dot level-l1" aria-hidden="true"></span>
+                        <span class="count-option-text"><strong>10 soal · Ringan</strong><small>Pas buat pemanasan</small></span>
                     </button>
                     <button type="button" class="count-option-button" data-count="20">
-                        <span class="count-option-emoji">🟡</span>
-                        <span class="count-option-text"><strong>20 Soal — Sedang</strong><small>Level standar, seru dan pas</small></span>
+                        <span class="count-option-emoji level-dot level-l2" aria-hidden="true"></span>
+                        <span class="count-option-text"><strong>20 soal · Sedang</strong><small>Level standar</small></span>
                     </button>
                     <button type="button" class="count-option-button" data-count="30">
-                        <span class="count-option-emoji">🔴</span>
-                        <span class="count-option-text"><strong>30 Soal — Sulit</strong><small>Menantang, buktikan kamu jagoannya!</small></span>
+                        <span class="count-option-emoji level-dot level-l3" aria-hidden="true"></span>
+                        <span class="count-option-text"><strong>30 soal · Sulit</strong><small>Buat yang mau menantang diri</small></span>
                     </button>
                 </div>
             </div>
@@ -1046,8 +1070,8 @@
         <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
             <div class="modal-content playful-modal">
                 <div class="modal-header">
-                    <h1 class="modal-title fs-5" id="advmathHintModalLabel">💡 Hint</h1>
-                    <span class="advmath-hint-modal-timer" title="Total waktu permainan (tetap berjalan)">⏱ <span id="advmathHintTimer">00:00</span></span>
+                    <h1 class="modal-title fs-5" id="advmathHintModalLabel">Hint</h1>
+                    <span class="advmath-hint-modal-timer" title="Total waktu permainan (tetap berjalan)"><span aria-hidden="true">⏱</span> <span id="advmathHintTimer">00:00</span></span>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup (waktu hint tetap berjalan)"></button>
                 </div>
                 <div class="modal-body">
@@ -1057,10 +1081,10 @@
                     </div>
                     <div class="advmath-hint-clue" id="advmathHintClue"></div>
                     <p class="advmath-hint-penalty-info" id="advmathHintPenaltyInfo"></p>
-                    <p class="advmath-hint-burn-note" id="advmathHintBurnNote" style="display:none;">💀 Soal ini hangus dan tidak bisa dijawab lagi.</p>
+                    <p class="advmath-hint-burn-note" id="advmathHintBurnNote" style="display:none;">Soal ini hangus dan tidak bisa dijawab lagi.</p>
                 </div>
                 <div class="modal-footer flex-wrap justify-content-center gap-2">
-                    <button type="button" class="btn-playful btn-playful-primary" id="advmathHintNextButton" style="display:none;">Lanjut ke Soal Berikutnya ▶</button>
+                    <button type="button" class="btn-playful btn-playful-primary" id="advmathHintNextButton" style="display:none;">Lanjut ke soal berikutnya ▶</button>
                     <button type="button" class="btn-playful btn-playful-outline" data-bs-dismiss="modal">Tutup</button>
                 </div>
             </div>
@@ -1073,29 +1097,29 @@
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content playful-modal">
                 <div class="modal-header">
-                    <h1 class="modal-title fs-5" id="chooseCountModalLabel">🎯 Pilih Jumlah Soal</h1>
+                    <h1 class="modal-title fs-5" id="chooseCountModalLabel">Pilih jumlah soal</h1>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body count-option-list">
                     <button type="button" class="count-option-button" data-count="10">
-                        <span class="count-option-emoji">🟢</span>
+                        <span class="count-option-emoji level-dot level-l1" aria-hidden="true"></span>
                         <span class="count-option-text">
-                            <strong>10 Soal — Mudah</strong>
-                            <small>Cocok buat pemanasan</small>
+                            <strong>10 soal · Ringan</strong>
+                            <small>Pas buat pemanasan</small>
                         </span>
                     </button>
                     <button type="button" class="count-option-button" data-count="20">
-                        <span class="count-option-emoji">🟡</span>
+                        <span class="count-option-emoji level-dot level-l2" aria-hidden="true"></span>
                         <span class="count-option-text">
-                            <strong>20 Soal — Sedang</strong>
-                            <small>Level standar, seru dan pas</small>
+                            <strong>20 soal · Sedang</strong>
+                            <small>Level standar</small>
                         </span>
                     </button>
                     <button type="button" class="count-option-button" data-count="30">
-                        <span class="count-option-emoji">🔴</span>
+                        <span class="count-option-emoji level-dot level-l3" aria-hidden="true"></span>
                         <span class="count-option-text">
-                            <strong>30 Soal — Sulit</strong>
-                            <small>Menantang, buktikan kamu jagoannya!</small>
+                            <strong>30 soal · Sulit</strong>
+                            <small>Buat yang mau menantang diri</small>
                         </span>
                     </button>
                 </div>
@@ -1109,15 +1133,15 @@
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content playful-modal">
                 <div class="modal-header">
-                    <h1 class="modal-title fs-5" id="confirmExitModalLabel">👀 Yakin mau keluar?</h1>
+                    <h1 class="modal-title fs-5" id="confirmExitModalLabel">Yakin mau keluar?</h1>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    Progres permainan yang sedang berjalan akan hilang kalau kamu keluar sekarang.
+                    Progres permainan akan hilang kalau kamu keluar sekarang.
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn-playful btn-playful-outline" data-bs-dismiss="modal">Batal</button>
-                    <button type="button" class="btn-playful btn-playful-danger" id="confirmExitYesButton">Ya, Keluar</button>
+                    <button type="button" class="btn-playful btn-playful-danger" id="confirmExitYesButton">Ya, keluar</button>
                 </div>
             </div>
         </div>
@@ -1129,20 +1153,20 @@
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content playful-modal">
                 <div class="modal-header">
-                    <h1 class="modal-title fs-5" id="helpModalLabel">📚 Cara Bermain</h1>
+                    <h1 class="modal-title fs-5" id="helpModalLabel">Cara bermain</h1>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     <ol class="help-list">
-                        <li>Tekan <strong>Mulai Main</strong>, lalu pilih jumlah soal (10, 20, atau 30).</li>
-                        <li>Jawab tiap soal perkalian pakai keypad angka atau keyboard.</li>
-                        <li>Lupa hasil kali? Tekan tombol <strong>?</strong> untuk melihat tabel perkalian.</li>
-                        <li>Tekan tab 10/20/30 Soal di dashboard untuk melihat papan peringkat masing-masing.</li>
-                        <li>Makin cepat &amp; makin sedikit salah, makin besar peluang masuk papan peringkat!</li>
+                        <li>Tekan <strong>Main sendiri</strong>, lalu pilih jumlah soal (10, 20, atau 30).</li>
+                        <li>Jawab tiap soal pakai keypad angka atau keyboard.</li>
+                        <li>Lupa hasil kalinya? Tekan <strong>?</strong> untuk membuka tabel perkalian.</li>
+                        <li>Ganti tab 10, 20, atau 30 soal di dashboard untuk melihat papan peringkat tiap level.</li>
+                        <li>Makin cepat dan makin sedikit salah, makin besar peluangmu masuk papan peringkat.</li>
                     </ol>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn-playful btn-playful-primary" data-bs-dismiss="modal">Mengerti!</button>
+                    <button type="button" class="btn-playful btn-playful-primary" data-bs-dismiss="modal">Oke, paham</button>
                 </div>
             </div>
         </div>
@@ -1155,12 +1179,12 @@
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content playful-modal">
                 <div class="modal-header">
-                    <h1 class="modal-title fs-5" id="endGameModalLabel">🎉 Selesai!</h1>
+                    <h1 class="modal-title fs-5" id="endGameModalLabel">Selesai</h1>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body text-center">
-                    <div class="end-game-stat">⏱️ Waktu: <span id="finalTime">00:00</span></div>
-                    <div class="end-game-stat">❌ Kesalahan: <span id="mistakesCount">0</span></div>
+                    <div class="end-game-stat">Waktu: <span id="finalTime">00:00</span></div>
+                    <div class="end-game-stat">Kesalahan: <span id="mistakesCount">0</span></div>
                     <div class="rank-insight" id="rankInsight" style="display:none;" aria-live="polite">
                         <div class="rank-insight-headline" id="rankInsightHeadline"></div>
                         <ul class="rank-insight-details" id="rankInsightDetails"></ul>
@@ -1168,9 +1192,9 @@
                 </div>
 
                 <div class="modal-footer flex-wrap justify-content-center gap-2">
-                    <button type="button" class="btn-playful btn-playful-success" id="saveScoreButton">💾 Simpan Skor</button>
-                    <button type="button" class="btn-playful btn-playful-secondary" id="playAgainButton">🔁 Main Lagi</button>
-                    <button type="button" class="btn-playful btn-playful-outline" id="endGameBackToDashboardButton">🏠 Dashboard</button>
+                    <button type="button" class="btn-playful btn-playful-success" id="saveScoreButton">Simpan skor</button>
+                    <button type="button" class="btn-playful btn-playful-secondary" id="playAgainButton">Main lagi</button>
+                    <button type="button" class="btn-playful btn-playful-outline" id="endGameBackToDashboardButton">Dashboard</button>
                 </div>
             </div>
         </div>
@@ -1183,14 +1207,14 @@
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content playful-modal">
                 <div class="modal-header">
-                    <h1 class="modal-title fs-5" id="saveRecordModalLabel">🏆 Simpan Skormu!</h1>
+                    <h1 class="modal-title fs-5" id="saveRecordModalLabel">Simpan skormu</h1>
                     <button type="button" class="btn-close" id="saveRecordCloseButton" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <label for="playerName" class="save-record-label">Nama Pemain</label>
-                    <input type="text" id="playerName" class="form-control playful-input" placeholder="Nama Kamu" maxlength="20">
+                    <label for="playerName" class="save-record-label">Nama pemain</label>
+                    <input type="text" id="playerName" class="form-control playful-input" placeholder="Nama kamu" maxlength="20">
 
-                    <label class="save-record-label">Pilih Avatar</label>
+                    <label class="save-record-label">Pilih avatar</label>
                     <div class="avatar-picker" id="avatarPicker"></div>
                 </div>
                 <div class="modal-footer">
@@ -1206,22 +1230,22 @@
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content playful-modal">
                 <div class="modal-header">
-                    <h1 class="modal-title fs-5" id="duelModalLabel">⚔️ Duel 1v1</h1>
+                    <h1 class="modal-title fs-5" id="duelModalLabel">Duel 1v1</h1>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body count-option-list">
                     <button type="button" class="count-option-button" id="duelCreateRoomButton">
                         <span class="count-option-emoji">🆕</span>
                         <span class="count-option-text">
-                            <strong>Buat Room</strong>
-                            <small>Dapatkan kode untuk dibagikan ke temanmu</small>
+                            <strong>Buat room</strong>
+                            <small>Dapat kode untuk dibagikan ke temanmu</small>
                         </span>
                     </button>
                     <button type="button" class="count-option-button" id="duelJoinRoomButton">
                         <span class="count-option-emoji">🔑</span>
                         <span class="count-option-text">
-                            <strong>Gabung Room</strong>
-                            <small>Sudah punya kode dari temanmu? Masuk di sini</small>
+                            <strong>Gabung room</strong>
+                            <small>Punya kode dari temanmu? Masukkan di sini</small>
                         </span>
                     </button>
                 </div>
@@ -1235,29 +1259,29 @@
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content playful-modal">
                 <div class="modal-header">
-                    <h1 class="modal-title fs-5" id="duelCreateModalLabel">🆕 Buat Room Duel</h1>
+                    <h1 class="modal-title fs-5" id="duelCreateModalLabel">Buat room duel</h1>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <label for="duelCreateName" class="save-record-label">Nama Kamu</label>
-                    <input type="text" id="duelCreateName" class="form-control playful-input" placeholder="Nama Kamu" maxlength="20">
+                    <label for="duelCreateName" class="save-record-label">Nama kamu</label>
+                    <input type="text" id="duelCreateName" class="form-control playful-input" placeholder="Nama kamu" maxlength="20">
 
-                    <label class="save-record-label">Pilih Avatar</label>
+                    <label class="save-record-label">Pilih avatar</label>
                     <div class="avatar-picker" id="duelCreateAvatarPicker"></div>
 
-                    <label class="save-record-label">Jumlah Soal</label>
+                    <label class="save-record-label">Jumlah soal</label>
                     <div class="count-option-list">
                         <button type="button" class="count-option-button" data-count="10">
-                            <span class="count-option-emoji">🟢</span>
-                            <span class="count-option-text"><strong>10 Soal</strong><small>Mudah</small></span>
+                            <span class="count-option-emoji level-dot level-l1" aria-hidden="true"></span>
+                            <span class="count-option-text"><strong>10 soal</strong><small>Ringan</small></span>
                         </button>
                         <button type="button" class="count-option-button" data-count="20">
-                            <span class="count-option-emoji">🟡</span>
-                            <span class="count-option-text"><strong>20 Soal</strong><small>Sedang</small></span>
+                            <span class="count-option-emoji level-dot level-l2" aria-hidden="true"></span>
+                            <span class="count-option-text"><strong>20 soal</strong><small>Sedang</small></span>
                         </button>
                         <button type="button" class="count-option-button" data-count="30">
-                            <span class="count-option-emoji">🔴</span>
-                            <span class="count-option-text"><strong>30 Soal</strong><small>Sulit</small></span>
+                            <span class="count-option-emoji level-dot level-l3" aria-hidden="true"></span>
+                            <span class="count-option-text"><strong>30 soal</strong><small>Sulit</small></span>
                         </button>
                     </div>
                 </div>
@@ -1271,17 +1295,17 @@
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content playful-modal">
                 <div class="modal-header">
-                    <h1 class="modal-title fs-5" id="duelJoinModalLabel">🔑 Gabung Room</h1>
+                    <h1 class="modal-title fs-5" id="duelJoinModalLabel">Gabung room</h1>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <label for="duelJoinCode" class="save-record-label">Kode Room</label>
+                    <label for="duelJoinCode" class="save-record-label">Kode room</label>
                     <input type="text" id="duelJoinCode" class="form-control playful-input duel-code-input" placeholder="K7Q2" maxlength="4">
 
-                    <label for="duelJoinName" class="save-record-label">Nama Kamu</label>
-                    <input type="text" id="duelJoinName" class="form-control playful-input" placeholder="Nama Kamu" maxlength="20">
+                    <label for="duelJoinName" class="save-record-label">Nama kamu</label>
+                    <input type="text" id="duelJoinName" class="form-control playful-input" placeholder="Nama kamu" maxlength="20">
 
-                    <label class="save-record-label">Pilih Avatar</label>
+                    <label class="save-record-label">Pilih avatar</label>
                     <div class="avatar-picker" id="duelJoinAvatarPicker"></div>
                 </div>
                 <div class="modal-footer">
@@ -1298,12 +1322,12 @@
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content playful-modal text-center">
                 <div class="modal-header">
-                    <h1 class="modal-title fs-5" id="duelWaitingModalLabel">⚔️ Room Dibuat!</h1>
+                    <h1 class="modal-title fs-5" id="duelWaitingModalLabel">Room siap</h1>
                 </div>
                 <div class="modal-body">
                     <p>Bagikan kode ini ke temanmu:</p>
                     <div class="duel-room-code" id="duelRoomCodeDisplay">----</div>
-                    <button type="button" class="btn-playful btn-playful-outline" id="duelCopyCodeButton">📋 Salin Kode</button>
+                    <button type="button" class="btn-playful btn-playful-outline" id="duelCopyCodeButton">Salin kode</button>
                     <p class="duel-waiting-text">
                         <span class="duel-spinner" aria-hidden="true"></span>
                         Menunggu lawan bergabung...
@@ -1323,15 +1347,15 @@
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content playful-modal">
                 <div class="modal-header">
-                    <h1 class="modal-title fs-5" id="duelResultModalLabel">⚔️ Hasil Duel</h1>
+                    <h1 class="modal-title fs-5" id="duelResultModalLabel">Hasil duel</h1>
                 </div>
                 <div class="modal-body">
                     <div class="duel-winner-banner" id="duelWinnerBanner"></div>
                     <div class="duel-result-grid" id="duelResultGrid"></div>
                 </div>
                 <div class="modal-footer flex-wrap justify-content-center gap-2">
-                    <button type="button" class="btn-playful btn-playful-secondary" id="duelRematchButton">🔁 Main Lagi</button>
-                    <button type="button" class="btn-playful btn-playful-outline" id="duelResultDashboardButton">🏠 Dashboard</button>
+                    <button type="button" class="btn-playful btn-playful-secondary" id="duelRematchButton">Main lagi</button>
+                    <button type="button" class="btn-playful btn-playful-outline" id="duelResultDashboardButton">Dashboard</button>
                 </div>
             </div>
         </div>
@@ -1344,12 +1368,12 @@
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content playful-modal text-center">
                 <div class="modal-header">
-                    <h1 class="modal-title fs-5" id="duelRematchWaitingModalLabel">🔁 Ajakan Terkirim</h1>
+                    <h1 class="modal-title fs-5" id="duelRematchWaitingModalLabel">Ajakan terkirim</h1>
                 </div>
                 <div class="modal-body">
                     <p class="duel-waiting-text">
                         <span class="duel-spinner" aria-hidden="true"></span>
-                        Menunggu persetujuan lawan untuk main lagi...
+                        Menunggu lawan setuju untuk main lagi...
                     </p>
                 </div>
                 <div class="modal-footer">
@@ -1366,12 +1390,12 @@
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content playful-modal text-center">
                 <div class="modal-header">
-                    <h1 class="modal-title fs-5" id="duelRematchRequestModalLabel">🔁 Ajakan Main Lagi</h1>
+                    <h1 class="modal-title fs-5" id="duelRematchRequestModalLabel">Ajakan main lagi</h1>
                 </div>
                 <div class="modal-body" id="duelRematchRequestText">Lawan ingin main lagi. Setuju?</div>
                 <div class="modal-footer flex-wrap justify-content-center gap-2">
-                    <button type="button" class="btn-playful btn-playful-success" id="duelRematchAcceptButton">✅ Setuju</button>
-                    <button type="button" class="btn-playful btn-playful-outline" id="duelRematchDeclineButton">❌ Tolak</button>
+                    <button type="button" class="btn-playful btn-playful-success" id="duelRematchAcceptButton">Setuju</button>
+                    <button type="button" class="btn-playful btn-playful-outline" id="duelRematchDeclineButton">Tolak</button>
                 </div>
             </div>
         </div>
@@ -1384,14 +1408,14 @@
          Kalau belum dikonfigurasi, game otomatis memakai localStorage sebagai cadangan. -->
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-    <script src="firebase-config.js?v=20261013"></script>
+    <script src="firebase-config.js?v=20261014"></script>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/js/bootstrap.bundle.min.js"
         integrity="sha384-HwwvtgBNo3bZJJLYd8oVXjrBZt8cqVSpeBNS5n7C8IVInixGAoxmnlMuBnhbgrkm"
         crossorigin="anonymous"></script>
-    <script src="knowledge-questions.js?v=20261013"></script>
-    <script src="advmath-questions.js?v=20261013"></script>
-    <script src="script.js?v=20261013"></script>
+    <script src="knowledge-questions.js?v=20261014"></script>
+    <script src="advmath-questions.js?v=20261014"></script>
+    <script src="script.js?v=20261014"></script>
 
 </body>
 
