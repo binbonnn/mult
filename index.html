@@ -4,163 +4,124 @@
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;700;800&family=Fredoka:wght@500;600;700&family=Lilita+One&family=Nunito:wght@500;700;800&family=Plus+Jakarta+Sans:wght@500;700;800&family=Rubik:wght@500;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,800&family=Figtree:wght@400;600;700&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/css/bootstrap.min.css" rel="stylesheet"
         integrity="sha384-4bw+/aepP/YC94hEpVNVgiZdgIC5+VKNBQNGCHeKRQN+PtmoHDEXuppvnDJzQIu9" crossorigin="anonymous">
-    <link rel="stylesheet" href="style.css?v=20261015">
+    <link rel="stylesheet" href="style.css?v=20261016">
     <title>Game Hub</title>
 </head>
 
-<body data-theme="hub">
+<body data-game="hub">
+    <a class="skip-link" href="#app">Lompat ke isi</a>
+    <div id="offlineBanner" class="offline-banner" role="status" hidden>Kamu sedang offline. Skor disimpan di perangkat ini dulu.</div>
+    <div id="liveRegion" class="visually-hidden" role="status" aria-live="polite" aria-atomic="true"></div>
 
     <!-- Maskot orisinal (SVG buatan sendiri, tanpa aset pihak ketiga). Dipakai lewat <use href="#mascot-gN"> -->
     <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
         <defs>
-            <!-- Game 1: Kali, bentuk "×" yang ramah -->
+            <!-- Maskot orisinal. Warna dari token (var), jadi ikut game aktif -->
+            <!-- Game 1: bentuk "x" bulat -->
             <symbol id="mascot-g1" viewBox="0 0 120 120">
-                <rect x="8" y="43" width="104" height="34" rx="17" transform="rotate(45 60 60)" fill="#00B86B" />
-                <rect x="8" y="43" width="104" height="34" rx="17" transform="rotate(-45 60 60)" fill="#00B86B" />
-                <circle cx="60" cy="60" r="30" fill="#00B86B" />
-                <ellipse cx="49" cy="56" rx="9" ry="10" fill="#FFF0CF" />
-                <ellipse cx="73" cy="56" rx="9" ry="10" fill="#FFF0CF" />
-                <circle cx="52" cy="57" r="4.5" fill="#252525" />
-                <circle cx="76" cy="57" r="4.5" fill="#252525" />
-                <path d="M51 74 Q61 83 71 74" fill="none" stroke="#252525" stroke-width="4" stroke-linecap="round" />
+                <rect x="8" y="43" width="104" height="34" rx="17" transform="rotate(45 60 60)" style="fill:var(--bg)" />
+                <rect x="8" y="43" width="104" height="34" rx="17" transform="rotate(-45 60 60)" style="fill:var(--bg)" />
+                <circle cx="60" cy="60" r="30" style="fill:var(--bg)" />
+                <circle cx="50" cy="56" r="5" style="fill:var(--ink)" />
+                <circle cx="70" cy="56" r="5" style="fill:var(--ink)" />
+                <path d="M50 70 Q60 79 70 70" fill="none" style="stroke:var(--ink)" stroke-width="4" stroke-linecap="round" />
             </symbol>
-            <!-- Game 2: Tanya, makhluk penasaran dengan bohlam ide -->
+            <!-- Game 2: robot kapsul -->
             <symbol id="mascot-g2" viewBox="0 0 120 120">
-                <path d="M20 106 V64 C20 38 38 22 60 22 C82 22 100 38 100 64 V106 Q100 110 96 110 H24 Q20 110 20 106 Z" fill="#29B8FF" />
-                <line x1="60" y1="22" x2="60" y2="15" stroke="#FFB000" stroke-width="5" stroke-linecap="round" />
-                <circle cx="60" cy="10" r="8" fill="#FFB000" />
-                <ellipse cx="45" cy="66" rx="13" ry="14" fill="#FFFDF7" />
-                <ellipse cx="76" cy="66" rx="13" ry="14" fill="#FFFDF7" />
-                <circle cx="49" cy="68" r="6.5" fill="#1B1B1B" />
-                <circle cx="80" cy="68" r="6.5" fill="#1B1B1B" />
-                <rect x="53" y="90" width="14" height="7" rx="3.5" fill="#1B1B1B" />
+                <line x1="60" y1="20" x2="60" y2="10" style="stroke:var(--bg)" stroke-width="5" stroke-linecap="round" />
+                <circle cx="60" cy="8" r="7" style="fill:var(--accent)" />
+                <rect x="20" y="20" width="80" height="92" rx="40" style="fill:var(--bg)" />
+                <circle cx="46" cy="58" r="6" style="fill:var(--white)" />
+                <circle cx="74" cy="58" r="6" style="fill:var(--white)" />
+                <path d="M48 78 Q60 88 72 78" fill="none" style="stroke:var(--white)" stroke-width="4" stroke-linecap="round" />
             </symbol>
-            <!-- Game 3: Nakal, percaya diri dan sedikit usil -->
+            <!-- Game 3: blob -->
             <symbol id="mascot-g3" viewBox="0 0 120 120">
-                <path d="M28 106 C22 60 34 18 62 18 C90 18 98 60 92 106 Q60 116 28 106 Z" fill="#FF70BD" />
-                <ellipse cx="47" cy="58" rx="11" ry="11" fill="#FFFDF7" />
-                <ellipse cx="77" cy="58" rx="11" ry="11" fill="#FFFDF7" />
-                <path d="M36 58 A11 11 0 0 1 58 58 Z" fill="#26213B" />
-                <path d="M66 58 A11 11 0 0 1 88 58 Z" fill="#26213B" />
-                <circle cx="50" cy="63" r="5" fill="#26213B" />
-                <circle cx="80" cy="63" r="5" fill="#26213B" />
-                <path d="M34 42 Q46 33 58 40" fill="none" stroke="#26213B" stroke-width="5" stroke-linecap="round" />
-                <path d="M68 44 L90 41" fill="none" stroke="#26213B" stroke-width="5" stroke-linecap="round" />
-                <path d="M50 86 Q68 98 84 80" fill="none" stroke="#26213B" stroke-width="5" stroke-linecap="round" />
-                <path d="M100 8 L104 20 L116 24 L104 28 L100 40 L96 28 L84 24 L96 20 Z" fill="#FFB000" />
+                <path d="M26 104 C16 60 32 16 62 18 C94 20 104 62 94 104 Q60 116 26 104 Z" style="fill:var(--bg)" />
+                <circle cx="48" cy="58" r="5" style="fill:var(--ink)" />
+                <circle cx="76" cy="58" r="5" style="fill:var(--ink)" />
+                <path d="M48 78 Q62 90 78 76" fill="none" style="stroke:var(--ink)" stroke-width="4" stroke-linecap="round" />
+                <circle cx="100" cy="22" r="7" style="fill:var(--accent)" />
             </symbol>
-            <!-- Game 4 (hub saja): Sunny, matahari yang tenang -->
+            <!-- Game 4 & 5 (hub saja) -->
             <symbol id="mascot-g4" viewBox="0 0 120 120">
-                <circle cx="58" cy="58" r="52" fill="#FFF1A6" />
-                <circle cx="58" cy="58" r="36" fill="#FF8A24" />
-                <path d="M42 54 Q48 61 54 54" fill="none" stroke="#2B2508" stroke-width="4" stroke-linecap="round" />
-                <path d="M62 54 Q68 61 74 54" fill="none" stroke="#2B2508" stroke-width="4" stroke-linecap="round" />
-                <path d="M52 68 Q58 74 64 68" fill="none" stroke="#2B2508" stroke-width="4" stroke-linecap="round" />
-                <path d="M88 114 C54 106 110 86 86 64" fill="none" stroke="#168A4A" stroke-width="12" stroke-linecap="round" />
-                <path d="M86 64 C92 50 106 52 110 44 C98 38 86 46 86 64 Z" fill="#168A4A" />
+                <circle cx="60" cy="60" r="44" style="fill:var(--ink)" />
+                <circle cx="46" cy="56" r="5" style="fill:var(--bg)" />
+                <circle cx="74" cy="56" r="5" style="fill:var(--bg)" />
+                <path d="M48 76 Q60 84 72 76" fill="none" style="stroke:var(--bg)" stroke-width="4" stroke-linecap="round" />
             </symbol>
-            <!-- Game 5 (hub saja): Aneh, mata tidak sama besar -->
             <symbol id="mascot-g5" viewBox="0 0 120 120">
-                <path d="M20 72 C14 42 40 18 66 26 C96 32 108 60 98 86 C90 108 52 114 34 100 C24 92 22 82 20 72 Z" fill="#FF5A1F" />
-                <path d="M28 90 Q46 78 62 90 T94 84" fill="none" stroke="#1688E8" stroke-width="7" stroke-linecap="round" />
-                <circle cx="50" cy="58" r="13" fill="#FFF9EE" />
-                <circle cx="53" cy="60" r="5.5" fill="#1B1B1B" />
-                <circle cx="82" cy="52" r="8" fill="#FFF9EE" />
-                <circle cx="80" cy="53" r="3.5" fill="#1B1B1B" />
-                <path d="M68 26 C66 8 90 6 88 22 C86 32 74 30 77 22" fill="none" stroke="#1688E8" stroke-width="5" stroke-linecap="round" />
-                <circle cx="104" cy="30" r="5" fill="#168B52" />
-                <circle cx="14" cy="96" r="4" fill="#168B52" />
+                <path d="M20 72 C14 42 40 18 66 26 C96 32 108 60 98 86 C90 108 52 114 34 100 C24 92 22 82 20 72 Z" style="fill:var(--ink)" />
+                <circle cx="48" cy="60" r="7" style="fill:var(--bg)" />
+                <circle cx="80" cy="54" r="4" style="fill:var(--bg)" />
+                <path d="M46 84 Q62 92 78 80" fill="none" style="stroke:var(--bg)" stroke-width="4" stroke-linecap="round" />
             </symbol>
         </defs>
     </svg>
 
 
 
-    <div id="app">
+    <main id="app">
 
         <!-- ================= HUB VIEW (landing page pilihan game) ================= -->
         <section id="hubView" class="view active">
             <header class="dashboard-header hub-header">
                 <div class="dashboard-heading">
-                    <h1>Mau main yang mana?</h1>
-                    <p class="subtitle">Tiga game, satu rumah. Pilih yang paling bikin penasaran.</p>
+                    <h1>Tiga game, satu rumah.</h1>
+                    <p class="subtitle">Pilih satu, main sendiri atau duel sama teman.</p>
                 </div>
             </header>
 
             <div class="game-grid">
-                <button type="button" class="game-card game-card-active game-card-multiply" id="hubOpenMultiplyButton">
-                    <span class="gc-decor" aria-hidden="true">
-                        <i class="gc-blob"></i><i class="gc-blob-2"></i><i class="gc-ring"></i><i class="gc-dots"></i>
-                        <i class="gc-glyph gc-glyph-a">×</i><i class="gc-glyph gc-glyph-b">÷</i><i class="gc-glyph gc-glyph-c">+</i><i class="gc-glyph gc-glyph-d">=</i>
-                    </span>
-                    <svg class="game-card-icon" viewBox="0 0 120 120" aria-hidden="true"><use href="#mascot-g1"/></svg>
+                <button type="button" class="game-card game-card-active game-card-multiply" data-game="mult" id="hubOpenMultiplyButton">
+                    <span class="gc-art" aria-hidden="true"><svg class="game-card-icon" viewBox="0 0 120 120"><use href="#mascot-g1"/></svg></span>
                     <span class="game-card-body">
                         <span class="game-card-title">Perkalian 1-10</span>
-                        <span class="game-card-subtitle">Hitung cepat, satu soal sekali jalan.</span>
+                        <span class="game-card-subtitle">Hitung cepat, tanpa panik.</span>
                         <span class="game-card-tags"><span class="gc-tag">Solo</span><span class="gc-tag">Duel 1v1</span></span>
+                        <span class="game-card-cta">Main <span aria-hidden="true">→</span></span>
                     </span>
-                    <span class="game-card-arrow" aria-hidden="true">→</span>
                 </button>
-
-                <button type="button" class="game-card game-card-active game-card-knowledge" id="hubOpenKnowledgeButton">
-                    <span class="gc-decor" aria-hidden="true">
-                        <i class="gc-blob"></i><i class="gc-blob-2"></i><i class="gc-stripes"></i><i class="gc-dots"></i>
-                        <i class="gc-glyph gc-glyph-a">?</i><i class="gc-glyph gc-glyph-b">!</i><i class="gc-glyph gc-glyph-c">✦</i><i class="gc-glyph gc-glyph-d">◎</i>
-                    </span>
-                    <svg class="game-card-icon" viewBox="0 0 120 120" aria-hidden="true"><use href="#mascot-g2"/></svg>
+                <button type="button" class="game-card game-card-active game-card-knowledge" data-game="knowledge" id="hubOpenKnowledgeButton">
+                    <span class="gc-art" aria-hidden="true"><svg class="game-card-icon" viewBox="0 0 120 120"><use href="#mascot-g2"/></svg></span>
                     <span class="game-card-body">
                         <span class="game-card-title">Pengetahuan Dasar</span>
                         <span class="game-card-subtitle">60 detik. Seberapa banyak yang kamu tahu?</span>
                         <span class="game-card-tags"><span class="gc-tag">Solo</span><span class="gc-tag">Duel 1v1</span></span>
+                        <span class="game-card-cta">Main <span aria-hidden="true">→</span></span>
                     </span>
-                    <span class="game-card-arrow" aria-hidden="true">→</span>
                 </button>
-
-                <button type="button" class="game-card game-card-active game-card-advmath" id="hubOpenAdvmathButton">
-                    <span class="gc-decor" aria-hidden="true">
-                        <i class="gc-blob"></i><i class="gc-blob-2"></i><i class="gc-ring"></i><i class="gc-stripes"></i>
-                        <i class="gc-glyph gc-glyph-a">√</i><i class="gc-glyph gc-glyph-b">²</i><i class="gc-glyph gc-glyph-c">∞</i><i class="gc-glyph gc-glyph-d">×</i>
-                    </span>
-                    <svg class="game-card-icon" viewBox="0 0 120 120" aria-hidden="true"><use href="#mascot-g3"/></svg>
+                <button type="button" class="game-card game-card-active game-card-advmath" data-game="advanced" id="hubOpenAdvmathButton">
+                    <span class="gc-art" aria-hidden="true"><svg class="game-card-icon" viewBox="0 0 120 120"><use href="#mascot-g3"/></svg></span>
                     <span class="game-card-body">
                         <span class="game-card-title">Perkalian 1-10 Lanjutan</span>
-                        <span class="game-card-subtitle">Pelan-pelan, perhatikan polanya.</span>
+                        <span class="game-card-subtitle">Pelan-pelan, polanya ada kok.</span>
                         <span class="game-card-tags"><span class="gc-tag">Solo</span><span class="gc-tag">Duel 1v1</span></span>
+                        <span class="game-card-cta">Main <span aria-hidden="true">→</span></span>
                     </span>
-                    <span class="game-card-arrow" aria-hidden="true">→</span>
                 </button>
-
-                <button type="button" class="game-card game-card-soon game-card-soon-4" id="hubComingSoon1">
-                    <span class="gc-decor" aria-hidden="true">
-                        <i class="gc-blob"></i><i class="gc-blob-2"></i><i class="gc-dots"></i>
-                        <i class="gc-glyph gc-glyph-a">★</i><i class="gc-glyph gc-glyph-c">◆</i><i class="gc-glyph gc-glyph-d">●</i>
-                    </span>
-                    <svg class="game-card-icon" viewBox="0 0 120 120" aria-hidden="true"><use href="#mascot-g4"/></svg>
+                <div class="game-card game-card-soon is-soon" data-game="soon-1" id="hubComingSoon1" aria-disabled="true">
+                    <span class="gc-art" aria-hidden="true"><svg class="game-card-icon" viewBox="0 0 120 120"><use href="#mascot-g4"/></svg></span>
                     <span class="game-card-body">
                         <span class="game-card-title">Game 4</span>
-                        <span class="game-card-subtitle">Lagi disiapkan.</span>
+                        <span class="game-card-subtitle">Lagi dibikin ✨</span>
+                        <span class="game-card-badge">Segera hadir</span>
                     </span>
-                    <span class="game-card-badge">Segera hadir</span>
-                </button>
-
-                <button type="button" class="game-card game-card-soon game-card-soon-5" id="hubComingSoon2">
-                    <span class="gc-decor" aria-hidden="true">
-                        <i class="gc-blob"></i><i class="gc-blob-2"></i><i class="gc-stripes"></i>
-                        <i class="gc-glyph gc-glyph-a">≈</i><i class="gc-glyph gc-glyph-c">◐</i><i class="gc-glyph gc-glyph-d">~</i>
-                    </span>
-                    <svg class="game-card-icon" viewBox="0 0 120 120" aria-hidden="true"><use href="#mascot-g5"/></svg>
+                </div>
+                <div class="game-card game-card-soon is-soon" data-game="soon-2" id="hubComingSoon2" aria-disabled="true">
+                    <span class="gc-art" aria-hidden="true"><svg class="game-card-icon" viewBox="0 0 120 120"><use href="#mascot-g5"/></svg></span>
                     <span class="game-card-body">
                         <span class="game-card-title">Game 5</span>
-                        <span class="game-card-subtitle">Lagi disiapkan.</span>
+                        <span class="game-card-subtitle">Lagi dibikin ✨</span>
+                        <span class="game-card-badge">Segera hadir</span>
                     </span>
-                    <span class="game-card-badge">Segera hadir</span>
-                </button>
+                </div>
             </div>
         </section>
         <!-- ================= HUB VIEW END ================= -->
@@ -495,7 +456,7 @@
         </section>
         <!-- ================= ADVMATH GAME VIEW END ================= -->
 
-    </div>
+    </main>
 
     <!-- COUNTDOWN OVERLAY (global, di luar #app agar tampil di semua game) -->
             <!-- INI COUNTDOWN OVERLAY -->
@@ -1480,14 +1441,15 @@
          Kalau belum dikonfigurasi, game otomatis memakai localStorage sebagai cadangan. -->
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-    <script src="firebase-config.js?v=20261015"></script>
+    <script src="firebase-config.js?v=20261016"></script>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/js/bootstrap.bundle.min.js"
         integrity="sha384-HwwvtgBNo3bZJJLYd8oVXjrBZt8cqVSpeBNS5n7C8IVInixGAoxmnlMuBnhbgrkm"
         crossorigin="anonymous"></script>
-    <script src="knowledge-questions.js?v=20261015"></script>
-    <script src="advmath-questions.js?v=20261015"></script>
-    <script src="script.js?v=20261015"></script>
+    <script src="knowledge-questions.js?v=20261016"></script>
+    <script src="advmath-questions.js?v=20261016"></script>
+    <script src="script.js?v=20261016"></script>
+    <script src="ui.js?v=20261016"></script>
 
 </body>
 
