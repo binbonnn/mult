@@ -7,9 +7,9 @@
    - Tema Game 4 & 5 disimpan di bagian paling bawah file ini (PENDING, belum dipakai halaman).
 ===================================================================== */
 :root {
-    --white: #FCFDFE;
-    --ink: #1F2A3A;
-    --ink-soft: #4B596B;
+    --white: #FFFDF7;
+    --ink: #1B1B2F;
+    --ink-soft: #4A4A5E;
     --ok: #277A5C;
     --ok-dark: #1F6B50;
     --ok-bg: #DDF1E8;
@@ -26,38 +26,78 @@
     --font-stack-fallback: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
 }
 
-/* Tema bawaan (sebelum JS jalan) = hub */
+/* Tema bawaan (sebelum JS jalan) = hub.
+   Token: --bg latar halaman, --on-bg teks langsung di atas latar, --ink teks di atas permukaan terang,
+   --pale panel besar, --soft garis/sekunder, --main aksi utama, --alt aksi sekunder, --hi sorotan. */
 body,
 body[data-theme="hub"] {
-    --main: #64748B;
-    --pale: #DCE6F1;
-    --soft: #B8D4CF;
+    --bg: #FFFDF7;
+    --on-bg: #1B1B2F;
+    --on-bg-soft: #4A4A5E;
+    --main: #1749F5;
     --on-main: #FFFFFF;
+    --pale: #FFFDF7;
+    --soft: #E7E0CC;
+    --alt: #B7F500;
+    --on-alt: #1B1B2F;
+    --hi: #FF7468;
+    --bar-track: #FFFDF7;
+    --bar-fill: #1B1B2F;
     --font-playful: 'Plus Jakarta Sans', var(--font-stack-fallback);
 }
 
+/* Game 1: Happy Energy */
 body[data-theme="g1"] {
-    --main: #43A88C;
-    --pale: #D9F2E8;
-    --soft: #A9D9C5;
-    --on-main: var(--ink);
+    --bg: #D8FF3E;
+    --on-bg: #252525;
+    --on-bg-soft: #3B3B3B;
+    --ink: #252525;
+    --main: #00B86B;
+    --on-main: #252525;
+    --pale: #FFF0CF;
+    --soft: #EAD9A8;
+    --alt: #252525;
+    --on-alt: #D8FF3E;
+    --hi: #FFF0CF;
+    --bar-track: #FFF0CF;
+    --bar-fill: #252525;
     --font-playful: 'Nunito', var(--font-stack-fallback);
 }
 
+/* Game 2: Curious Universe */
 body[data-theme="g2"] {
-    --main: #5796CC;
-    --pale: #DCECF9;
-    --soft: #B9C9EE;
-    --on-main: var(--ink);
-    --font-playful: 'Atkinson Hyperlegible', var(--font-stack-fallback);
+    --bg: #1749F5;
+    --on-bg: #FFFDF7;
+    --on-bg-soft: #DCE6FF;
+    --ink: #10163A;
+    --main: #29B8FF;
+    --on-main: #10163A;
+    --pale: #FFFDF7;
+    --soft: #D6E0F7;
+    --alt: #FFB000;
+    --on-alt: #10163A;
+    --hi: #FFFDF7;
+    --bar-track: rgba(0, 0, 0, 0.28);
+    --bar-fill: #FFB000;
+    --font-playful: 'Rubik', var(--font-stack-fallback);
 }
 
+/* Game 3: Bold Focus */
 body[data-theme="g3"] {
-    --main: #6969B8;
-    --pale: #E5E4F8;
-    --soft: #B8B7E4;
-    --on-main: #FFFFFF;
-    --font-playful: 'Rubik', var(--font-stack-fallback);
+    --bg: #B8A2FF;
+    --on-bg: #26213B;
+    --on-bg-soft: #3D3560;
+    --ink: #26213B;
+    --main: #FF70BD;
+    --on-main: #26213B;
+    --pale: #FFFDF7;
+    --soft: #E0D6FA;
+    --alt: #26213B;
+    --on-alt: #FFFDF7;
+    --hi: #FFB000;
+    --bar-track: #FFFDF7;
+    --bar-fill: #26213B;
+    --font-playful: 'Lilita One', var(--font-stack-fallback);
 }
 
 /* Nama variabel lama dipetakan ke token baru agar aturan lama ikut berganti warna */
@@ -91,7 +131,7 @@ html {
 }
 
 body {
-    background-color: var(--white);
+    background-color: var(--bg);
     color: var(--ink);
     line-height: 1.5;
     -webkit-font-smoothing: antialiased;
@@ -3575,21 +3615,6 @@ button,
     }
 }
 
-/* =====================================================================
-   TEMA GAME 4 & 5 (DISIMPAN, PENDING)
-   Belum dipakai oleh halaman mana pun. Saat Game 4/5 dibangun, cukup beri
-   <body data-theme="g4"> / "g5" (lewat switchView) dan hapus komentar ini.
-
-   body[data-theme="g4"] {
-       --main: #C58B45; --pale: #F8EBD5; --soft: #EAC9A0; --on-main: var(--ink);
-       --font-playful: 'DM Sans', var(--font-stack-fallback);
-   }
-   body[data-theme="g5"] {
-       --main: #419B9A; --pale: #D8F0ED; --soft: #E9C8C0; --on-main: var(--ink);
-       --font-playful: 'Manrope', var(--font-stack-fallback);
-   }
-===================================================================== */
-
 /* ikon bantuan berupa huruf "?" (lebih terbaca daripada emoji pucat) */
 .dashboard-header-actions .icon-button {
     font-size: 20px;
@@ -3649,4 +3674,391 @@ button,
 .score-rules-title,
 .knowledge-recap-title {
     gap: 10px;
+}
+
+
+/* =====================================================================
+   TEMA BARU 2: playful, expressive, character-driven
+   Setiap game punya warna dasar sendiri (latar halaman). Permukaan
+   (kartu, tombol opsi, input) memakai putih hangat bersama #FFFDF7.
+   Hanya warna, font, maskot, dan teks yang berubah; mekanisme tetap.
+===================================================================== */
+
+/* ---- teks yang berada langsung di atas latar halaman ---- */
+.dashboard-heading h1,
+#progressLabel,
+#knowledgeProgressLabel,
+#advmathProgressLabel {
+    color: var(--on-bg);
+}
+
+.subtitle,
+.breadcrumb-back,
+.advmath-hint-note {
+    color: var(--on-bg-soft);
+}
+
+.breadcrumb-back:hover {
+    color: var(--on-bg);
+}
+
+.dashboard-heading h1::after {
+    background: var(--main);
+    height: 6px;
+    width: 52px;
+}
+
+.btn-start-game {
+    box-shadow: 0 0 0 5px var(--bg);
+}
+
+.btn-playful-secondary {
+    background: var(--alt);
+    color: var(--on-alt);
+}
+
+.btn-playful-outline {
+    background: var(--white);
+    border: 2px solid var(--ink);
+    color: var(--ink);
+}
+
+.btn-playful-outline:hover {
+    background: var(--pale);
+}
+
+.icon-button {
+    border: 2px solid var(--ink);
+    background: var(--white);
+}
+
+.icon-button:hover {
+    background: var(--main);
+    color: var(--on-main);
+}
+
+/* progres & waktu di topbar: kontras tinggi di atas warna dasar masing-masing game */
+.game-topbar .progress-bar-track {
+    background: var(--bar-track);
+    border: 0;
+    height: 10px;
+}
+
+.game-topbar .progress-bar-fill {
+    background: var(--bar-fill);
+}
+
+.advmath-hint-countdown .progress-bar-track {
+    background: var(--soft);
+}
+
+.advmath-hint-countdown .progress-bar-fill {
+    background: var(--ink);
+}
+
+.leaderboard-tab.is-active {
+    background: var(--main);
+    color: var(--on-main);
+}
+
+.leaderboard-panel,
+.score-rules {
+    border-width: 2px;
+}
+
+.leaderboard-tabs {
+    border-width: 2px;
+    border-color: var(--ink);
+}
+
+/* Game 3: hint level 1 memakai warna gelap supaya hitung mundurnya jelas */
+.advmath-hint-btn {
+    --hint-color: var(--ink);
+}
+
+/* Countdown: latar sesuai warna dasar game */
+.countdown-overlay {
+    background: var(--bg);
+    backdrop-filter: none;
+}
+
+.countdown-content {
+    color: var(--on-bg);
+}
+
+.countdown-label {
+    color: var(--on-bg-soft);
+}
+
+.countdown-mascot {
+    display: none;
+    width: clamp(96px, 30vw, 150px);
+    height: clamp(96px, 30vw, 150px);
+    margin: 0 auto 10px;
+}
+
+body[data-theme="g1"] .cm-g1,
+body[data-theme="g2"] .cm-g2,
+body[data-theme="g3"] .cm-g3 {
+    display: block;
+}
+
+/* ---- Game 3: Lilita One hanya punya satu bobot, hindari faux-bold ---- */
+body[data-theme="g3"] {
+    font-synthesis: none;
+    letter-spacing: 0.01em;
+}
+
+body[data-theme="g3"] *,
+body[data-theme="g3"] strong,
+body[data-theme="g3"] b {
+    font-weight: 400 !important;
+}
+
+body[data-theme="g3"] strong,
+body[data-theme="g3"] b {
+    text-decoration: underline;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 3px;
+    text-decoration-color: var(--main);
+}
+
+body[data-theme="g3"] .rank-list-score small,
+body[data-theme="g3"] .podium-mistakes,
+body[data-theme="g3"] .leaderboard-status,
+body[data-theme="g3"] .duel-opponent-name,
+body[data-theme="g3"] .score-rules-note,
+body[data-theme="g3"] .advmath-hint-note {
+    font-size: 13px;
+}
+
+/* ---- Maskot di header dashboard ---- */
+.dashboard-header.has-mascot {
+    min-height: 140px;
+}
+
+.header-mascot {
+    position: absolute;
+    right: 6px;
+    top: 52px;
+    width: 82px;
+    height: 82px;
+    z-index: 1;
+    pointer-events: none;
+}
+
+@media (min-width: 768px) {
+    .dashboard-header.has-mascot {
+        min-height: 150px;
+    }
+
+    .header-mascot {
+        width: 104px;
+        height: 104px;
+        top: 48px;
+    }
+}
+
+/* =====================================================================
+   HUB (warm white) + lima tombol game berwarna dasar masing-masing
+===================================================================== */
+.hub-header {
+    background: var(--main);
+    border: 0;
+    color: #fff;
+}
+
+.hub-header::before {
+    background: var(--alt);
+    opacity: 1;
+}
+
+.hub-header::after {
+    border-color: var(--hi);
+    opacity: 1;
+}
+
+.hub-header .dashboard-heading h1 {
+    color: #fff;
+}
+
+.hub-header .dashboard-heading h1::after {
+    background: var(--alt);
+}
+
+.hub-header .subtitle {
+    color: #E4EBFF;
+}
+
+.game-card {
+    --c-bg: #FFFDF7;
+    --c-ink: #1B1B1B;
+    --c-ink-soft: #3A3A3A;
+    --c-1: #1749F5;
+    --c-2: #B7F500;
+    --c-3: #FF7468;
+    background: var(--c-bg);
+    color: var(--c-ink);
+    border: 3px solid var(--c-ink);
+}
+
+.game-card:hover {
+    border-color: var(--c-ink);
+    box-shadow: 4px 6px 0 var(--c-ink);
+}
+
+.game-card-multiply {
+    --c-bg: #D8FF3E;
+    --c-ink: #252525;
+    --c-ink-soft: #3B3B3B;
+    --c-1: #00B86B;
+    --c-2: #FFF0CF;
+    --c-3: #252525;
+    font-family: 'Nunito', var(--font-stack-fallback);
+}
+
+.game-card-knowledge {
+    --c-bg: #1749F5;
+    --c-ink: #FFFDF7;
+    --c-ink-soft: #DCE6FF;
+    --c-1: #29B8FF;
+    --c-2: #FFB000;
+    --c-3: #FFFDF7;
+    font-family: 'Rubik', var(--font-stack-fallback);
+}
+
+.game-card-advmath {
+    --c-bg: #B8A2FF;
+    --c-ink: #26213B;
+    --c-ink-soft: #3D3560;
+    --c-1: #FF70BD;
+    --c-2: #FFB000;
+    --c-3: #26213B;
+    font-family: 'Lilita One', var(--font-stack-fallback);
+    font-synthesis: none;
+}
+
+.game-card-soon-4 {
+    --c-bg: #FFD92F;
+    --c-ink: #2B2508;
+    --c-ink-soft: #3F3711;
+    --c-1: #FF8A24;
+    --c-2: #168A4A;
+    --c-3: #FFF1A6;
+    font-family: 'Fredoka', var(--font-stack-fallback);
+}
+
+.game-card-soon-5 {
+    --c-bg: #FFF9EE;
+    --c-ink: #1B1B1B;
+    --c-ink-soft: #3A3A3A;
+    --c-1: #FF5A1F;
+    --c-2: #168B52;
+    --c-3: #1688E8;
+    font-family: 'Bricolage Grotesque', var(--font-stack-fallback);
+}
+
+.game-card-advmath *,
+.game-card-advmath .game-card-title {
+    font-weight: 400;
+}
+
+/* dua kata sejalan: bayangan keras saat hover, tanpa blur */
+.game-card-title {
+    color: var(--c-ink);
+}
+
+.game-card-subtitle {
+    color: var(--c-ink-soft);
+}
+
+.game-card-icon {
+    width: 82px;
+    height: 82px;
+    background: none;
+    border: 0;
+    border-radius: 0;
+    overflow: visible;
+}
+
+.game-card-active .game-card-icon {
+    width: 92px;
+    height: 92px;
+}
+
+.gc-tag {
+    background: #FFFDF7;
+    border: 2px solid #1B1B1B;
+    color: #1B1B1B;
+}
+
+.game-card-arrow {
+    background: #1B1B1B;
+    color: #FFFDF7;
+}
+
+.game-card-badge {
+    background: #FFFDF7;
+    border: 2px dashed #1B1B1B;
+    color: #1B1B1B;
+}
+
+.game-card.is-coming-soon,
+.game-card-soon {
+    border-style: dashed;
+}
+
+.gc-blob { background: var(--c-1); opacity: 0.9; }
+.gc-blob-2 { background: var(--c-2); opacity: 0.9; }
+.gc-ring { border-color: var(--c-3); opacity: 0.55; }
+.gc-dots { background-image: radial-gradient(var(--c-ink) 1.8px, transparent 2.2px); opacity: 0.35; }
+.gc-stripes { background: repeating-linear-gradient(135deg, var(--c-2) 0 6px, transparent 6px 12px); opacity: 1; }
+.gc-glyph { color: var(--c-ink); opacity: 0.28; }
+
+@media (min-width: 768px) {
+    .game-card-icon {
+        width: 104px;
+        height: 104px;
+    }
+
+    .game-card-active .game-card-icon {
+        width: 112px;
+        height: 112px;
+    }
+}
+
+@media (max-width: 340px) {
+    .game-card-icon,
+    .game-card-active .game-card-icon {
+        width: 64px;
+        height: 64px;
+    }
+}
+
+/* =====================================================================
+   TEMA GAME 4 & 5 (DISIMPAN SEBAGAI REFERENSI)
+   Belum ada halaman game; palet & font mereka saat ini hanya dipakai
+   tombol di hub (variabel --c-* di atas). Saat game dibangun, pindahkan
+   ke blok body[data-theme] dan tambahkan ke VIEW_THEMES di script.js.
+
+   Game 4 Sunny Recharge : dasar #FFD92F; #FF8A24, #168A4A, #FFF1A6; font Fredoka
+   Game 5 Happy Weird    : dasar #FFF9EE; #FF5A1F, #168B52, #1688E8; font Bricolage Grotesque
+===================================================================== */
+
+/* lingkaran dekorasi pada tombol aktif dibuat kecil dan di sudut kanan atas,
+   supaya tidak berada di belakang judul */
+.game-card-active .gc-blob {
+    width: 92px;
+    height: 92px;
+    right: -34px;
+    top: -34px;
+}
+
+.podium-base span {
+    opacity: 1;
+}
+
+.game-card-badge {
+    white-space: nowrap;
+    padding: 5px 9px;
 }
