@@ -1,4064 +1,621 @@
 /* =====================================================================
-   SISTEM TEMA (satu ekosistem, enam karakter)
-   - Putih tunggal --white: identik di hub dan semua game.
-   - Setiap halaman memakai tepat tiga warna pendamping (--main, --pale, --soft)
-     yang diatur lewat atribut body[data-theme] (diganti oleh switchView()).
-   - Warna status (benar/salah/peringatan) adalah warna fungsional, bukan warna identitas.
-   - Tema Game 4 & 5 disimpan di bagian paling bawah file ini (PENDING, belum dipakai halaman).
-===================================================================== */
+   GAME HUB — style.css (redesain 3: "poster ramah")
+   Struktur:
+   1. Tokens (satu-satunya tempat nilai warna/ukuran)
+   2. Reset & dasar
+   3. Komponen bersama (tombol, kartu, chip, tab, progress, sheet/modal, toast)
+   4. Hub
+   5. Lobi (dashboard tiap game)
+   6. Halaman bermain (G1 keypad, G2/G3 pilihan ganda)
+   7. State khusus (skeleton, kosong, offline, status simpan, duel)
+   8. Responsif, landscape, hover/pointer, reduced-motion, contrast
+   Rasio kontras tiap pasangan warna utama ada di laporan audit.
+   ===================================================================== */
+
+/* ---------- 1. TOKENS ---------- */
 :root {
-    --white: #FFFDF7;
-    --ink: #1B1B2F;
-    --ink-soft: #4A4A5E;
-    --ok: #277A5C;
-    --ok-dark: #1F6B50;
-    --ok-bg: #DDF1E8;
-    --bad: #AE3F3A;
-    --bad-dark: #9A3631;
-    --bad-bg: #FBE6E3;
-    --warn: #7A4C12;
-    --warn-bg: #FBEBD3;
-    --radius-lg: 22px;
-    --radius-md: 16px;
-    --radius-sm: 10px;
-    --shadow-soft: 0 1px 2px rgba(31, 42, 58, 0.06), 0 4px 14px rgba(31, 42, 58, 0.07);
-    --shadow-playful: 0 6px 22px rgba(31, 42, 58, 0.14);
-    --font-stack-fallback: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    --paper: #F1EDE4;
+    --ink: #1A1A1A;
+    --white: #FFFFFF;
+    --ink-soft: #595959;        /* 6,0:1 di paper, 7,0:1 di putih */
+
+    --ok: #0BA95B;              /* isian benar (teks ink 5,7:1) */
+    --ok-text: #0B7A44;         /* teks hijau di putih 5,4:1 */
+    --bad: #FF4B14;             /* isian salah (teks ink 5,2:1) */
+    --bad-text: #C23A0A;        /* teks merah di putih 5,4:1 */
+    --warn: #FFC905;            /* peringatan, selalu dengan teks ink */
+
+    --line: rgba(26, 26, 26, .14);
+    --shadow: 0 2px 0 rgba(26, 26, 26, .12);
+
+    --r-card: 28px;
+    --r-pill: 999px;
+    --r-input: 20px;
+
+    --s-1: .25rem; --s-2: .5rem; --s-3: .75rem; --s-4: 1rem;
+    --s-6: 1.5rem; --s-8: 2rem; --s-12: 3rem; --s-16: 4rem;
+
+    --font-display: 'Bricolage Grotesque', 'Trebuchet MS', system-ui, sans-serif;
+    --font-body: 'Figtree', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+
+    --t-h1: clamp(2.25rem, 8vw, 4.5rem);
+    --t-h2: clamp(1.5rem, 5vw, 2rem);
+    --t-question-num: clamp(3.5rem, 16vw, 7rem);
+    --t-question-text: clamp(1.125rem, 4.2vw, 1.75rem);
+
+    --target: 3rem;             /* 48px */
+    --safe-b: env(safe-area-inset-bottom, 0px);
+    --safe-t: env(safe-area-inset-top, 0px);
 }
 
-/* Tema bawaan (sebelum JS jalan) = hub.
-   Token: --bg latar halaman, --on-bg teks langsung di atas latar, --ink teks di atas permukaan terang,
-   --pale panel besar, --soft garis/sekunder, --main aksi utama, --alt aksi sekunder, --hi sorotan. */
-body,
-body[data-theme="hub"] {
-    --bg: #FFFDF7;
-    --on-bg: #1B1B2F;
-    --on-bg-soft: #4A4A5E;
-    --main: #1749F5;
-    --on-main: #FFFFFF;
-    --pale: #FFFDF7;
-    --soft: #E7E0CC;
-    --alt: #B7F500;
-    --on-alt: #1B1B2F;
-    --hi: #FF7468;
-    --bar-track: #FFFDF7;
-    --bar-fill: #1B1B2F;
-    --font-playful: 'Plus Jakarta Sans', var(--font-stack-fallback);
-}
+/* Set warna per game: dipasang di <body data-game> dan di kartu hub */
+[data-game="hub"]       { --bg: var(--paper); --tint-1: #E4DED0; --tint-2: #D6CFBF; --accent: #FFC905; --on-bg: var(--ink); --on-accent: var(--ink); }
+[data-game="mult"]      { --bg: #0BA95B; --tint-1: #4BCF86; --tint-2: #8DE0B3; --accent: #FFC905; --on-bg: var(--ink); --on-accent: var(--ink); }
+[data-game="knowledge"] { --bg: #1F7BDB; --tint-1: #5AA2EC; --tint-2: #9CC6F3; --accent: #FFC905; --on-bg: var(--white); --on-accent: var(--ink); }
+[data-game="advanced"]  { --bg: #F6A5A5; --tint-1: #FBC9C9; --tint-2: #FDE0E0; --accent: #1F7BDB; --on-bg: var(--ink); --on-accent: var(--white); }
+[data-game="soon-1"]    { --bg: #FFC905; --tint-1: #FFDB4D; --tint-2: #FFE98F; --accent: var(--ink); --on-bg: var(--ink); --on-accent: var(--white); }
+[data-game="soon-2"]    { --bg: #FF6A1A; --tint-1: #FF8F52; --tint-2: #FFB48A; --accent: var(--ink); --on-bg: var(--ink); --on-accent: var(--white); }
 
-/* Game 1: Happy Energy */
-body[data-theme="g1"] {
-    --bg: #D8FF3E;
-    --on-bg: #252525;
-    --on-bg-soft: #3B3B3B;
-    --ink: #252525;
-    --main: #00B86B;
-    --on-main: #252525;
-    --pale: #FFF0CF;
-    --soft: #EAD9A8;
-    --alt: #252525;
-    --on-alt: #D8FF3E;
-    --hi: #FFF0CF;
-    --bar-track: #FFF0CF;
-    --bar-fill: #252525;
-    --font-playful: 'Nunito', var(--font-stack-fallback);
-}
+/* ---------- 2. RESET & DASAR ---------- */
+*, *::before, *::after { box-sizing: border-box; }
 
-/* Game 2: Curious Universe */
-body[data-theme="g2"] {
-    --bg: #1749F5;
-    --on-bg: #FFFDF7;
-    --on-bg-soft: #DCE6FF;
-    --ink: #10163A;
-    --main: #29B8FF;
-    --on-main: #10163A;
-    --pale: #FFFDF7;
-    --soft: #D6E0F7;
-    --alt: #FFB000;
-    --on-alt: #10163A;
-    --hi: #FFFDF7;
-    --bar-track: rgba(0, 0, 0, 0.28);
-    --bar-fill: #FFB000;
-    --font-playful: 'Rubik', var(--font-stack-fallback);
-}
+html { -webkit-text-size-adjust: 100%; }
 
-/* Game 3: Bold Focus */
-body[data-theme="g3"] {
-    --bg: #B8A2FF;
-    --on-bg: #26213B;
-    --on-bg-soft: #3D3560;
-    --ink: #26213B;
-    --main: #FF70BD;
-    --on-main: #26213B;
-    --pale: #FFFDF7;
-    --soft: #E0D6FA;
-    --alt: #26213B;
-    --on-alt: #FFFDF7;
-    --hi: #FFB000;
-    --bar-track: #FFFDF7;
-    --bar-fill: #26213B;
-    --font-playful: 'Lilita One', var(--font-stack-fallback);
-}
-
-/* Nama variabel lama dipetakan ke token baru agar aturan lama ikut berganti warna */
 body {
-    --color-primary: var(--main);
-    --color-primary-dark: var(--ink);
-    --color-secondary: var(--soft);
-    --color-secondary-dark: var(--ink-soft);
-    --color-accent: var(--main);
-    --color-success: var(--ok);
-    --color-success-dark: var(--ok-dark);
-    --color-danger: var(--bad);
-    --color-danger-dark: var(--bad-dark);
-    --color-text: var(--ink);
-    --color-text-on-space: var(--ink);
-    --color-card-bg: var(--pale);
-}
-
-* {
-    box-sizing: border-box;
-}
-
-body,
-html {
-    height: 100%;
     margin: 0;
-    padding: 0;
-    font-family: var(--font-playful);
-    color: var(--color-text-on-space);
+    min-height: 100vh;
+    min-height: 100dvh;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: 1rem;
+    line-height: 1.5;
+    font-weight: 400;
+    -webkit-tap-highlight-color: transparent;
     overflow-x: hidden;
 }
 
-body {
-    background-color: var(--bg);
-    color: var(--ink);
-    line-height: 1.5;
-    -webkit-font-smoothing: antialiased;
-}
-
-@keyframes twinkle {
-
-    0%,
-    100% {
-        opacity: 0.55;
-    }
-
-    50% {
-        opacity: 1;
-    }
-}
-
-#app {
-    min-height: 100%;
-    display: flex;
-    flex-direction: column;
-    position: relative;
-    /* JANGAN beri z-index di sini: akan membuat stacking context baru
-       yang membuat modal di dalamnya tertutup backdrop Bootstrap. */
-}
-
-/* ============ VIEW SWITCHING ============ */
-.view {
-    display: none;
-    flex-direction: column;
-    min-height: 100vh;
-    padding: 20px 16px 32px;
-    width: 100%;
-    max-width: 560px;
-    margin: 0 auto;
-    box-sizing: border-box;
-}
-
-.view.active {
-    display: flex;
-}
-
-/* ============ ICON BUTTON ============ */
-.icon-button {
-    background: var(--color-card-bg);
-    border: none;
-    border-radius: 50%;
-    width: 44px;
-    height: 44px;
-    font-size: 20px;
-    font-weight: 700;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: var(--shadow-soft);
-    color: var(--color-primary);
-    cursor: pointer;
-    transition: transform 0.15s ease, box-shadow 0.15s ease;
-    flex-shrink: 0;
-}
-
-.icon-button:hover {
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-playful);
-}
-
-.icon-button:active {
-    transform: scale(0.92);
-}
-
-/* ============ DASHBOARD ============ */
-.dashboard-header {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 12px;
-    margin-bottom: 20px;
-    position: relative;
-    overflow: visible;
-    padding-top: 4px;
-}
-
-.dashboard-heading,
-.dashboard-header-actions {
-    position: relative;
-    z-index: 2;
-}
-
-.dashboard-header-actions {
-    display: flex;
-    gap: 8px;
-    flex-shrink: 0;
-}
-
-.dashboard-heading h1 {
-    font-size: 26px;
-    font-weight: 800;
-    margin: 0 0 4px;
-    line-height: 1.15;
-    color: var(--color-text-on-space);
-    text-shadow: 0 0 18px rgba(139, 108, 255, 0.55);
-}
-
-.subtitle {
-    margin: 0;
-    font-size: 14px;
-    color: #c3b8ff;
-    opacity: 0.85;
-}
-
-/* ---- Panel Papan Peringkat ----
-   Semua ukuran memakai variabel supaya mudah diskalakan per device (lihat media query). */
-.leaderboard-panel {
-    --avatar-size: 60px;
-    --avatar-size-first: 86px;
-    --podium-name-size: 13px;
-    --podium-score-size: 15px;
-    --podium-score-size-first: 20px;
-    --podium-meta-size: 11.5px;
-    --base-h-first: 64px;
-    --base-h-second: 48px;
-    --base-h-third: 36px;
-    --tab-size: 14px;
-    --row-name-size: 14px;
-    --row-score-size: 14px;
-    --row-meta-size: 11px;
-    --row-avatar-size: 34px;
-
-    width: 100%;
-    background: linear-gradient(165deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.02));
-    border: 1px solid rgba(255, 255, 255, 0.14);
-    border-radius: var(--radius-lg);
-    padding: 16px 14px 18px;
-    margin-bottom: 18px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
-}
-
-.leaderboard-tabs {
-    display: flex;
-    gap: 6px;
-    background: rgba(0, 0, 0, 0.25);
-    border-radius: 999px;
-    padding: 4px;
-    margin-bottom: 20px;
-}
-
-.leaderboard-tab {
-    flex: 1 1 0;
-    min-height: 44px; /* target sentuh minimal 44px */
-    border: none;
-    background: transparent;
-    color: #d3c9ff;
-    font-family: var(--font-playful);
-    font-weight: 700;
-    font-size: var(--tab-size);
-    padding: 8px 6px;
-    border-radius: 999px;
-    cursor: pointer;
-    transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
-}
-
-.leaderboard-tab:hover:not(.is-active) {
-    background: rgba(255, 255, 255, 0.08);
-}
-
-.leaderboard-tab.is-active {
-    background: linear-gradient(135deg, var(--color-accent), #ffb84d);
-    color: #3a2400;
-    box-shadow: 0 4px 12px rgba(255, 209, 102, 0.35);
-}
-
-/* ---- Podium (peringkat 1-3): emas, perak, perunggu ---- */
-.podium {
-    display: flex;
-    align-items: flex-end;
-    justify-content: center;
-    gap: clamp(6px, 2vw, 16px);
-    padding: 8px 0 0;
-}
-
-.podium-spot {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    flex: 1 1 0;
-    min-width: 0;
-    position: relative;
-}
-
-.podium-spot.is-empty {
-    opacity: 0.5;
-    filter: grayscale(0.7);
-}
-
-.podium-medal {
-    font-size: calc(var(--avatar-size) * 0.42);
-    line-height: 1;
-    margin-bottom: 4px;
-    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.45));
-}
-
-.podium-first .podium-medal {
-    font-size: calc(var(--avatar-size-first) * 0.42);
-    animation: crownFloat 2.6s ease-in-out infinite;
-}
-
-.podium-avatar-wrap {
-    position: relative;
-    margin-bottom: 10px;
-}
-
-.podium-avatar {
-    width: var(--avatar-size);
-    height: var(--avatar-size);
-    font-size: calc(var(--avatar-size) * 0.5);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border: 4px solid;
-}
-
-.podium-first .podium-avatar {
-    width: var(--avatar-size-first);
-    height: var(--avatar-size-first);
-    font-size: calc(var(--avatar-size-first) * 0.5);
-    background: radial-gradient(circle at 30% 25%, #fff3c4, #ffd166 60%, #f5a524);
-    border-color: #ffd166;
-    animation: goldGlow 2.4s ease-in-out infinite;
-}
-
-.podium-second .podium-avatar {
-    background: radial-gradient(circle at 30% 25%, #ffffff, #dfe6f2 60%, #aab6c9);
-    border-color: #dfe6f2;
-    box-shadow: 0 0 0 3px rgba(223, 230, 242, 0.2), 0 0 20px rgba(200, 215, 240, 0.45);
-}
-
-.podium-third .podium-avatar {
-    background: radial-gradient(circle at 30% 25%, #ffe1c4, #e39a5f 60%, #b56a2c);
-    border-color: #e0955a;
-    box-shadow: 0 0 0 3px rgba(224, 149, 90, 0.2), 0 0 20px rgba(224, 149, 90, 0.45);
-}
-
-/* kilau bintang di sekitar juara 1 */
-.podium-first .podium-avatar-wrap::before,
-.podium-first .podium-avatar-wrap::after {
-    content: '✦';
-    position: absolute;
-    color: #fff3c4;
-    text-shadow: 0 0 8px #ffd166;
-    pointer-events: none;
-    animation: twinkle 1.8s ease-in-out infinite;
-}
-
-.podium-first .podium-avatar-wrap::before {
-    top: -4px;
-    left: -16px;
-    font-size: 18px;
-}
-
-.podium-first .podium-avatar-wrap::after {
-    bottom: 8px;
-    right: -18px;
-    font-size: 13px;
-    animation-delay: 0.9s;
-}
-
-.podium-name {
-    font-size: var(--podium-name-size);
-    font-weight: 700;
-    color: var(--color-text-on-space);
-    max-width: 100%;
-    padding: 0 4px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    text-align: center;
-}
-
-.podium-score {
-    font-size: var(--podium-score-size);
-    font-weight: 800;
-    margin-top: 2px;
-    font-variant-numeric: tabular-nums;
-    display: flex;
-    align-items: baseline;
-    justify-content: center;
-    gap: .25em;
-    white-space: nowrap;
-    max-width: 100%;
-    text-align: center;
-}
-
-.podium-score-unit {
-    font-size: .6em;
-    font-weight: 700;
-    opacity: .85;
-}
-
-.podium-first .podium-score {
-    font-size: var(--podium-score-size-first);
-    color: #ffd166;
-    text-shadow: 0 0 12px rgba(255, 209, 102, 0.5);
-}
-
-.podium-second .podium-score {
-    color: #e6ecf7;
-}
-
-.podium-third .podium-score {
-    color: #f0b184;
-}
-
-.podium-mistakes {
-    font-size: var(--podium-meta-size);
-    font-weight: 600;
-    color: #cfc5ff;
-    margin-top: 1px;
-}
-
-/* Alas podium bertingkat: tinggi berbeda menegaskan urutan peringkat */
-.podium-base {
-    width: 100%;
-    margin-top: 10px;
-    border-radius: 12px 12px 0 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 800;
-    box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.5);
-}
-
-.podium-base span {
-    color: rgba(58, 36, 0, 0.55);
-    line-height: 1;
-}
-
-.podium-first .podium-base {
-    height: var(--base-h-first);
-    font-size: calc(var(--base-h-first) * 0.62);
-    background: linear-gradient(180deg, #ffe08a, #f5a524);
-}
-
-.podium-second .podium-base {
-    height: var(--base-h-second);
-    font-size: calc(var(--base-h-second) * 0.62);
-    background: linear-gradient(180deg, #eef2f9, #a9b5c8);
-}
-
-.podium-third .podium-base {
-    height: var(--base-h-third);
-    font-size: calc(var(--base-h-third) * 0.62);
-    background: linear-gradient(180deg, #f3c197, #b56a2c);
-}
-
-.you-chip {
-    display: inline-block;
-    margin-top: 4px;
-    padding: 1px 8px;
-    border-radius: 999px;
-    background: var(--color-accent);
-    color: #3a2400;
-    font-size: 10.5px;
-    font-weight: 800;
-    white-space: nowrap;
-}
-
-@keyframes goldGlow {
-
-    0%,
-    100% {
-        box-shadow: 0 0 0 3px rgba(255, 209, 102, 0.25), 0 0 22px rgba(255, 209, 102, 0.5);
-    }
-
-    50% {
-        box-shadow: 0 0 0 6px rgba(255, 209, 102, 0.35), 0 0 38px rgba(255, 209, 102, 0.9);
-    }
-}
-
-@keyframes crownFloat {
-
-    0%,
-    100% {
-        transform: translateY(0) rotate(-4deg);
-    }
-
-    50% {
-        transform: translateY(-4px) rotate(4deg);
-    }
-}
-
-.leaderboard-loading {
-    text-align: center;
-    font-size: 14px;
-    color: #cfc5ff;
-    padding: 48px 8px;
-}
-
-/* ---- Daftar peringkat 4-7 ---- */
-.rank-list {
-    list-style: none;
-    margin: 0;
-    padding: 12px 0 0;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-.rank-list-empty {
-    text-align: center;
-    font-size: 14px;
-    color: #cfc5ff;
-    padding: 16px 8px 4px;
-    line-height: 1.5;
-}
-
-.rank-list-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    background: rgba(255, 255, 255, 0.07);
-    border: 1px solid rgba(255, 255, 255, 0.09);
-    border-radius: var(--radius-sm);
-    padding: 9px 12px;
-}
-
-.rank-list-row.is-you {
-    border-color: var(--color-accent);
-    background: rgba(255, 209, 102, 0.14);
-}
-
-.rank-list-position {
-    font-weight: 800;
-    color: var(--color-accent);
-    width: 20px;
-    flex-shrink: 0;
-    text-align: center;
-    font-size: var(--row-name-size);
-}
-
-.rank-list-avatar {
-    width: var(--row-avatar-size);
-    height: var(--row-avatar-size);
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.14);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: calc(var(--row-avatar-size) * 0.55);
-    flex-shrink: 0;
-}
-
-.rank-list-name {
-    font-size: var(--row-name-size);
-    font-weight: 600;
-    color: var(--color-text-on-space);
-    flex: 1 1 auto;
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.rank-list-dots {
-    flex: 0 1 16px;
-    border-bottom: 1px dashed rgba(255, 255, 255, 0.25);
-    height: 1px;
-    min-width: 6px;
-}
-
-.rank-list-score {
-    font-size: var(--row-score-size);
-    font-weight: 800;
-    color: var(--color-text-on-space);
-    flex-shrink: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    line-height: 1.3;
-    font-variant-numeric: tabular-nums;
-}
-
-.rank-list-score small {
-    font-size: var(--row-meta-size);
-    font-weight: 600;
-    color: #cfc5ff;
-}
-
-/* ---- Avatar picker (modal simpan skor) ---- */
-.save-record-label {
-    display: block;
-    font-size: 12.5px;
-    font-weight: 700;
-    color: #c3b8ff;
-    margin: 12px 0 6px;
-}
-
-.save-record-label:first-child {
-    margin-top: 0;
-}
-
-.avatar-picker {
-    display: grid;
-    grid-template-columns: repeat(5, 1fr);
-    gap: 8px;
-}
-
-.avatar-option {
-    aspect-ratio: 1;
-    border-radius: 50%;
-    border: 2px solid rgba(255, 255, 255, 0.15);
-    background: rgba(255, 255, 255, 0.06);
-    font-size: 20px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: transform 0.12s ease, border-color 0.12s ease, background 0.12s ease;
-}
-
-.avatar-option:hover {
-    transform: translateY(-2px);
-}
-
-.avatar-option.is-selected {
-    border-color: var(--color-accent);
-    background: rgba(255, 209, 102, 0.18);
-    box-shadow: 0 0 0 3px rgba(255, 209, 102, 0.25);
-}
-
-/* ---- Playful buttons ---- */
-.btn-playful {
-    font-family: var(--font-playful);
-    font-weight: 700;
-    border: none;
-    border-radius: 999px;
-    padding: 12px 22px;
-    font-size: 16px;
-    cursor: pointer;
-    box-shadow: var(--shadow-soft);
-    transition: transform 0.12s ease, box-shadow 0.12s ease, filter 0.12s ease;
-}
-
-.btn-playful:hover {
-    transform: translateY(-2px);
-    filter: brightness(1.05);
-}
-
-.btn-playful:active {
-    transform: scale(0.95);
-}
-
-.btn-playful:disabled {
-    opacity: 0.45;
-    cursor: not-allowed;
-    transform: none !important;
-}
-
-.btn-playful-primary {
-    background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
-    color: white;
-}
-
-.btn-playful-secondary {
-    background: var(--color-secondary);
-    color: white;
-}
-
-.btn-playful-success {
-    background: var(--color-success);
-    color: white;
-}
-
-.btn-playful-danger {
-    background: var(--color-danger);
-    color: white;
-}
-
-.btn-playful-outline {
-    background: transparent;
-    border: 2px solid var(--color-primary);
-    color: var(--color-primary);
-    box-shadow: none;
-}
-
-.cta-row {
-    display: flex;
-    gap: 10px;
-    margin-top: auto;
-    /* Tetap terlihat di dasar layar walau papan peringkat panjang (Hukum Fitts: target utama mudah dijangkau) */
-    position: sticky;
-    bottom: 14px;
-    z-index: 5;
-}
-
-.btn-start-game {
-    flex: 1 1 0;
-    min-width: 0;
-    font-size: 16px;
-    padding: 15px 8px;
-    white-space: nowrap;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45), 0 0 0 4px rgba(5, 6, 28, 0.55);
-}
-
-/* ---- Choose count modal ---- */
-.count-option-list {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-}
-
-.count-option-button {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    background: #f5f3ff;
-    border: 2px solid transparent;
-    border-radius: var(--radius-md);
-    padding: 14px;
-    cursor: pointer;
-    text-align: left;
-    font-family: var(--font-playful);
-    transition: transform 0.12s ease, border-color 0.12s ease, background 0.12s ease;
-}
-
-.count-option-button:hover {
-    border-color: var(--color-primary);
-    background: #ede9fe;
-    transform: translateY(-2px);
-}
-
-.count-option-button:active {
-    transform: scale(0.97);
-}
-
-.count-option-emoji {
-    font-size: 30px;
-    flex-shrink: 0;
-}
-
-.count-option-text {
-    display: flex;
-    flex-direction: column;
-}
-
-.count-option-text strong {
-    font-size: 16px;
-    color: var(--color-text);
-}
-
-.count-option-text small {
-    color: #6b21a8;
-    opacity: 0.8;
-    font-size: 12px;
-}
-
-/* ============ GAME VIEW ============ */
-.game-topbar {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 18px;
-}
-
-.progress-info {
-    flex: 1 1 auto;
-    text-align: center;
-}
-
-#progressLabel {
-    font-size: 13px;
-    font-weight: 700;
-    color: var(--color-text-on-space);
-    display: block;
-    margin-bottom: 4px;
-}
-
-.progress-bar-track {
-    background: rgba(255, 255, 255, 0.18);
-    border-radius: 999px;
-    height: 8px;
-    overflow: hidden;
-}
-
-.progress-bar-fill {
-    height: 100%;
-    width: 0%;
-    background: linear-gradient(90deg, var(--color-primary), var(--color-secondary));
-    border-radius: 999px;
-    transition: width 0.35s ease;
-}
-
-#stopwatch {
-    background-color: var(--color-card-bg);
-    color: var(--color-text);
-    transition: background-color 1s;
-    padding: 8px 16px;
-    border-radius: 999px;
-    font-weight: 700;
-    box-shadow: var(--shadow-soft);
-    flex-shrink: 0;
-}
-
-.question-row {
-    flex: 1 1 auto; /* mengisi ruang antara topbar dan keypad */
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    align-items: center; /* soal berada di tengah ruang, bukan menempel di atas */
-    gap: 12px;
-    padding: 12px 0;
-}
-
-#question {
-    font-size: clamp(38px, 11vw, 68px);
-    font-weight: 800;
-    background: var(--color-card-bg);
-    color: var(--color-text);
-    padding: clamp(16px, 3.2vw, 30px) clamp(24px, 6vw, 48px);
-    border-radius: 28px;
-    box-shadow: var(--shadow-soft), 0 0 40px rgba(139, 108, 255, 0.25);
-    min-height: clamp(76px, 12vh, 120px);
-    display: flex;
-    align-items: center;
-    font-variant-numeric: tabular-nums;
-}
-
-#question:empty {
-    visibility: hidden; /* saat countdown: jangan tampilkan kartu kosong */
-}
-
-.circle-button {
-    font-size: 20px !important;
-}
-
-/* ---- Keypad ---- */
-.keypad-wrapper {
-    margin-top: auto;
-}
-
-.answer-input {
-    width: 100%;
-    text-align: center;
-    font-size: 22px;
-    font-weight: 700;
-    font-family: var(--font-playful);
-    padding: 14px;
-    border-radius: var(--radius-md);
-    border: 2px solid #ede9fe;
-    margin-bottom: 14px;
-    background: white;
-    box-shadow: var(--shadow-soft);
-}
-
-.answer-input:focus {
-    outline: none;
-    border-color: var(--color-primary);
-}
-
-.keypad {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 10px;
-}
-
-.keypad-btn {
-    font-family: var(--font-playful);
-    font-size: 22px;
-    font-weight: 700;
-    background: white;
-    border: none;
-    border-radius: var(--radius-md);
-    padding: clamp(14px, 2.4vh, 22px) 0;
-    box-shadow: var(--shadow-soft);
-    cursor: pointer;
-    color: var(--color-text);
-    transition: transform 0.1s ease, box-shadow 0.1s ease;
-}
-
-.keypad-btn:hover:not(:disabled) {
-    transform: translateY(-2px);
-}
-
-.keypad-btn:active:not(:disabled) {
-    transform: scale(0.92);
-}
-
-.keypad-btn:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-}
-
-.keypad-btn-delete {
-    background: #fee2e2;
-    color: var(--color-danger-dark);
-}
-
-.keypad-btn-submit {
-    background: var(--color-success);
-    color: white;
-    font-size: 18px;
-}
-
-/* ============ COUNTDOWN OVERLAY ============ */
-.countdown-overlay {
-    display: none;
-    position: fixed;
-    inset: 0;
-    z-index: 1200;
-    align-items: center;
-    justify-content: center;
-    background: radial-gradient(circle at 50% 40%, rgba(124, 58, 237, 0.92), rgba(59, 7, 100, 0.96));
-    backdrop-filter: blur(4px);
-}
-
-.countdown-overlay.is-visible {
-    display: flex;
-}
-
-.countdown-content {
-    text-align: center;
-    color: white;
-}
-
-.countdown-number {
-    font-size: 110px;
-    font-weight: 800;
-    line-height: 1;
-    text-shadow: 0 6px 24px rgba(0, 0, 0, 0.35);
-}
-
-.countdown-number.countdown-pop {
-    animation: countdownPop 0.7s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-.countdown-label {
-    margin-top: 14px;
-    font-size: 20px;
-    font-weight: 700;
-    letter-spacing: 0.5px;
-    opacity: 0;
-    animation: countdownLabelIn 0.5s ease forwards 0.15s;
-}
-
-@keyframes countdownPop {
-    0% {
-        transform: scale(0.25) rotate(-18deg);
-        opacity: 0;
-    }
-
-    55% {
-        transform: scale(1.2) rotate(6deg);
-        opacity: 1;
-    }
-
-    75% {
-        transform: scale(0.9) rotate(-4deg);
-    }
-
-    100% {
-        transform: scale(1) rotate(0deg);
-        opacity: 1;
-    }
-}
-
-@keyframes countdownLabelIn {
-    from {
-        opacity: 0;
-        transform: translateY(6px);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-
-.toast-alert {
-    position: fixed;
-    top: 14px;
-    left: 50%;
-    transform: translateX(-50%) translateY(-120%);
-    z-index: 1080;
-    background: white;
-    padding: 12px 22px;
-    border-radius: 999px;
-    box-shadow: var(--shadow-playful);
-    font-weight: 700;
-    font-size: 15px;
-    animation: toastIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-    white-space: nowrap;
-}
-
-.toast-alert.toast-success {
-    color: var(--color-success-dark);
-    border: 2px solid var(--color-success);
-}
-
-.toast-alert.toast-danger {
-    color: var(--color-danger-dark);
-    border: 2px solid var(--color-danger);
-}
-
-@keyframes toastIn {
-    to {
-        transform: translateX(-50%) translateY(0);
-    }
-}
-
-.wiggle-animation {
-    animation: wiggle 0.2s ease-in-out 2;
-}
-
-@keyframes wiggle {
-    0% {
-        transform: translateX(0);
-    }
-
-    25% {
-        transform: translateX(-6px);
-    }
-
-    50% {
-        transform: translateX(6px);
-    }
-
-    75% {
-        transform: translateX(-6px);
-    }
-
-    100% {
-        transform: translateX(0);
-    }
-}
-
-/* ============ MODALS ============ */
-.playful-modal {
-    border-radius: var(--radius-lg);
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    font-family: var(--font-playful);
-    background: linear-gradient(165deg, var(--color-space-2), var(--color-space-3));
-    color: var(--color-text-on-space);
-}
-
-.playful-modal .modal-header,
-.playful-modal .modal-footer {
-    border-color: rgba(255, 255, 255, 0.12);
-}
-
-.playful-modal .btn-close {
-    filter: invert(1) grayscale(100%) brightness(2);
-}
-
-.end-game-stat {
-    font-size: 17px;
-    font-weight: 700;
-    margin-bottom: 6px;
-}
-
-.help-list {
-    padding-left: 20px;
-    line-height: 1.8;
-}
-
-.playful-input {
-    font-family: var(--font-playful);
-    border-radius: var(--radius-sm);
-    margin-top: 8px;
-    background: rgba(255, 255, 255, 0.92);
-    border: none;
-}
-
-/* ---- Tabel perkalian (helper) ---- */
-.multiplication-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 10px;
-}
-
-.multiplication-cell {
-    border: 1px solid rgba(255, 255, 255, 0.16);
-    border-radius: var(--radius-sm);
-    background: rgba(255, 255, 255, 0.05);
-    padding: 12px 8px;
-    text-align: center;
-    font-size: 14px;
-    line-height: 1.65;
-    white-space: nowrap;
-    font-variant-numeric: tabular-nums;
-}
-
-.multiplication-title {
-    font-weight: 800;
-    color: var(--color-accent);
-    margin-bottom: 4px;
-}
-
-.multiplication-line strong {
-    color: #ffffff;
-}
-
-#hintModal .modal-body {
-    overscroll-behavior: contain;
-    -webkit-overflow-scrolling: touch;
-}
-
-/* ---- Insight peringkat di modal selesai ---- */
-.rank-insight {
-    margin-top: 14px;
-    padding: 14px;
-    border-radius: var(--radius-md);
-    background: rgba(255, 255, 255, 0.06);
-    border: 1px solid rgba(255, 255, 255, 0.14);
-    text-align: left;
-}
-
-.rank-insight.is-top {
-    border-color: rgba(255, 209, 102, 0.7);
-    background: linear-gradient(135deg, rgba(255, 209, 102, 0.18), rgba(255, 255, 255, 0.04));
-}
-
-.rank-insight.is-miss {
-    border-color: rgba(255, 155, 155, 0.5);
-}
-
-.rank-insight-headline {
-    font-size: 17px;
-    font-weight: 800;
-    text-align: center;
-    margin-bottom: 10px;
-    line-height: 1.3;
-    text-wrap: balance;
-}
-
-.rank-insight-details {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-.rank-insight-details li {
-    position: relative;
-    padding-left: 30px;
-    font-size: 14.5px;
-    line-height: 1.45;
-    font-variant-numeric: tabular-nums;
-}
-
-.rank-insight-details li::before {
-    content: attr(data-icon);
-    position: absolute;
-    left: 0;
-    top: 0;
-}
-
-@media (max-width: 380px) {
-    .keypad-btn {
-        font-size: 19px;
-    }
-
-    .countdown-number {
-        font-size: 84px;
-    }
-
-    .leaderboard-panel {
-        padding: 14px 10px 16px;
-    }
-}
-
-/* ============ AKSESIBILITAS: FOCUS TERLIHAT SAAT NAVIGASI KEYBOARD ============ */
-.icon-button:focus-visible,
-.leaderboard-tab:focus-visible,
-.btn-playful:focus-visible,
-.keypad-btn:focus-visible,
-.count-option-button:focus-visible,
-.avatar-option:focus-visible {
-    outline: 3px solid var(--color-accent);
+h1, h2, h3, .display { font-family: var(--font-display); font-weight: 800; line-height: .95; margin: 0; letter-spacing: -.01em; }
+h1 { font-size: var(--t-h1); }
+p { margin: 0; }
+button { font-family: inherit; touch-action: manipulation; }
+input { font-family: inherit; }
+svg { max-width: 100%; height: auto; }
+
+:focus-visible {
+    outline: 3px solid var(--ink);
     outline-offset: 2px;
-}
-
-/* ============ ERGONOMI SENTUH: tanpa zoom ganda & highlight, agar ketukan cepat responsif ============ */
-button,
-.keypad-btn,
-.leaderboard-tab,
-.avatar-option {
-    touch-action: manipulation;
-    -webkit-tap-highlight-color: transparent;
-}
-
-.keypad-btn,
-.btn-playful,
-.leaderboard-tab {
-    -webkit-user-select: none;
-    user-select: none;
-}
-
-/* ============ HORMATI PREFERENSI "REDUCED MOTION" PENGGUNA ============ */
-@media (prefers-reduced-motion: reduce) {
-
-    *,
-    *::before,
-    *::after {
-        animation-duration: 0.001ms !important;
-        animation-iteration-count: 1 !important;
-        transition-duration: 0.001ms !important;
-    }
-}
-
-/* ============ VIEWPORT DINAMIS (mengatasi toolbar browser mobile) ============ */
-@supports (height: 100dvh) {
-    .view {
-        min-height: 100dvh;
-    }
-}
-
-/* ============ TABLET (>= 768px) ============ */
-@media (min-width: 768px) {
-    .view {
-        max-width: 640px;
-        padding-top: 32px;
-    }
-
-    #dashboardView {
-        max-width: 720px;
-        justify-content: center; /* blok dashboard di tengah layar, tidak menempel atas */
-    }
-
-    .dashboard-heading h1 {
-        font-size: 32px;
-    }
-
-    .subtitle {
-        font-size: 15px;
-    }
-
-    .btn-start-game {
-        font-size: 18px;
-    }
-
-    .leaderboard-panel {
-        --avatar-size: clamp(58px, 9vh, 78px);
-        --avatar-size-first: clamp(80px, 12.5vh, 108px);
-        --podium-name-size: 15px;
-        --podium-score-size: 18px;
-        --podium-score-size-first: 25px;
-        --podium-meta-size: 12.5px;
-        --base-h-first: clamp(54px, 9vh, 84px);
-        --base-h-second: clamp(40px, 6.6vh, 62px);
-        --base-h-third: clamp(30px, 5vh, 46px);
-        --tab-size: 16px;
-        --row-name-size: 16px;
-        --row-score-size: 16px;
-        --row-meta-size: 12px;
-        --row-avatar-size: 42px;
-        padding: clamp(16px, 3vh, 24px) 24px clamp(18px, 3vh, 26px);
-    }
-
-    /* Layar lebar: peringkat 4-7 dibuat 2 kolom, hemat tinggi & lebih mudah dipindai */
-    .rank-list {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 10px;
-    }
-
-    .rank-list-empty {
-        grid-column: 1 / -1;
-    }
-
-    .rank-list-row {
-        padding: 10px 14px;
-    }
-
-    .keypad {
-        gap: 12px;
-    }
-}
-
-/* ============ LAPTOP / DESKTOP (>= 1200px) ============ */
-@media (min-width: 1200px) {
-    #dashboardView {
-        max-width: 820px;
-    }
-
-    .view {
-        max-width: 680px;
-    }
-
-    .leaderboard-panel {
-        --avatar-size: clamp(62px, 10vh, 88px);
-        --avatar-size-first: clamp(86px, 14vh, 122px);
-        --podium-name-size: 16.5px;
-        --podium-score-size: 20px;
-        --podium-score-size-first: 28px;
-        --podium-meta-size: 13.5px;
-        --base-h-first: clamp(58px, 10vh, 96px);
-        --base-h-second: clamp(42px, 7.4vh, 70px);
-        --base-h-third: clamp(32px, 5.6vh, 52px);
-        --tab-size: 17px;
-        --row-name-size: 17px;
-        --row-score-size: 17px;
-        --row-meta-size: 12.5px;
-        --row-avatar-size: 46px;
-        padding: 28px 32px 30px;
-    }
-}
-
-/* ============ LAPTOP DENGAN TINGGI LAYAR TERBATAS (mis. 1366x768 => area browser ~650px) ============ */
-@media (min-width: 768px) and (max-height: 780px) {
-    .view {
-        padding-top: 14px;
-        padding-bottom: 14px;
-    }
-
-    .dashboard-header {
-        margin-bottom: 10px;
-    }
-
-    .subtitle {
-        display: none;
-    }
-
-    .leaderboard-panel {
-        --avatar-size: 54px;
-        --avatar-size-first: 74px;
-        --base-h-first: 44px;
-        --base-h-second: 33px;
-        --base-h-third: 25px;
-        margin-bottom: 12px;
-        padding-top: 12px;
-        padding-bottom: 12px;
-    }
-
-    .leaderboard-tabs {
-        margin-bottom: 10px;
-    }
-
-    .leaderboard-tab {
-        min-height: 40px;
-    }
-
-    .podium {
-        padding-top: 0;
-    }
-
-    .podium-avatar-wrap {
-        margin-bottom: 6px;
-    }
-
-    .podium-base {
-        margin-top: 6px;
-    }
-
-    .rank-list {
-        padding-top: 8px;
-        gap: 8px;
-    }
-
-    .rank-list-row {
-        padding: 7px 12px;
-    }
-
-    .btn-start-game {
-        padding: 13px;
-    }
-}
-
-/* ============ ORIENTASI LANSKAP DI LAYAR PENDEK (HP direbahkan) ============ */
-@media (max-height: 480px) and (orientation: landscape) {
-    .view,
-    #dashboardView {
-        padding-top: 10px;
-        padding-bottom: 14px;
-        min-height: auto;
-        justify-content: flex-start;
-    }
-
-    #question {
-        font-size: 30px;
-        padding: 8px 20px;
-        min-height: 50px;
-    }
-
-    .keypad-btn {
-        padding: 8px 0;
-        font-size: 17px;
-    }
-
-    .keypad {
-        gap: 6px;
-    }
-
-    .answer-input {
-        padding: 8px;
-        margin-bottom: 8px;
-    }
-
-    .countdown-number {
-        font-size: 64px;
-    }
-
-    .leaderboard-panel {
-        --avatar-size: 42px;
-        --avatar-size-first: 58px;
-        --base-h-first: 34px;
-        --base-h-second: 24px;
-        --base-h-third: 18px;
-        padding: 10px 10px 12px;
-    }
-}
-
-/* ============ CONFETTI (efek saat game selesai) ============ */
-.confetti-container {
-    position: fixed;
-    inset: 0;
-    pointer-events: none;
-    z-index: 1400;
-    overflow: hidden;
-}
-
-.confetti-piece {
-    position: absolute;
-    top: -12px;
-    width: 8px;
-    height: 14px;
-    opacity: 0.9;
-    border-radius: 2px;
-    animation-name: confettiFall;
-    animation-timing-function: cubic-bezier(0.35, 0, 0.65, 1);
-    animation-fill-mode: forwards;
-}
-
-@keyframes confettiFall {
-    0% {
-        transform: translate(0, 0) rotate(0deg);
-        opacity: 1;
-    }
-
-    100% {
-        transform: translate(var(--drift), 112vh) rotate(var(--rotate));
-        opacity: 0.85;
-    }
-}
-
-@media (prefers-reduced-motion: reduce) {
-    .confetti-container {
-        display: none;
-    }
-}
-
-/* ============ STATUS KONEKSI PAPAN PERINGKAT ============ */
-.leaderboard-status {
-    margin: 14px 0 0;
-    text-align: center;
-    font-size: 11px;
-    font-weight: 600;
-    line-height: 1.4;
-    color: #c3b8ff;
-}
-
-.leaderboard-status:empty {
-    display: none;
-}
-
-.leaderboard-status.is-online {
-    color: #6ee7b7;
-}
-
-.leaderboard-status.is-local {
-    color: var(--color-accent);
-}
-
-.leaderboard-status.is-error {
-    color: #ff9b9b;
-}
-
-/* ============ DUEL 1v1 ============ */
-.duel-room-code {
-    font-size: 40px;
-    font-weight: 800;
-    letter-spacing: 10px;
-    background: rgba(255, 255, 255, 0.08);
-    border: 2px dashed rgba(255, 209, 102, 0.6);
-    border-radius: var(--radius-md);
-    padding: 14px 8px;
-    margin: 10px 0 16px;
-    color: var(--color-accent);
-    font-variant-numeric: tabular-nums;
-}
-
-.duel-waiting-text {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    margin: 16px 0 0;
-    font-size: 14px;
-    color: #cfc5ff;
-}
-
-.duel-spinner {
-    width: 16px;
-    height: 16px;
-    border: 3px solid rgba(255, 255, 255, 0.25);
-    border-top-color: var(--color-accent);
-    border-radius: 50%;
-    animation: duelSpin 0.8s linear infinite;
-    flex-shrink: 0;
-}
-
-@keyframes duelSpin {
-    to {
-        transform: rotate(360deg);
-    }
-}
-
-.duel-code-input {
-    text-align: center;
-    letter-spacing: 6px;
-    font-size: 22px;
-    font-weight: 800;
-    text-transform: uppercase;
-}
-
-/* ---- Bar progres lawan (dalam game view) ---- */
-.duel-opponent-bar {
-    align-items: center;
-    gap: 10px;
-    background: rgba(255, 255, 255, 0.06);
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    border-radius: var(--radius-md);
-    padding: 8px 12px;
-    margin-bottom: 14px;
-}
-
-.duel-opponent-avatar {
-    width: 30px;
-    height: 30px;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.12);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 16px;
-    flex-shrink: 0;
-}
-
-.duel-opponent-info {
-    flex: 1 1 auto;
-    min-width: 0;
-}
-
-.duel-opponent-name {
-    font-size: 11px;
-    font-weight: 700;
-    color: #cfc5ff;
-    display: block;
-    margin-bottom: 3px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.duel-opponent-track {
-    height: 6px;
-}
-
-.duel-opponent-fill {
-    background: linear-gradient(90deg, var(--color-secondary), #ff9ad9);
-}
-
-.duel-opponent-count {
-    font-size: 12px;
-    font-weight: 800;
-    color: var(--color-text-on-space);
-    flex-shrink: 0;
-    font-variant-numeric: tabular-nums;
-}
-
-.duel-disconnect-banner {
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    background: rgba(255, 107, 107, 0.15);
-    border: 1px solid rgba(255, 107, 107, 0.4);
-    border-radius: var(--radius-sm);
-    padding: 8px 12px;
-    margin-bottom: 12px;
-    font-size: 12.5px;
-    color: #ffb3b3;
-    text-align: center;
-    flex-wrap: wrap;
-}
-
-.duel-banner-link {
-    background: none;
-    border: none;
-    color: #ffd166;
-    font-weight: 800;
-    text-decoration: underline;
-    cursor: pointer;
-    padding: 0;
-    font-size: 12.5px;
-}
-
-/* ---- Modal hasil duel ---- */
-.duel-winner-banner {
-    text-align: center;
-    font-size: 19px;
-    font-weight: 800;
-    padding: 12px;
-    border-radius: var(--radius-md);
-    margin-bottom: 16px;
-}
-
-.duel-winner-banner.is-win {
-    background: linear-gradient(135deg, rgba(255, 209, 102, 0.28), rgba(255, 255, 255, 0.04));
-    color: var(--color-accent);
-}
-
-.duel-winner-banner.is-lose {
-    background: rgba(255, 255, 255, 0.06);
-    color: var(--color-text-on-space);
-}
-
-.duel-result-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
-}
-
-.duel-result-card {
-    text-align: center;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    border-radius: var(--radius-md);
-    padding: 14px 8px;
-}
-
-.duel-result-card.is-winner {
-    border-color: var(--color-accent);
-    background: rgba(255, 209, 102, 0.12);
-}
-
-.duel-result-avatar {
-    font-size: 32px;
-    margin-bottom: 4px;
-}
-
-.duel-result-name {
-    font-size: 13px;
-    font-weight: 700;
-    color: var(--color-text-on-space);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.duel-result-label {
-    font-size: 10.5px;
-    color: #cfc5ff;
-    margin: 2px 0 6px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-.duel-result-stat {
-    font-size: 13px;
-    font-weight: 800;
-    color: var(--color-text-on-space);
-    font-variant-numeric: tabular-nums;
-}
-
-@media (min-width: 768px) {
-    .duel-room-code {
-        font-size: 48px;
-    }
-
-    .duel-result-avatar {
-        font-size: 40px;
-    }
-}
-
-/* HUB: lihat bagian "HUB BARU" di akhir file */
-
-/* ============ BREADCRUMB KEMBALI KE HUB ============ */
-.breadcrumb-back {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    background: none;
-    border: none;
-    color: #cfc5ff;
-    font-family: var(--font-playful);
-    font-weight: 700;
-    font-size: 12.5px;
-    padding: 6px 2px;
-    margin-bottom: 8px;
-    cursor: pointer;
-    transition: color 0.15s ease;
-}
-
-.breadcrumb-back:hover {
-    color: var(--color-accent);
-}
-
-/* ============ GAME PENGETAHUAN DASAR: SOAL PILIHAN GANDA ============ */
-.knowledge-question-card, .advmath-question-card {
-    font-size: clamp(17px, 4.2vw, 25px);
-    font-weight: 800;
-    background: var(--color-card-bg);
-    color: var(--color-text);
-    padding: 20px 22px;
-    border-radius: 24px;
-    box-shadow: var(--shadow-soft);
-    min-height: 90px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    line-height: 1.35;
-    width: 100%;
-}
-
-.knowledge-options-grid, .advmath-options-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px;
-    margin-bottom: 14px;
-}
-
-.knowledge-option-btn, .advmath-option-btn {
-    font-family: var(--font-playful);
-    font-size: 14.5px;
-    font-weight: 700;
-    background: var(--color-card-bg);
-    color: var(--color-text);
-    border: none;
-    border-radius: var(--radius-md);
-    padding: 16px 10px;
-    min-height: 64px;
-    box-shadow: var(--shadow-soft);
-    cursor: pointer;
-    transition: transform 0.1s ease, background 0.15s ease, color 0.15s ease, opacity 0.15s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    line-height: 1.3;
-}
-
-.knowledge-option-btn:hover:not(:disabled), .advmath-option-btn:hover:not(:disabled) {
-    transform: translateY(-2px);
-}
-
-.knowledge-option-btn:active:not(:disabled), .advmath-option-btn:active:not(:disabled) {
-    transform: scale(0.96);
-}
-
-.knowledge-option-btn:disabled, .advmath-option-btn:disabled {
-    cursor: not-allowed;
-}
-
-.knowledge-option-btn.is-correct, .advmath-option-btn.is-correct {
-    background: var(--color-success);
-    color: white;
-    box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.35), 0 8px 18px rgba(52, 211, 153, 0.3);
-}
-
-.knowledge-option-btn.is-wrong, .advmath-option-btn.is-wrong {
-    background: var(--color-danger);
-    color: white;
-    opacity: 0.7;
-    text-decoration: line-through;
-}
-
-.knowledge-hint-button, .advmath-hint-button {
-    width: 100%;
-    font-size: 13.5px;
-    padding: 12px;
-}
-
-.knowledge-hint-button:disabled, .advmath-hint-button:disabled {
-    opacity: 0.4;
-}
-
-@media (min-width: 768px) {
-.knowledge-options-grid, .advmath-options-grid {
-        gap: 16px;
-    }
-
-.knowledge-option-btn, .advmath-option-btn {
-        font-size: 16px;
-        min-height: 76px;
-        padding: 18px 14px;
-    }
-
-.knowledge-hint-button, .advmath-hint-button {
-        font-size: 15px;
-        padding: 14px;
-        max-width: 420px;
-        margin: 0 auto;
-    }
-}
-
-
-/* =====================================================================
-   ATURAN SKOR (dashboard Pengetahuan Dasar)
-   Panduan di tempat keputusan dibuat (HCI: help & documentation, recognition over recall)
-===================================================================== */
-.score-rules {
-    width: 100%;
-    background: rgba(255, 255, 255, 0.06);
-    border: 1px dashed rgba(255, 255, 255, 0.25);
-    border-radius: var(--radius-md);
-    padding: 12px 12px 10px;
-    margin-bottom: 16px;
-}
-
-.score-rules-title {
-    font-size: 15px;
-    font-weight: 800;
-    margin: 0;
-    color: var(--color-accent);
-    cursor: pointer;
-    list-style: none;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    min-height: 32px; /* target sentuh nyaman */
-}
-
-.score-rules-title::-webkit-details-marker { display: none; }
-
-.score-rules-hint::before { content: 'Tutup ▲'; font-size: 12px; opacity: 0.8; font-weight: 700; }
-.score-rules:not([open]) .score-rules-hint::before { content: 'Lihat ▼'; }
-.score-rules[open] .score-rules-grid { margin-top: 8px; }
-
-.score-rules-grid {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 8px;
-}
-
-.score-rule {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    min-width: 0;
-    padding: 6px 10px;
-    border-radius: var(--radius-sm);
-    background: rgba(0, 0, 0, 0.22);
-    border-left: 4px solid var(--color-success);
-}
-
-.score-rule.is-loss {
-    border-left-color: var(--color-danger);
-    grid-column: 1 / -1;
-}
-
-.score-rule-points {
-    flex: 0 0 auto;
-    min-width: 2.6em;
-    font-weight: 800;
-    font-size: 16px;
-    font-variant-numeric: tabular-nums;
-    color: var(--color-success);
-}
-
-.score-rule.is-loss .score-rule-points {
-    color: var(--color-danger);
-}
-
-.score-rule-text {
-    font-size: 13px;
-    line-height: 1.25;
-}
-
-.score-rules-note {
-    margin: 8px 2px 0;
-    font-size: 12px;
-    line-height: 1.35;
-    opacity: 0.85;
-}
-
-.end-game-stat-main {
-    font-size: 1.25em;
-    font-weight: 800;
-}
-
-@media (min-width: 768px) {
-    .score-rules-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-    .score-rule.is-loss { grid-column: auto; }
-    .score-rule-text { font-size: 14px; }
-}
-
-
-/* =====================================================================
-   PERKALIAN 1-10 LANJUTAN: sistem waktu, hint bertingkat, soal hangus
-===================================================================== */
-#advmathLeaderboardTabs .leaderboard-tab {
-    padding-inline: 4px;
-    font-size: min(var(--tab-size), 13.5px);
-    white-space: nowrap;
-}
-
-.score-rules-sub {
-    margin: 8px 2px 8px;
-    font-size: 13px;
-    line-height: 1.35;
-}
-
-.score-rule.is-hint {
-    border-left-color: var(--color-accent);
-}
-
-.score-rule.is-hint .score-rule-points {
-    color: var(--color-accent);
-}
-
-.score-rule.is-loss .score-rule-points,
-.score-rule.is-hint .score-rule-points {
-    min-width: 2.8em;
-}
-
-#advmathScoreRules .score-rule.is-loss {
-    grid-column: auto; /* di panel ini semua aturan setara, tidak ada baris lebar khusus */
-}
-
-.advmath-timer {
-    background-color: var(--color-card-bg);
-    color: var(--color-text);
-    padding: 8px 14px;
-    border-radius: 999px;
-    font-weight: 800;
-    font-variant-numeric: tabular-nums;
-    box-shadow: var(--shadow-soft);
-    flex-shrink: 0;
-    min-width: 76px;
-    text-align: center;
-}
-
-.advmath-timer.is-penalty {
-    animation: advmath-timer-hit 0.7s ease-out;
-}
-
-@keyframes advmath-timer-hit {
-    0% { background-color: var(--color-danger); color: #fff; transform: scale(1.18); }
-    100% { background-color: var(--color-card-bg); color: var(--color-text); transform: scale(1); }
-}
-
-.advmath-penalty-row {
-    height: 22px;
-    display: flex;
-    justify-content: flex-end;
-    margin: -4px 4px 2px;
-}
-
-.advmath-penalty-chip {
-    font-weight: 800;
-    font-size: 14px;
-    color: #fff;
-    background: var(--color-danger-dark);
-    border-radius: 999px;
-    padding: 1px 10px;
-    opacity: 0;
-    pointer-events: none;
-}
-
-.advmath-penalty-chip.is-visible {
-    animation: advmath-chip-float 1.8s ease-out forwards;
-}
-
-@keyframes advmath-chip-float {
-    0% { opacity: 0; transform: translateY(-6px); }
-    12% { opacity: 1; transform: translateY(0); }
-    75% { opacity: 1; }
-    100% { opacity: 0; transform: translateY(4px); }
-}
-
-/* Jawaban benar ditunjukkan setelah soal hangus (bantuan pemulihan) */
-.advmath-option-btn.is-reveal {
-    outline: 3px dashed var(--color-success);
-    outline-offset: -3px;
-    background: #e8fff4;
-}
-
-.advmath-burn-banner {
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-    flex-wrap: wrap;
-    background: rgba(255, 107, 107, 0.16);
-    border: 1px solid rgba(255, 107, 107, 0.55);
-    border-radius: var(--radius-md);
-    padding: 10px 12px;
-    margin-bottom: 12px;
-}
-
-.advmath-burn-text {
-    font-weight: 700;
-    font-size: 14px;
-    flex: 1 1 180px;
-}
-
-.advmath-next-btn {
-    flex: 1 1 200px;
-    min-height: 48px;
-}
-
-/* ---- Tombol hint 1/2/3 dengan border countdown (conic-gradient) ---- */
-.advmath-hint-row {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 10px;
-    margin-bottom: 6px;
-}
-
-.advmath-hint-btn {
-    --p: 1;
-    --hint-color: #ffd166;
-    --hint-glow: rgba(255, 209, 102, 0.28);
-    position: relative;
-    isolation: isolate;
-    font-family: var(--font-playful);
-    background: var(--color-card-bg);
-    color: var(--color-text);
-    border: none;
-    border-radius: var(--radius-md);
-    padding: 8px 4px;
-    min-height: 74px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 1px;
-    line-height: 1.15;
-    cursor: pointer;
-    box-shadow: var(--shadow-soft), 0 0 10px var(--hint-glow);
-    transition: transform 0.1s ease, opacity 0.2s ease;
-}
-
-.advmath-hint-btn::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    border-radius: inherit;
-    padding: 4px;
-    background: conic-gradient(from 0deg, var(--hint-color) calc(var(--p) * 360deg), rgba(46, 16, 101, 0.16) 0);
-    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-    -webkit-mask-composite: xor;
-    mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
-    pointer-events: none;
-}
-
-.advmath-hint-btn[data-level="2"] {
-    --hint-color: #fb923c;
-    --hint-glow: rgba(251, 146, 60, 0.5);
-}
-
-.advmath-hint-btn[data-level="3"] {
-    --hint-color: #ef4444;
-    --hint-glow: rgba(239, 68, 68, 0.65);
-    background: linear-gradient(180deg, #fff1ec, #ffd9cf);
-    animation: advmath-flame 1.1s ease-in-out infinite alternate;
-}
-
-@keyframes advmath-flame {
-    from { box-shadow: var(--shadow-soft), 0 0 10px rgba(239, 68, 68, 0.55), 0 -2px 14px rgba(251, 146, 60, 0.45); }
-    to { box-shadow: var(--shadow-soft), 0 0 20px rgba(239, 68, 68, 0.85), 0 -6px 22px rgba(255, 209, 102, 0.6); }
-}
-
-.advmath-hint-btn:hover:not(:disabled) { transform: translateY(-2px); }
-.advmath-hint-btn:active:not(:disabled) { transform: scale(0.96); }
-
-.advmath-hint-title { font-weight: 800; font-size: 13.5px; }
-.advmath-hint-cost { font-weight: 800; font-size: 12.5px; color: var(--color-danger-dark); }
-.advmath-hint-status {
-    font-weight: 800;
-    font-size: 12px;
-    min-height: 14px;
-    font-variant-numeric: tabular-nums;
-}
-
-.advmath-hint-btn.is-active .advmath-hint-status { color: var(--color-primary-dark); }
-
-.advmath-hint-btn:disabled { cursor: not-allowed; }
-
-.advmath-hint-btn.is-locked { opacity: 0.45; animation: none; }
-
-/* Hint kedaluwarsa: tampilan "hangus / gosong" */
-.advmath-hint-btn.is-expired {
-    background: linear-gradient(180deg, #3b2a22, #17100c);
-    color: #d8c3b4;
-    animation: none;
-    box-shadow: var(--shadow-soft), inset 0 -10px 14px rgba(0, 0, 0, 0.55);
-}
-
-.advmath-hint-btn.is-expired .advmath-hint-cost { color: #a8896f; text-decoration: line-through; }
-.advmath-hint-btn.is-expired .advmath-hint-status { color: #fb923c; text-shadow: 0 0 6px rgba(251, 146, 60, 0.9); }
-
-.advmath-hint-note {
-    margin: 4px 2px 0;
-    font-size: 12px;
-    opacity: 0.8;
-    text-align: center;
-}
-
-/* ---- Pop-up hint ---- */
-.advmath-hint-modal-timer {
-    margin-left: auto;
-    margin-right: 10px;
-    font-weight: 800;
-    font-variant-numeric: tabular-nums;
-}
-
-.advmath-hint-countdown {
-    font-weight: 700;
-    font-size: 14px;
-    margin-bottom: 10px;
-}
-
-.advmath-hint-countdown .progress-bar-track { margin-top: 4px; }
-
-.advmath-hint-clue {
-    color: var(--color-text);
-    background: #fff8e1;
-    border-left: 5px solid var(--color-accent);
-    border-radius: var(--radius-sm);
-    padding: 14px;
-    font-size: 16px;
-    line-height: 1.5;
-    white-space: pre-wrap;
-    overflow-wrap: anywhere;
-}
-
-.advmath-hint-modal.is-level-3 .advmath-hint-clue {
-    background: #fff1ec;
-    border-left-color: #ef4444;
-}
-
-.advmath-hint-modal.is-level-3 .modal-content {
-    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.45), 0 0 30px rgba(239, 68, 68, 0.45);
-}
-
-.advmath-hint-penalty-info {
-    margin: 10px 0 0;
-    font-size: 12.5px;
-    opacity: 0.8;
-}
-
-.advmath-hint-burn-note {
-    margin: 8px 0 0;
-    font-weight: 700;
-    color: var(--color-danger-dark);
-}
-
-@media (min-width: 768px) {
-    .advmath-hint-row { gap: 14px; max-width: 640px; margin-inline: auto; width: 100%; }
-    .advmath-hint-btn { min-height: 84px; }
-    .advmath-hint-title { font-size: 15px; }
-    .advmath-hint-cost { font-size: 14px; }
-}
-
-@media (prefers-reduced-motion: reduce) {
-    .advmath-hint-btn[data-level="3"],
-    .advmath-timer.is-penalty,
-    .advmath-penalty-chip.is-visible {
-        animation: none;
-    }
-    .advmath-penalty-chip.is-visible { opacity: 1; }
-}
-
-
-/* =====================================================================
-   PENGETAHUAN DASAR: penjelasan opsi salah & pembahasan soal sebelumnya
-   (hanya selector .knowledge-*, game Perkalian 1-10 Lanjutan tidak tersentuh)
-===================================================================== */
-.knowledge-option-btn {
-    flex-direction: column;
-    gap: 5px;
-}
-
-/* Opsi salah: merah, TIDAK dicoret, teks tetap terbaca (opacity dikurangi pada teksnya saja) */
-.knowledge-option-btn.is-wrong {
-    background: var(--color-danger);
-    color: #fff;
-    opacity: 1;
-    text-decoration: none;
-    cursor: pointer;
-    box-shadow: 0 0 0 2px rgba(185, 28, 28, 0.55), var(--shadow-soft);
-}
-
-.knowledge-option-btn.is-wrong:disabled {
-    cursor: default;
-    opacity: 1;
-}
-
-.knowledge-option-btn.is-wrong .kn-opt-text {
-    opacity: 0.85;
-}
-
-.kn-opt-cue {
-    font-size: 11.5px;
-    font-weight: 800;
-    line-height: 1.2;
-    background: rgba(0, 0, 0, 0.25);
-    padding: 2px 9px;
-    border-radius: 999px;
-    white-space: nowrap;
-}
-
-.knowledge-option-btn.is-open {
-    transform: none !important;
-}
-
-.kn-opt-explain {
-    display: block;
-    width: 100%;
-    margin-top: 2px;
-    padding: 8px 10px;
-    border-radius: 10px;
-    background: rgba(255, 255, 255, 0.96);
-    color: var(--color-text);
-    font-size: 12.5px;
-    font-weight: 600;
-    line-height: 1.4;
-    text-align: left;
-    overflow-wrap: anywhere;
-    animation: kn-explain-in 0.18s ease-out;
-}
-
-.kn-opt-explain[hidden] {
-    display: none;
-}
-
-@keyframes kn-explain-in {
-    from { opacity: 0; transform: translateY(-4px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-/* Panel pembahasan soal sebelumnya: di BAWAH tombol hint supaya posisi soal & opsi tidak bergeser antar soal */
-.knowledge-recap {
-    width: 100%;
-    margin-top: 14px;
-    background: rgba(56, 189, 248, 0.1);
-    border: 1px solid rgba(56, 189, 248, 0.4);
-    border-left: 5px solid #38bdf8;
-    border-radius: var(--radius-md);
-    padding: 10px 12px;
-}
-
-.knowledge-recap-title {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-    min-height: 32px;
-    font-weight: 800;
-    font-size: 13.5px;
-    color: #bae6fd;
-    cursor: pointer;
-    list-style: none;
-}
-
-.knowledge-recap-title::-webkit-details-marker { display: none; }
-.knowledge-recap-toggle::before { content: 'Tutup ▲'; font-size: 12px; font-weight: 700; opacity: 0.85; }
-.knowledge-recap:not([open]) .knowledge-recap-toggle::before { content: 'Buka ▼'; }
-
-.knowledge-recap-body { margin-top: 6px; }
-
-.knowledge-recap-q {
-    margin: 0 0 6px;
-    font-size: 12.5px;
-    opacity: 0.8;
-    overflow-wrap: anywhere;
-}
-
-.knowledge-recap-a {
-    margin: 0 0 4px;
-    font-size: 14px;
-    overflow-wrap: anywhere;
-}
-
-.knowledge-recap-label { opacity: 0.85; }
-.knowledge-recap-a b { color: var(--color-success); }
-
-.knowledge-recap-expl {
-    margin: 0;
-    font-size: 13.5px;
-    line-height: 1.5;
-    overflow-wrap: anywhere;
-}
-
-@media (min-width: 768px) {
-    .kn-opt-explain { font-size: 14px; }
-    .kn-opt-cue { font-size: 12.5px; }
-    .knowledge-recap { max-width: 720px; margin-inline: auto; }
-}
-
-@media (prefers-reduced-motion: reduce) {
-    .kn-opt-explain { animation: none; }
-}
-
-
-/* =====================================================================
-   LAPISAN TEMA BARU: warna, font, dan bentuk permukaan
-   (hanya tampilan; mekanisme game tidak disentuh)
-   Aturan di bawah ini sengaja ditaruh paling akhir agar menggantikan
-   gaya lama bertema gelap di atasnya.
-===================================================================== */
-
-/* ---- Teks & judul ---- */
-.dashboard-heading h1 {
-    color: var(--ink);
-    text-shadow: none;
-    letter-spacing: -0.01em;
-    font-weight: 800;
-}
-
-.dashboard-heading h1::after {
-    content: '';
-    display: block;
-    width: 44px;
-    height: 5px;
-    border-radius: 999px;
-    background: var(--main);
-    margin: 10px 0 8px;
-}
-
-.subtitle {
-    color: var(--ink-soft);
-    opacity: 1;
-    font-size: 15px;
-}
-
-.breadcrumb-back {
-    color: var(--ink-soft);
-    font-size: 14px;
-    min-height: 44px;
-    padding: 8px 4px;
-    margin-bottom: 2px;
-}
-
-.breadcrumb-back:hover {
-    color: var(--ink);
-}
-
-/* ---- Tombol ikon ---- */
-.icon-button {
-    background: var(--pale);
-    color: var(--ink);
-    border: 1px solid var(--soft);
-    box-shadow: none;
-}
-
-.icon-button:hover {
-    background: var(--soft);
-    box-shadow: none;
-}
-
-/* ---- Panel papan peringkat ---- */
-.leaderboard-panel {
-    background: var(--pale);
-    border: 1px solid var(--soft);
-    box-shadow: none;
-}
-
-.leaderboard-tabs {
-    background: var(--white);
-    border: 1px solid var(--soft);
-}
-
-.leaderboard-tab {
-    color: var(--ink-soft);
-}
-
-.leaderboard-tab:hover:not(.is-active) {
-    background: var(--pale);
-    color: var(--ink);
-}
-
-.leaderboard-tab.is-active {
-    background: var(--main);
-    color: var(--on-main);
-    box-shadow: none;
-}
-
-/* podium: peringkat dibedakan oleh tinggi alas, angka, dan medali, bukan hanya warna */
-.podium-medal {
-    filter: none;
-}
-
-.podium-first .podium-avatar {
-    background: var(--white);
-    border-color: var(--main);
-    animation: goldGlow 2.4s ease-in-out infinite;
-}
-
-.podium-second .podium-avatar {
-    background: var(--white);
-    border-color: var(--soft);
-    box-shadow: none;
-}
-
-.podium-third .podium-avatar {
-    background: var(--white);
-    border-color: var(--soft);
-    border-style: dashed;
-    box-shadow: none;
-}
-
-.podium-avatar {
-    font-size: calc(var(--avatar-size) * 0.5);
-}
-
-.podium-first .podium-avatar-wrap::before,
-.podium-first .podium-avatar-wrap::after {
-    color: var(--main);
-    text-shadow: none;
-}
-
-.podium-name {
-    color: var(--ink);
-}
-
-.podium-first .podium-score,
-.podium-second .podium-score,
-.podium-third .podium-score {
-    color: var(--ink);
-    text-shadow: none;
-}
-
-.podium-mistakes {
-    color: var(--ink-soft);
-}
-
-.podium-base {
-    box-shadow: none;
-}
-
-.podium-base span {
-    color: var(--ink);
-    opacity: 0.7;
-}
-
-.podium-first .podium-base {
-    background: var(--main);
-}
-
-.podium-first .podium-base span {
-    color: var(--on-main);
-    opacity: 0.9;
-}
-
-.podium-second .podium-base {
-    background: var(--soft);
-}
-
-.podium-third .podium-base {
-    background: var(--white);
-    border: 1px solid var(--soft);
-    border-bottom: none;
-}
-
-.you-chip {
-    background: var(--main);
-    color: var(--on-main);
-}
-
-@keyframes goldGlow {
-
-    0%,
-    100% {
-        box-shadow: 0 0 0 3px var(--soft);
-    }
-
-    50% {
-        box-shadow: 0 0 0 7px var(--soft);
-    }
-}
-
-.leaderboard-loading,
-.rank-list-empty {
-    color: var(--ink-soft);
-}
-
-.rank-list-row {
-    background: var(--white);
-    border: 1px solid var(--soft);
-}
-
-.rank-list-row.is-you {
-    border-color: var(--main);
-    border-width: 2px;
-    background: var(--white);
-}
-
-.rank-list-position {
-    color: var(--ink-soft);
-}
-
-.rank-list-avatar {
-    background: var(--pale);
-}
-
-.rank-list-name,
-.rank-list-score {
-    color: var(--ink);
-}
-
-.rank-list-dots {
-    border-bottom-color: var(--soft);
-}
-
-.rank-list-score small {
-    color: var(--ink-soft);
-}
-
-/* ---- Form & avatar ---- */
-.save-record-label {
-    color: var(--ink-soft);
-    font-size: 13px;
-}
-
-.avatar-option {
-    border: 2px solid var(--soft);
-    background: var(--white);
-}
-
-.avatar-option.is-selected {
-    border-color: var(--main);
-    background: var(--pale);
-    box-shadow: 0 0 0 3px var(--soft);
-}
-
-.playful-input {
-    background: var(--white);
-    color: var(--ink);
-    border: 2px solid var(--soft);
-}
-
-.playful-input:focus {
-    background: var(--white);
-    color: var(--ink);
-    border-color: var(--main);
-    box-shadow: 0 0 0 3px var(--soft);
-    outline: none;
-}
-
-.playful-input::placeholder {
-    color: #5F6B7C;
-    opacity: 1;
-}
-
-/* ---- Tombol ---- */
-.btn-playful {
-    box-shadow: none;
-    letter-spacing: 0.005em;
-}
-
-.btn-playful:hover {
-    filter: brightness(0.95);
-}
-
-.btn-playful-primary,
-.btn-playful-success {
-    background: var(--main);
-    color: var(--on-main);
-}
-
-.btn-playful-secondary {
-    background: var(--soft);
-    color: var(--ink);
-}
-
-.btn-playful-danger {
-    background: var(--bad);
-    color: #fff;
-}
-
-.btn-playful-outline {
-    background: transparent;
-    border: 2px solid var(--main);
-    color: var(--ink);
-}
-
-.btn-playful-outline:hover {
-    background: var(--pale);
-    filter: none;
-}
-
-.btn-start-game {
     box-shadow: 0 0 0 5px var(--white);
 }
 
-/* ---- Pilihan jumlah soal / mode duel ---- */
-.count-option-button {
-    background: var(--pale);
-    border: 2px solid var(--soft);
-    color: var(--ink);
-}
-
-.count-option-button:hover {
-    border-color: var(--main);
-    background: var(--white);
-}
-
-.count-option-emoji {
-    font-size: 26px;
-    width: 34px;
-    text-align: center;
-    color: var(--main);
-}
-
-.count-option-text strong {
-    color: var(--ink);
-}
-
-.count-option-text small {
-    color: var(--ink-soft);
-    opacity: 1;
-    font-size: 13px;
-}
-
-/* ---- Layar game: topbar, progres, soal, keypad ---- */
-#progressLabel {
-    color: var(--ink);
-}
-
-.progress-bar-track {
-    background: var(--pale);
-    border: 1px solid var(--soft);
-}
-
-.progress-bar-fill {
-    background: var(--main);
-}
-
-.duel-opponent-fill {
-    background: var(--ink-soft);
-}
-
-#stopwatch,
-.advmath-timer {
-    background-color: var(--pale);
-    color: var(--ink);
-    border: 1px solid var(--soft);
-    box-shadow: none;
-}
-
-#question {
-    background: var(--pale);
-    color: var(--ink);
-    border: 2px solid var(--soft);
-    box-shadow: none;
-}
-
-.answer-input {
-    background: var(--white);
-    color: var(--ink);
-    border: 2px solid var(--soft);
-    box-shadow: none;
-}
-
-.answer-input:focus {
-    border-color: var(--main);
-    box-shadow: 0 0 0 3px var(--soft);
-}
-
-.answer-input::placeholder {
-    color: #5F6B7C;
-    opacity: 1;
-}
-
-.keypad-btn {
-    background: var(--pale);
-    color: var(--ink);
-    border: 1px solid var(--soft);
-    box-shadow: none;
-}
-
-.keypad-btn:hover:not(:disabled) {
-    background: var(--soft);
-}
-
-.keypad-btn-delete {
-    background: var(--bad-bg);
-    color: var(--bad-dark);
-    border-color: transparent;
-}
-
-.keypad-btn-delete:hover:not(:disabled) {
-    background: var(--bad-bg);
-    filter: brightness(0.96);
-}
-
-.keypad-btn-submit {
-    background: var(--main);
-    color: var(--on-main);
-    border-color: transparent;
-}
-
-.keypad-btn-submit:hover:not(:disabled) {
-    background: var(--main);
-    filter: brightness(0.95);
-}
-
-/* ---- Countdown ---- */
-.countdown-overlay {
-    background: rgba(252, 253, 254, 0.96);
-    backdrop-filter: blur(6px);
-}
-
-.countdown-content {
-    color: var(--ink);
-}
-
-.countdown-number {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 1.7em;
-    padding: 0.08em 0.4em;
-    border-radius: 999px;
-    background: var(--pale);
-    border: 6px solid var(--main);
-    color: var(--ink);
-    font-size: clamp(56px, 22vw, 96px);
-    line-height: 1.15;
-    text-shadow: none;
-}
-
-.countdown-label {
-    color: var(--ink-soft);
-    font-size: 18px;
-    font-weight: 700;
-}
-
-/* ---- Toast ---- */
-.toast-alert {
-    background: var(--white);
-    color: var(--ink);
-    border: 2px solid var(--soft);
-    box-shadow: var(--shadow-playful);
-    white-space: normal;
-    text-align: center;
-    max-width: min(92vw, 440px);
-    border-radius: 18px;
-    line-height: 1.35;
-}
-
-.toast-alert.toast-success {
-    color: var(--ok-dark);
-    border-color: var(--ok);
-}
-
-.toast-alert.toast-danger {
-    color: var(--bad-dark);
-    border-color: var(--bad);
-}
-
-/* ---- Modal ---- */
-.modal-backdrop {
-    --bs-backdrop-bg: #1F2A3A;
-    --bs-backdrop-opacity: 0.45;
-}
-
-.playful-modal {
-    background: var(--white);
-    color: var(--ink);
-    border: 1px solid var(--soft);
-    border-top: 5px solid var(--main);
-    box-shadow: var(--shadow-playful);
-}
-
-.playful-modal .modal-header,
-.playful-modal .modal-footer {
-    border-color: var(--pale);
-}
-
-.playful-modal .modal-title {
-    font-weight: 800;
-    color: var(--ink);
-}
-
-.playful-modal .btn-close {
-    filter: none;
-    opacity: 0.7;
-}
-
-.multiplication-cell {
-    border: 1px solid var(--soft);
-    background: var(--pale);
-}
-
-.multiplication-title {
-    color: var(--ink);
-}
-
-.multiplication-line strong {
-    color: var(--ink);
-}
-
-.rank-insight {
-    background: var(--pale);
-    border: 1px solid var(--soft);
-}
-
-.rank-insight.is-top {
-    border: 2px solid var(--main);
-    background: var(--pale);
-}
-
-.rank-insight.is-miss {
-    border: 1px dashed var(--ink-soft);
-}
-
-/* ---- Status koneksi papan peringkat ---- */
-.leaderboard-status {
-    color: var(--ink-soft);
-    font-size: 12px;
-}
-
-.leaderboard-status.is-online {
-    color: var(--ok-dark);
-}
-
-.leaderboard-status.is-local {
-    color: var(--warn);
-}
-
-.leaderboard-status.is-error {
-    color: var(--bad-dark);
-}
-
-/* ---- Duel ---- */
-.duel-room-code {
-    background: var(--white);
-    border: 2px dashed var(--main);
-    color: var(--ink);
-}
-
-.duel-waiting-text {
-    color: var(--ink-soft);
-}
-
-.duel-spinner {
-    border-color: var(--soft);
-    border-top-color: var(--main);
-}
-
-.duel-opponent-bar {
-    background: var(--white);
-    border: 1px solid var(--soft);
-}
-
-.duel-opponent-avatar {
-    background: var(--pale);
-}
-
-.duel-opponent-name {
-    color: var(--ink-soft);
-    font-size: 12px;
-}
-
-.duel-opponent-count {
-    color: var(--ink);
-}
-
-.duel-disconnect-banner {
-    background: var(--bad-bg);
-    border: 1px solid var(--bad);
-    color: var(--bad-dark);
-}
-
-.duel-banner-link {
-    color: var(--ink);
-}
-
-.duel-winner-banner.is-win {
-    background: var(--pale);
-    border: 2px solid var(--main);
-    color: var(--ink);
-}
-
-.duel-winner-banner.is-lose {
-    background: var(--pale);
-    color: var(--ink);
-}
-
-.duel-result-card {
-    background: var(--white);
-    border: 1px solid var(--soft);
-}
-
-.duel-result-card.is-winner {
-    border: 2px solid var(--main);
-    background: var(--pale);
-}
-
-.duel-result-name,
-.duel-result-stat {
-    color: var(--ink);
-}
-
-.duel-result-label {
-    color: var(--ink-soft);
-    font-size: 11.5px;
-}
-
-/* ---- Aturan skor / waktu ---- */
-.score-rules {
-    background: var(--pale);
-    border: 1px solid var(--soft);
-}
-
-.score-rules-title {
-    color: var(--ink);
-}
-
-.score-rule {
-    background: var(--white);
-    border-left-color: var(--ok);
-}
-
-.score-rule-points {
-    color: var(--ok-dark);
-}
-
-.score-rule.is-loss {
-    border-left-color: var(--bad);
-}
-
-.score-rule.is-loss .score-rule-points {
-    color: var(--bad-dark);
-}
-
-.score-rule.is-hint {
-    border-left-color: var(--warn);
-}
-
-.score-rule.is-hint .score-rule-points {
-    color: var(--warn);
-}
-
-.score-rules-note,
-.score-rules-sub {
-    color: var(--ink-soft);
-    opacity: 1;
-}
-
-/* ---- Game 2 & 3: kartu soal & opsi ---- */
-.knowledge-question-card,
-.advmath-question-card {
-    background: var(--pale);
-    color: var(--ink);
-    border: 2px solid var(--soft);
-    box-shadow: none;
-}
-
-.knowledge-option-btn,
-.advmath-option-btn {
-    background: var(--white);
-    color: var(--ink);
-    border: 2px solid var(--soft);
-    box-shadow: none;
-}
-
-.knowledge-option-btn:hover:not(:disabled),
-.advmath-option-btn:hover:not(:disabled) {
-    border-color: var(--main);
-    background: var(--pale);
-}
-
-.knowledge-option-btn:disabled,
-.advmath-option-btn:disabled {
-    color: var(--ink);
-    opacity: 0.75;
-}
-
-.knowledge-option-btn.is-correct,
-.advmath-option-btn.is-correct {
-    background: var(--ok);
-    border-color: var(--ok);
-    color: #fff;
-    opacity: 1;
-    box-shadow: none;
-}
-
-.knowledge-option-btn.is-wrong,
-.advmath-option-btn.is-wrong {
-    background: var(--bad);
-    border-color: var(--bad);
-    color: #fff;
-    text-decoration: none;
-    box-shadow: none;
-}
-
-.advmath-option-btn.is-wrong {
-    opacity: 0.85;
-}
-
-.knowledge-option-btn.is-wrong:hover:not(:disabled) {
-    background: var(--bad);
-    border-color: var(--bad-dark);
-}
-
-.knowledge-option-btn.is-wrong .kn-opt-text {
-    opacity: 0.95;
-}
-
-.kn-opt-cue {
-    background: rgba(0, 0, 0, 0.22);
-}
-
-.kn-opt-explain {
-    background: var(--white);
-    color: var(--ink);
-    border-left: 4px solid var(--bad);
-}
-
-.knowledge-recap {
-    background: var(--pale);
-    border: 1px solid var(--soft);
-    border-left: 5px solid var(--main);
-}
-
-.knowledge-recap-title {
-    color: var(--ink);
-}
-
-.knowledge-recap-a b {
-    color: var(--ok-dark);
-}
-
-.knowledge-recap-q {
-    opacity: 1;
-    color: var(--ink-soft);
-}
-
-/* ---- Game 3: hint, hangus, hukuman ---- */
-.advmath-penalty-chip {
-    background: var(--bad);
-    color: #fff;
-}
-
-.advmath-option-btn.is-reveal {
-    outline: 3px dashed var(--ok);
-    background: var(--ok-bg);
-    color: var(--ink);
-}
-
-.advmath-burn-banner {
-    background: var(--bad-bg);
-    border: 1px solid var(--bad);
-    color: var(--ink);
-}
-
-.advmath-hint-btn {
-    --hint-color: var(--main);
-    --hint-glow: transparent;
-    background: var(--white);
-    color: var(--ink);
-    box-shadow: none;
-    border: 1px solid var(--soft);
-}
-
-.advmath-hint-btn::before {
-    background: conic-gradient(from 0deg, var(--hint-color) calc(var(--p) * 360deg), var(--soft) 0);
-}
-
-.advmath-hint-btn[data-level="2"] {
-    --hint-color: var(--warn);
-    --hint-glow: rgba(154, 100, 32, 0.28);
-    box-shadow: 0 0 10px var(--hint-glow);
-}
-
-.advmath-hint-btn[data-level="3"] {
-    --hint-color: var(--bad);
-    --hint-glow: rgba(174, 63, 58, 0.4);
-    background: var(--bad-bg);
-    animation: advmath-flame 1.1s ease-in-out infinite alternate;
-}
-
-@keyframes advmath-flame {
-    from { box-shadow: 0 0 8px rgba(174, 63, 58, 0.30), 0 -2px 12px rgba(154, 100, 32, 0.25); }
-    to { box-shadow: 0 0 16px rgba(174, 63, 58, 0.50), 0 -5px 20px rgba(154, 100, 32, 0.38); }
-}
-
-.advmath-hint-cost {
-    color: var(--bad-dark);
-}
-
-.advmath-hint-btn.is-active .advmath-hint-status {
-    color: var(--ink);
-}
-
-.advmath-hint-btn.is-locked {
-    opacity: 0.6;
-}
-
-.advmath-hint-btn.is-expired {
-    background: #2B3140;
-    border-color: #2B3140;
-    color: #E4E8EF;
-    box-shadow: none;
-}
-
-.advmath-hint-btn.is-expired .advmath-hint-cost {
-    color: #C9D0DB;
-}
-
-.advmath-hint-btn.is-expired .advmath-hint-status {
-    color: #F2C79A;
-    text-shadow: none;
-}
-
-.advmath-hint-note,
-.advmath-hint-penalty-info {
-    color: var(--ink-soft);
-    opacity: 1;
-}
-
-.advmath-hint-clue {
-    background: var(--pale);
-    color: var(--ink);
-    border-left: 5px solid var(--main);
-}
-
-.advmath-hint-modal.is-level-3 .advmath-hint-clue {
-    background: var(--bad-bg);
-    border-left-color: var(--bad);
-}
-
-.advmath-hint-modal.is-level-3 .modal-content {
-    box-shadow: 0 0 0 3px rgba(174, 63, 58, 0.35);
-}
-
-.advmath-hint-burn-note {
-    color: var(--bad-dark);
-}
-
-@keyframes advmath-timer-hit {
-    0% { background-color: var(--bad); color: #fff; transform: scale(1.15); }
-    100% { background-color: var(--pale); color: var(--ink); transform: scale(1); }
-}
-
-/* ---- Fokus keyboard: cincin gelap yang terlihat di semua tema ---- */
-.icon-button:focus-visible,
-.leaderboard-tab:focus-visible,
-.btn-playful:focus-visible,
-.keypad-btn:focus-visible,
-.count-option-button:focus-visible,
-.avatar-option:focus-visible,
-.knowledge-option-btn:focus-visible,
-.advmath-option-btn:focus-visible,
-.advmath-hint-btn:focus-visible,
-.breadcrumb-back:focus-visible,
-.game-card:focus-visible,
-.score-rules-title:focus-visible,
-.knowledge-recap-title:focus-visible,
-.duel-banner-link:focus-visible {
-    outline: 3px solid var(--ink);
-    outline-offset: 3px;
-}
-
-@media (max-width: 380px) {
-    .countdown-label {
-        font-size: 16px;
-    }
-}
-
-.advmath-hint-btn.is-locked,
-.advmath-hint-btn.is-expired {
-    animation: none;
-}
-
-
-/* =====================================================================
-   HUB BARU: banner judul + lima tombol game ber-dekorasi
-   Setiap tombol membawa palet & font-nya sendiri lewat variabel --c-*,
-   sehingga Game 4 & 5 sudah tampil di hub tanpa mengubah halaman lain.
-   Dekorasi (.gc-decor) berada di dalam tombol (overflow hidden) dan tidak
-   menerima klik, jadi tidak menutupi tombol lain.
-===================================================================== */
-.hub-header {
-    position: relative;
-    overflow: hidden;
-    isolation: isolate;
-    margin-bottom: 20px;
-    padding: 22px 20px 20px;
-    border-radius: var(--radius-lg);
-    background: var(--pale);
-    border: 1px solid var(--soft);
-}
-
-.hub-header::before,
-.hub-header::after {
-    content: '';
-    position: absolute;
-    z-index: -1;
-    border-radius: 50%;
-    pointer-events: none;
-}
-
-.hub-header::before {
-    width: 150px;
-    height: 150px;
-    right: -40px;
-    top: -56px;
-    background: var(--soft);
-    opacity: 0.8;
-}
-
-.hub-header::after {
-    width: 70px;
-    height: 70px;
-    right: 60px;
-    bottom: -34px;
-    border: 6px solid var(--main);
-    opacity: 0.35;
-}
-
-.hub-header .dashboard-heading h1 {
-    font-size: 30px;
-}
-
-.game-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 14px;
-}
-
-.game-card {
-    --c-main: #64748B;
-    --c-pale: #DCE6F1;
-    --c-soft: #B8D4CF;
-    --c-on: #fff;
-    position: relative;
-    overflow: hidden;
-    isolation: isolate;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    min-height: 168px;
-    padding: 22px 14px 18px;
-    border: 2px solid var(--c-soft);
-    border-radius: var(--radius-lg);
-    background: var(--c-pale);
-    color: var(--ink);
-    text-align: center;
-    cursor: pointer;
-    font-family: var(--font-playful);
-    box-shadow: none;
-    transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
-}
-
-.game-card:hover {
-    transform: translateY(-3px);
-    border-color: var(--c-main);
-    box-shadow: 0 10px 22px rgba(31, 42, 58, 0.10);
-}
-
-.game-card:active {
-    transform: scale(0.98);
-}
-
-.game-card > *:not(.gc-decor) {
-    position: relative;
-    z-index: 1;
-}
-
-/* palet & font per game */
-.game-card-multiply {
-    --c-main: #43A88C;
-    --c-pale: #D9F2E8;
-    --c-soft: #A9D9C5;
-    --c-on: var(--ink);
-    font-family: 'Nunito', var(--font-stack-fallback);
-}
-
-.game-card-knowledge {
-    --c-main: #5796CC;
-    --c-pale: #DCECF9;
-    --c-soft: #B9C9EE;
-    --c-on: var(--ink);
-    font-family: 'Atkinson Hyperlegible', var(--font-stack-fallback);
-}
-
-.game-card-advmath {
-    --c-main: #6969B8;
-    --c-pale: #E5E4F8;
-    --c-soft: #B8B7E4;
-    --c-on: #fff;
-    font-family: 'Rubik', var(--font-stack-fallback);
-}
-
-.game-card-soon-4 {
-    --c-main: #C58B45;
-    --c-pale: #F8EBD5;
-    --c-soft: #EAC9A0;
-    --c-on: var(--ink);
-    font-family: 'DM Sans', var(--font-stack-fallback);
-}
-
-.game-card-soon-5 {
-    --c-main: #419B9A;
-    --c-pale: #D8F0ED;
-    --c-soft: #E9C8C0;
-    --c-on: var(--ink);
-    font-family: 'Manrope', var(--font-stack-fallback);
-}
-
-/* isi tombol */
-.game-card-icon {
-    font-size: 40px;
-    line-height: 1;
-    display: grid;
-    place-items: center;
-    width: 64px;
-    height: 64px;
-    border-radius: 20px;
-    background: var(--white);
-    border: 2px solid var(--c-soft);
-    flex-shrink: 0;
-}
-
-.game-card-body {
-    display: flex;
-    flex-direction: column;
-    align-items: inherit;
-    gap: 3px;
-    min-width: 0;
-}
-
-.game-card-title {
-    font-size: 16px;
-    font-weight: 800;
-    line-height: 1.2;
-    color: var(--ink);
-}
-
-.game-card-subtitle {
-    font-size: 13px;
-    font-weight: 600;
-    line-height: 1.35;
-    color: var(--ink-soft);
-}
-
-.game-card-tags {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    margin-top: 6px;
-}
-
-.gc-tag {
-    font-size: 12px;
-    font-weight: 700;
-    line-height: 1;
-    padding: 5px 10px;
-    border-radius: 999px;
-    background: var(--white);
-    border: 1px solid var(--c-soft);
-    color: var(--ink);
-}
-
-.game-card-arrow {
-    display: grid;
-    place-items: center;
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background: var(--c-main);
-    color: var(--c-on);
-    font-size: 20px;
-    font-weight: 800;
-    flex-shrink: 0;
-    transition: transform 0.18s ease;
-}
-
-.game-card:hover .game-card-arrow {
-    transform: translateX(3px);
-}
-
-.game-card-badge {
-    margin-top: 4px;
-    font-size: 12px;
-    font-weight: 800;
-    letter-spacing: 0.02em;
-    padding: 5px 12px;
-    border-radius: 999px;
-    background: var(--white);
-    border: 1px dashed var(--c-main);
-    color: var(--ink);
-    opacity: 1;
-}
-
-/* tombol aktif: lebar penuh, mendatar */
-.game-card-active {
-    grid-column: span 2;
-    flex-direction: row;
-    justify-content: flex-start;
-    text-align: left;
-    gap: 14px;
-    min-height: 118px;
-    padding: 18px 16px;
-}
-
-.game-card-active .game-card-body {
-    align-items: flex-start;
-    flex: 1 1 auto;
-}
-
-.game-card-active .game-card-title {
-    font-size: 18px;
-}
-
-/* belum tersedia: garis putus-putus + lencana, bukan sekadar warna pudar */
-.game-card.is-coming-soon,
-.game-card-soon {
-    opacity: 1;
-    border-style: dashed;
-}
-
-.game-card.is-coming-soon .game-card-icon,
-.game-card-soon .game-card-icon {
-    filter: none;
-    opacity: 1;
-}
-
-/* ---- dekorasi ---- */
-.gc-decor {
-    position: absolute;
-    inset: 0;
-    z-index: 0;
-    overflow: hidden;
-    border-radius: inherit;
-    pointer-events: none;
-}
-
-.gc-decor i {
-    position: absolute;
-    display: block;
-    font-style: normal;
-    transition: transform 0.4s ease;
-}
-
-.gc-blob {
-    width: 130px;
-    height: 130px;
-    right: -34px;
-    top: -46px;
-    border-radius: 50%;
-    background: var(--c-soft);
-    opacity: 0.85;
-}
-
-.gc-blob-2 {
-    width: 84px;
-    height: 84px;
-    left: -26px;
-    bottom: -30px;
-    border-radius: 50%;
-    background: var(--c-soft);
-    opacity: 0.55;
-}
-
-.gc-ring {
-    width: 58px;
-    height: 58px;
-    right: 18%;
-    bottom: -20px;
-    border-radius: 50%;
-    border: 5px solid var(--c-main);
-    opacity: 0.28;
-}
-
-.gc-dots {
-    width: 74px;
-    height: 56px;
-    left: 38%;
-    top: 8px;
-    background-image: radial-gradient(var(--c-main) 1.8px, transparent 2.2px);
-    background-size: 12px 12px;
-    opacity: 0.35;
-}
-
-.gc-stripes {
-    width: 80px;
-    height: 34px;
-    right: 8px;
-    bottom: 8px;
-    border-radius: 10px;
-    background: repeating-linear-gradient(135deg, var(--c-soft) 0 6px, transparent 6px 12px);
-    opacity: 0.9;
-}
-
-.gc-glyph {
-    font-weight: 800;
-    line-height: 1;
-    color: var(--c-main);
-    opacity: 0.3;
-}
-
-.gc-glyph-a { font-size: 34px; right: 14px; top: 10px; transform: rotate(12deg); }
-.gc-glyph-b { font-size: 24px; right: 30%; bottom: 8px; transform: rotate(-10deg); }
-.gc-glyph-c { font-size: 28px; left: 8px; top: 8px; transform: rotate(-8deg); }
-.gc-glyph-d { font-size: 20px; left: 42%; bottom: 10px; transform: rotate(8deg); }
-
-.game-card:hover .gc-blob { transform: scale(1.1); }
-.game-card:hover .gc-ring { transform: scale(1.15) rotate(20deg); }
-.game-card:hover .gc-glyph-a { transform: rotate(22deg) scale(1.1); }
-.game-card:hover .gc-glyph-c { transform: rotate(-18deg) scale(1.1); }
-
-@media (min-width: 768px) {
-    .game-grid {
-        grid-template-columns: repeat(2, 1fr);
-        gap: 18px;
-    }
-
-    .game-card {
-        min-height: 200px;
-        padding: 28px 18px 22px;
-    }
-
-    .game-card-active {
-        grid-column: span 2;
-        min-height: 132px;
-        padding: 22px 24px;
-        gap: 20px;
-    }
-
-    .game-card-icon {
-        width: 76px;
-        height: 76px;
-        font-size: 46px;
-    }
-
-    .game-card-title {
-        font-size: 17px;
-    }
-
-    .game-card-active .game-card-title {
-        font-size: 21px;
-    }
-
-    .game-card-subtitle {
-        font-size: 14px;
-    }
-
-    .hub-header .dashboard-heading h1 {
-        font-size: 36px;
-    }
-}
-
-@media (max-width: 340px) {
-    .game-card-active {
-        padding: 16px 12px;
-        gap: 10px;
-    }
-
-    .game-card-icon {
-        width: 54px;
-        height: 54px;
-        font-size: 32px;
-    }
-
-    .game-card-arrow {
-        width: 34px;
-        height: 34px;
-    }
-}
-
-/* ikon bantuan berupa huruf "?" (lebih terbaca daripada emoji pucat) */
-.dashboard-header-actions .icon-button {
-    font-size: 20px;
-    font-weight: 800;
-}
-
-/* titik-titik dekorasi pada tombol aktif dipindah ke sisi kanan supaya tidak menempel di teks */
-.game-card-active .gc-dots {
-    left: auto;
-    right: 64px;
-    top: 8px;
-    width: 52px;
-    height: 40px;
-    opacity: 0.28;
-}
-
-/* indikator level (bukan hanya warna): lingkaran terisi 1/3, 2/3, penuh */
-.level-dot {
-    display: block;
-    width: 26px;
-    height: 26px;
-    border-radius: 50%;
-    border: 2px solid var(--main);
-    background: conic-gradient(var(--main) var(--fill, 100%), transparent 0);
-    flex-shrink: 0;
-}
-
-.level-l1 { --fill: 33%; }
-.level-l2 { --fill: 66%; }
-.level-l3 { --fill: 100%; }
-
-.toast-alert {
-    width: max-content;
-}
-
-#knowledgeTimer {
-    background-color: var(--pale);
-    color: var(--ink);
-    border: 1px solid var(--soft);
-    padding: 8px 16px;
-    border-radius: 999px;
-    font-weight: 700;
-    font-variant-numeric: tabular-nums;
-    flex-shrink: 0;
-}
-
-/* slot podium kosong: tetap terbaca, hanya lebih redup */
-.podium-spot.is-empty {
-    opacity: 0.8;
-    filter: none;
-}
-
-.podium-spot.is-empty .podium-avatar {
-    border-style: dashed;
-}
-
-.score-rules-title,
-.knowledge-recap-title {
-    gap: 10px;
-}
-
-
-/* =====================================================================
-   TEMA BARU 2: playful, expressive, character-driven
-   Setiap game punya warna dasar sendiri (latar halaman). Permukaan
-   (kartu, tombol opsi, input) memakai putih hangat bersama #FFFDF7.
-   Hanya warna, font, maskot, dan teks yang berubah; mekanisme tetap.
-===================================================================== */
-
-/* ---- teks yang berada langsung di atas latar halaman ---- */
-.dashboard-heading h1,
-#progressLabel,
-#knowledgeProgressLabel,
-#advmathProgressLabel {
-    color: var(--on-bg);
-}
-
-.subtitle,
-.breadcrumb-back,
-.advmath-hint-note {
-    color: var(--on-bg-soft);
-}
-
-.breadcrumb-back:hover {
-    color: var(--on-bg);
-}
-
-.dashboard-heading h1::after {
-    background: var(--main);
-    height: 6px;
-    width: 52px;
-}
-
-.btn-start-game {
-    box-shadow: 0 0 0 5px var(--bg);
-}
-
-.btn-playful-secondary {
-    background: var(--alt);
-    color: var(--on-alt);
-}
-
-.btn-playful-outline {
-    background: var(--white);
-    border: 2px solid var(--ink);
-    color: var(--ink);
-}
-
-.btn-playful-outline:hover {
-    background: var(--pale);
-}
+.visually-hidden, .sr-only {
+    position: absolute !important; width: 1px; height: 1px; margin: -1px; padding: 0;
+    overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+.skip-link {
+    position: absolute; left: var(--s-4); top: -4rem; z-index: 3000;
+    background: var(--ink); color: var(--white); padding: var(--s-3) var(--s-4); border-radius: var(--r-pill);
+}
+.skip-link:focus { top: var(--s-4); }
+
+#app {
+    width: 100%;
+    max-width: 60rem;
+    margin: 0 auto;
+    padding: calc(var(--s-4) + var(--safe-t)) var(--s-4) calc(var(--s-6) + var(--safe-b));
+    padding-left: max(var(--s-4), env(safe-area-inset-left, 0px));
+    padding-right: max(var(--s-4), env(safe-area-inset-right, 0px));
+}
+
+.view { display: none; }
+.view.active { display: block; animation: viewIn .24s ease-out both; }
+@keyframes viewIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+/* ---------- 3. KOMPONEN BERSAMA ---------- */
+
+/* Tombol */
+.btn-playful {
+    display: inline-flex; align-items: center; justify-content: center; gap: var(--s-2);
+    min-height: var(--target); padding: var(--s-3) var(--s-6);
+    border: 3px solid var(--ink); border-radius: var(--r-pill);
+    background: var(--white); color: var(--ink);
+    font-family: var(--font-display); font-weight: 800; font-size: 1.1875rem; line-height: 1.1;
+    cursor: pointer; text-align: center; text-decoration: none;
+    transition: transform .12s ease, background-color .12s ease;
+    user-select: none;
+}
+.btn-playful:active:not(:disabled) { transform: scale(.97); }
+.btn-playful:disabled, .btn-playful[aria-disabled="true"] { opacity: .45; cursor: not-allowed; }
+.btn-playful-primary   { background: var(--accent); color: var(--on-accent); }
+.btn-playful-secondary { background: var(--white); color: var(--ink); }
+.btn-playful-success   { background: var(--ok); color: var(--ink); }
+.btn-playful-danger    { background: var(--bad); color: var(--ink); }
+.btn-playful-outline   { background: transparent; color: var(--ink); }
+.btn-playful.is-loading { pointer-events: none; opacity: .7; }
 
 .icon-button {
-    border: 2px solid var(--ink);
-    background: var(--white);
+    display: inline-flex; align-items: center; justify-content: center;
+    min-width: var(--target); min-height: var(--target); padding: 0 var(--s-2);
+    border: 3px solid var(--ink); border-radius: var(--r-pill);
+    background: var(--white); color: var(--ink);
+    font-family: var(--font-display); font-weight: 800; font-size: 1.25rem; line-height: 1;
+    cursor: pointer; user-select: none;
+}
+.icon-button:active { transform: scale(.95); }
+.circle-button { border-radius: 50%; }
+
+.breadcrumb-back {
+    display: inline-flex; align-items: center; gap: var(--s-2);
+    min-height: var(--target); padding: 0 var(--s-4);
+    border: 3px solid var(--ink); border-radius: var(--r-pill);
+    background: var(--white); color: var(--ink);
+    font-weight: 700; font-size: 1rem; cursor: pointer; margin-bottom: var(--s-4);
 }
 
-.icon-button:hover {
-    background: var(--main);
-    color: var(--on-main);
+/* Chip */
+.chip, .you-chip, .gc-tag, .game-card-badge {
+    display: inline-flex; align-items: center; gap: var(--s-1);
+    padding: var(--s-1) var(--s-3); border-radius: var(--r-pill);
+    background: var(--white); color: var(--ink); border: 2px solid var(--ink);
+    font-size: .75rem; font-weight: 700; line-height: 1.3;
+}
+.you-chip { background: var(--accent); color: var(--on-accent); padding: 0 var(--s-2); margin-left: var(--s-1); }
+
+/* Progress */
+.progress-bar-track { height: .75rem; border-radius: var(--r-pill); background: var(--white); border: 2px solid var(--ink); overflow: hidden; }
+.progress-bar-fill { height: 100%; width: 0; background: var(--accent); border-radius: var(--r-pill); transition: width .3s ease; }
+.progress-bar-fill:not([style*="width"]) { width: 0; }
+
+/* Kartu */
+.surface { background: var(--white); border-radius: var(--r-card); }
+
+/* Toast (diisi script.js) */
+.toast-alert {
+    position: fixed; left: 50%; top: calc(1rem + var(--safe-t)); z-index: 2500;
+    transform: translateX(-50%);
+    display: inline-flex; align-items: center; gap: var(--s-2);
+    width: max-content; max-width: min(92vw, 27.5rem);
+    padding: var(--s-3) var(--s-6); border-radius: var(--r-pill);
+    border: 3px solid var(--ink); background: var(--white); color: var(--ink);
+    font-weight: 700; font-size: 1rem; line-height: 1.3; text-align: center;
+    pointer-events: none; animation: toastIn .22s ease-out both;
+}
+.toast-success { background: var(--ok); }
+.toast-danger { background: var(--bad); }
+@keyframes toastIn { from { opacity: 0; transform: translate(-50%, -8px); } to { opacity: 1; transform: translate(-50%, 0); } }
+
+/* Banner offline */
+.offline-banner {
+    position: fixed; left: 0; right: 0; top: 0; z-index: 2400;
+    padding: calc(var(--s-2) + var(--safe-t)) var(--s-4) var(--s-2);
+    background: var(--warn); color: var(--ink); text-align: center; font-weight: 700; font-size: .875rem;
+    border-bottom: 3px solid var(--ink);
+}
+.offline-banner[hidden] { display: none; }
+
+/* Modal Bootstrap -> dialog di tengah (≥600) / bottom sheet (<600) */
+.modal-backdrop.show { opacity: .55; }
+.playful-modal {
+    background: var(--white); color: var(--ink); border: 3px solid var(--ink); border-radius: var(--r-card);
+    font-family: var(--font-body);
+}
+.playful-modal .modal-header { border: 0; padding: var(--s-6) var(--s-6) var(--s-2); align-items: flex-start; gap: var(--s-3); }
+.playful-modal .modal-title { font-family: var(--font-display); font-weight: 800; font-size: var(--t-h2); line-height: 1; }
+.playful-modal .modal-body { padding: var(--s-2) var(--s-6) var(--s-4); font-size: 1rem; }
+.playful-modal .modal-footer { border: 0; padding: var(--s-2) var(--s-6) var(--s-6); gap: var(--s-2); justify-content: stretch; }
+.playful-modal .modal-footer > * { flex: 1 1 8rem; margin: 0; }
+.playful-modal .btn-close { opacity: 1; width: var(--target); height: var(--target); margin: 0 0 0 auto; padding: 0; background-size: 1rem; border: 3px solid var(--ink); border-radius: 50%; flex: none; }
+.modal { --bs-modal-zindex: 2000; }
+
+@media (max-width: 599.98px) {
+    .modal-dialog-centered { align-items: flex-end; min-height: 100%; margin: 0; max-width: none; }
+    .modal.fade .modal-dialog { transform: translateY(100%); transition: transform .28s ease-out; }
+    .modal.show .modal-dialog { transform: none; }
+    .playful-modal { border-radius: var(--r-card) var(--r-card) 0 0; border-bottom: 0; padding-bottom: var(--safe-b); width: 100%; }
+    .playful-modal .modal-footer { position: sticky; bottom: 0; background: var(--white); }
 }
 
-/* progres & waktu di topbar: kontras tinggi di atas warna dasar masing-masing game */
-.game-topbar .progress-bar-track {
-    background: var(--bar-track);
-    border: 0;
-    height: 10px;
+/* Teks bantuan */
+.help-list { padding-left: 1.25rem; margin: 0; display: grid; gap: var(--s-3); }
+.help-list li::marker { font-weight: 800; }
+.end-game-stat { font-size: 1.125rem; margin-bottom: var(--s-2); }
+.end-game-stat span { font-weight: 800; font-variant-numeric: tabular-nums; }
+.end-game-stat-main { font-family: var(--font-display); font-weight: 800; font-size: clamp(1.5rem, 6vw, 2.25rem); line-height: 1.1; margin-bottom: var(--s-4); }
+.save-record-label { display: block; font-weight: 700; margin: var(--s-4) 0 var(--s-2); }
+.playful-input, .form-control.playful-input {
+    min-height: var(--target); border: 3px solid var(--ink); border-radius: var(--r-input);
+    background: var(--white); color: var(--ink); font-size: 1rem; padding: var(--s-3) var(--s-4);
 }
+.playful-input:focus { box-shadow: 0 0 0 5px var(--tint-2); border-color: var(--ink); outline: 3px solid var(--ink); outline-offset: 2px; }
+.duel-code-input { text-transform: uppercase; letter-spacing: .3em; text-align: center; font-family: var(--font-display); font-weight: 800; font-size: 1.5rem; }
 
-.game-topbar .progress-bar-fill {
-    background: var(--bar-fill);
+.avatar-picker { display: flex; flex-wrap: wrap; gap: var(--s-2); }
+.avatar-option {
+    width: var(--target); height: var(--target); border-radius: 50%;
+    border: 3px solid var(--ink); background: var(--white); font-size: 1.5rem; line-height: 1; cursor: pointer;
 }
+.avatar-option.is-selected { background: var(--accent); box-shadow: 0 0 0 3px var(--white), 0 0 0 6px var(--ink); }
 
-.advmath-hint-countdown .progress-bar-track {
-    background: var(--soft);
+.count-option-list { display: grid; gap: var(--s-3); }
+.count-option-button {
+    display: flex; align-items: center; gap: var(--s-4); width: 100%; min-height: 3.5rem; padding: var(--s-3) var(--s-4);
+    border: 3px solid var(--ink); border-radius: var(--r-input); background: var(--white); color: var(--ink);
+    text-align: left; cursor: pointer;
 }
+.count-option-button:active { transform: scale(.98); }
+.count-option-text { display: grid; line-height: 1.25; }
+.count-option-text strong { font-size: 1.125rem; }
+.count-option-text small { font-size: .875rem; color: var(--ink-soft); }
+.count-option-emoji { font-size: 1.5rem; line-height: 1; flex: none; }
+.level-dot { width: 1.25rem; height: 1.25rem; border-radius: 50%; border: 3px solid var(--ink); display: inline-block; flex: none; }
+.level-l1 { background: var(--ok); }
+.level-l2 { background: var(--warn); }
+.level-l3 { background: var(--bad); }
 
-.advmath-hint-countdown .progress-bar-fill {
-    background: var(--ink);
-}
+/* Tabel perkalian (modal bantuan G1) */
+.multiplication-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr)); gap: var(--s-3); }
+.multiplication-cell { border: 2px solid var(--ink); border-radius: var(--r-input); padding: var(--s-3); background: var(--white); }
+.multiplication-title { font-family: var(--font-display); font-weight: 800; margin-bottom: var(--s-1); }
+.multiplication-line { font-size: .875rem; font-variant-numeric: tabular-nums; }
 
-.leaderboard-tab.is-active {
-    background: var(--main);
-    color: var(--on-main);
-}
+/* Maskot */
+.mascot { display: block; }
+.mascot[data-state="happy"], .mascot[data-state="proud"] { animation: mascotPop .3s ease-out; }
+.mascot[data-state="oops"] { animation: mascotShake .5s ease-in-out; }
+.mascot[data-state="idle"] { animation: mascotBob 3.2s ease-in-out infinite; }
+.mascot[data-state="sleepy"] { opacity: .75; transform: rotate(-6deg); }
+.mascot[data-state="thinking"] { transform: rotate(4deg); }
+@keyframes mascotPop { 40% { transform: scale(1.1); } }
+@keyframes mascotShake { 20%, 60% { transform: translateX(-3px); } 40%, 80% { transform: translateX(3px); } }
+@keyframes mascotBob { 50% { transform: translateY(-3px); } }
 
-.leaderboard-panel,
-.score-rules {
-    border-width: 2px;
-}
+/* ---------- 4. HUB ---------- */
+.dashboard-header.hub-header { margin-bottom: var(--s-6); display: block; }
+.hub-header h1 { max-width: 12ch; }
+.hub-header .subtitle { margin-top: var(--s-3); font-size: 1.125rem; max-width: 36ch; color: var(--ink); }
 
-.leaderboard-tabs {
-    border-width: 2px;
-    border-color: var(--ink);
-}
-
-/* Game 3: hint level 1 memakai warna gelap supaya hitung mundurnya jelas */
-.advmath-hint-btn {
-    --hint-color: var(--ink);
-}
-
-/* Countdown: latar sesuai warna dasar game */
-.countdown-overlay {
-    background: var(--bg);
-    backdrop-filter: none;
-}
-
-.countdown-content {
-    color: var(--on-bg);
-}
-
-.countdown-label {
-    color: var(--on-bg-soft);
-}
-
-.countdown-mascot {
-    display: none;
-    width: clamp(96px, 30vw, 150px);
-    height: clamp(96px, 30vw, 150px);
-    margin: 0 auto 10px;
-}
-
-body[data-theme="g1"] .cm-g1,
-body[data-theme="g2"] .cm-g2,
-body[data-theme="g3"] .cm-g3 {
-    display: block;
-}
-
-/* ---- Game 3: Lilita One hanya punya satu bobot, hindari faux-bold ---- */
-body[data-theme="g3"] {
-    font-synthesis: none;
-    letter-spacing: 0.01em;
-}
-
-body[data-theme="g3"] *,
-body[data-theme="g3"] strong,
-body[data-theme="g3"] b {
-    font-weight: 400 !important;
-}
-
-body[data-theme="g3"] strong,
-body[data-theme="g3"] b {
-    text-decoration: underline;
-    text-decoration-thickness: 2px;
-    text-underline-offset: 3px;
-    text-decoration-color: var(--main);
-}
-
-body[data-theme="g3"] .rank-list-score small,
-body[data-theme="g3"] .podium-mistakes,
-body[data-theme="g3"] .leaderboard-status,
-body[data-theme="g3"] .duel-opponent-name,
-body[data-theme="g3"] .score-rules-note,
-body[data-theme="g3"] .advmath-hint-note {
-    font-size: 13px;
-}
-
-/* ---- Maskot di header dashboard ---- */
-.dashboard-header.has-mascot {
-    min-height: 140px;
-}
-
-.header-mascot {
-    position: absolute;
-    right: 6px;
-    top: 52px;
-    width: 82px;
-    height: 82px;
-    z-index: 1;
-    pointer-events: none;
-}
-
-@media (min-width: 768px) {
-    .dashboard-header.has-mascot {
-        min-height: 150px;
-    }
-
-    .header-mascot {
-        width: 104px;
-        height: 104px;
-        top: 48px;
-    }
-}
-
-/* =====================================================================
-   HUB (warm white) + lima tombol game berwarna dasar masing-masing
-===================================================================== */
-.hub-header {
-    background: var(--main);
-    border: 0;
-    color: #fff;
-}
-
-.hub-header::before {
-    background: var(--alt);
-    opacity: 1;
-}
-
-.hub-header::after {
-    border-color: var(--hi);
-    opacity: 1;
-}
-
-.hub-header .dashboard-heading h1 {
-    color: #fff;
-}
-
-.hub-header .dashboard-heading h1::after {
-    background: var(--alt);
-}
-
-.hub-header .subtitle {
-    color: #E4EBFF;
-}
+.game-grid { display: grid; grid-template-columns: 1fr; gap: var(--s-4); }
 
 .game-card {
-    --c-bg: #FFFDF7;
-    --c-ink: #1B1B1B;
-    --c-ink-soft: #3A3A3A;
-    --c-1: #1749F5;
-    --c-2: #B7F500;
-    --c-3: #FF7468;
-    background: var(--c-bg);
-    color: var(--c-ink);
-    border: 3px solid var(--c-ink);
+    position: relative; display: flex; flex-direction: column; overflow: hidden; width: 100%; padding: 0; text-align: left;
+    border: 3px solid var(--ink); border-radius: var(--r-card); background: var(--white); color: var(--ink); cursor: pointer;
+    transition: transform .14s ease;
+}
+button.game-card:active { transform: scale(.98); }
+.gc-art { display: grid; place-items: center; background: var(--tint-2); min-height: 7.5rem; padding: var(--s-4); border-bottom: 3px solid var(--ink); }
+.game-card-icon { width: 5.5rem; height: 5.5rem; }
+.game-card-body { display: grid; gap: var(--s-2); padding: var(--s-4) var(--s-4) var(--s-4); background: var(--white); }
+.game-card-title { font-family: var(--font-display); font-weight: 800; font-size: 1.5rem; line-height: 1; }
+.game-card-subtitle { font-size: 1rem; color: var(--ink-soft); }
+.game-card-tags { display: flex; flex-wrap: wrap; gap: var(--s-2); }
+.game-card-cta { display: inline-flex; align-items: center; gap: var(--s-2); font-weight: 800; font-family: var(--font-display); font-size: 1.0625rem; }
+.game-card.is-soon { cursor: default; }
+.game-card.is-soon .gc-art { background: var(--bg); }
+.game-card.is-soon .game-card-icon { --m-body: var(--ink); }
+.game-card.is-soon .game-card-icon { opacity: .9; }
+.game-card-badge { background: var(--white); width: fit-content; }
+
+/* ---------- 5. LOBI ---------- */
+.dashboard-header {
+    display: grid; grid-template-columns: auto 1fr; grid-template-areas: "mascot actions" "heading heading";
+    align-items: center; gap: var(--s-3) var(--s-4); margin-bottom: var(--s-4); color: var(--on-bg);
+}
+.dashboard-heading { grid-area: heading; min-width: 0; }
+.dashboard-heading h1 { font-size: clamp(2rem, 7vw, 3.25rem); overflow-wrap: break-word; hyphens: manual; }
+h1[tabindex="-1"]:focus { outline: none; box-shadow: none; }
+.dashboard-heading .subtitle {
+    display: inline-block; margin-top: var(--s-3); padding: var(--s-1) var(--s-3); border-radius: var(--r-input);
+    background: var(--white); color: var(--ink); font-size: 1rem; line-height: 1.4; max-width: 36ch;
+}
+.header-mascot { grid-area: mascot; width: clamp(4rem, 16vw, 6rem); height: auto; padding: 8%; background: var(--tint-2); border: 3px solid var(--ink); border-radius: 50%; }
+.dashboard-header-actions { grid-area: actions; display: flex; gap: var(--s-2); justify-self: end; align-self: start; }
+
+.view[id$="DashboardView"], #dashboardView { color: var(--on-bg); }
+
+/* Aturan skor / waktu (details) */
+.score-rules { background: var(--white); color: var(--ink); border: 3px solid var(--ink); border-radius: var(--r-card); padding: 0 var(--s-4); margin-bottom: var(--s-4); }
+.score-rules-title { min-height: var(--target); display: flex; align-items: center; justify-content: space-between; cursor: pointer; font-family: var(--font-display); font-weight: 800; font-size: 1.125rem; list-style: none; }
+.score-rules-title::-webkit-details-marker { display: none; }
+.score-rules-hint::after { content: "＋"; font-size: 1.25rem; }
+.score-rules[open] .score-rules-hint::after { content: "−"; }
+.score-rules-sub, .score-rules-note { font-size: .9375rem; margin-bottom: var(--s-3); }
+.score-rules-note { color: var(--ink-soft); padding-bottom: var(--s-3); }
+.score-rules-grid { list-style: none; padding: 0; margin: 0 0 var(--s-3); display: grid; grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr)); gap: var(--s-2); }
+.score-rule { display: flex; align-items: center; gap: var(--s-3); padding: var(--s-2) var(--s-3); border-radius: var(--r-input); background: var(--tint-2); border: 2px solid var(--ink); min-height: var(--target); }
+.score-rule-points { font-family: var(--font-display); font-weight: 800; font-size: 1.25rem; font-variant-numeric: tabular-nums; min-width: 3.25rem; }
+.score-rule-text { font-size: .875rem; line-height: 1.25; }
+.score-rule.is-loss { background: var(--white); }
+.score-rule.is-loss .score-rule-points { color: var(--bad-text); }
+.score-rule.is-gain .score-rule-points { color: var(--ok-text); }
+
+/* Panel peringkat */
+.leaderboard-panel { background: var(--white); color: var(--ink); border: 3px solid var(--ink); border-radius: var(--r-card); padding: var(--s-4); margin-bottom: var(--s-4); }
+.leaderboard-tabs { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: var(--s-1); padding: var(--s-1); border-radius: var(--r-pill); background: var(--tint-2); border: 2px solid var(--ink); margin-bottom: var(--s-4); }
+.leaderboard-tab { min-height: 3rem; padding: 0 var(--s-2); border: 0; border-radius: var(--r-pill); background: transparent; color: var(--ink); font-weight: 700; font-size: .875rem; cursor: pointer; white-space: nowrap; }
+.leaderboard-tab.is-active { background: var(--ink); color: var(--white); }
+
+.podium { display: grid; grid-template-columns: repeat(3, 1fr); align-items: end; gap: var(--s-2); min-height: 11rem; }
+.podium-spot { display: flex; flex-direction: column; align-items: center; text-align: center; min-width: 0; position: relative; }
+.podium-medal { font-size: 1.25rem; line-height: 1; }
+.podium-avatar-wrap { margin: var(--s-1) 0; }
+.podium-avatar { width: 3rem; height: 3rem; border-radius: 50%; display: grid; place-items: center; background: var(--tint-2); border: 3px solid var(--ink); font-size: 1.5rem; }
+.podium-first .podium-avatar { width: 3.5rem; height: 3.5rem; background: var(--accent); }
+.podium-name { max-width: 100%; font-weight: 700; font-size: .875rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.podium-score { font-family: var(--font-display); font-weight: 800; font-size: 1.125rem; font-variant-numeric: tabular-nums; }
+.podium-mistakes { font-size: .75rem; color: var(--ink-soft); min-height: 1.1em; }
+.podium-base { font-size: 1.5rem; width: 100%; margin-top: var(--s-2); display: grid; place-items: start center; padding-top: var(--s-1); background: var(--tint-1); border: 2px solid var(--ink); border-radius: var(--s-3) var(--s-3) 0 0; font-family: var(--font-display); font-weight: 800; color: var(--ink); }
+.podium-first .podium-base { height: 3.5rem; background: var(--accent); }
+.podium-second .podium-base { height: 2.5rem; }
+.podium-third .podium-base { height: 1.75rem; }
+.podium-spot.is-empty { opacity: .8; }
+.podium-spot.is-you .podium-name { text-decoration: underline; text-underline-offset: 3px; }
+.podium-spot .you-chip { position: absolute; top: 0; right: 0; margin: 0; }
+
+.rank-list { list-style: none; margin: var(--s-4) 0 0; padding: 0; display: grid; gap: var(--s-2); }
+.rank-list-row { display: grid; grid-template-columns: 1.75rem 2.25rem minmax(0, 1fr) auto; align-items: center; gap: var(--s-2); min-height: 3rem; padding: var(--s-1) var(--s-3); border-radius: var(--r-input); background: var(--paper); border: 2px solid transparent; }
+.rank-list-row.is-you { border-color: var(--ink); background: var(--tint-2); }
+.rank-list-dots { display: none; }
+.rank-list-position { font-family: var(--font-display); font-weight: 800; }
+.rank-list-avatar { font-size: 1.25rem; text-align: center; }
+.rank-list-name { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rank-list-score { font-family: var(--font-display); font-weight: 800; font-variant-numeric: tabular-nums; text-align: right; display: grid; line-height: 1.1; }
+.rank-list-score small { font-family: var(--font-body); font-weight: 400; font-size: .75rem; color: var(--ink-soft); }
+.rank-list-empty { list-style: none; text-align: center; padding: var(--s-4); color: var(--ink); background: var(--paper); border-radius: var(--r-input); }
+
+.leaderboard-status { margin-top: var(--s-3); font-size: .8125rem; display: flex; align-items: center; gap: var(--s-2); color: var(--ink-soft); min-height: 1.25rem; }
+.leaderboard-status::before { content: ""; width: .625rem; height: .625rem; border-radius: 50%; background: var(--ink-soft); flex: none; }
+.leaderboard-status.is-online::before { background: var(--ok); }
+.leaderboard-status.is-local::before { background: var(--warn); border: 1px solid var(--ink); }
+.leaderboard-status.is-error::before { background: var(--bad); }
+.leaderboard-status:empty { display: none; }
+.leaderboard-loading { grid-column: 1 / -1; display: grid; place-items: center; min-height: 8rem; text-align: center; }
+.leaderboard-loading::before { content: ""; width: 100%; height: 6rem; border-radius: var(--r-input); background: linear-gradient(90deg, var(--paper) 25%, var(--tint-2) 50%, var(--paper) 75%); background-size: 200% 100%; animation: shimmer 1.2s linear infinite; opacity: .8; }
+.leaderboard-loading { gap: var(--s-2); }
+@keyframes shimmer { to { background-position: -200% 0; } }
+
+/* Aksi utama: menempel di bawah pada layar sempit */
+.cta-row {
+    position: sticky; bottom: 0; z-index: 5; display: grid; grid-template-columns: 1fr 1fr; gap: var(--s-3);
+    margin: 0 calc(var(--s-4) * -1); padding: var(--s-3) var(--s-4) calc(var(--s-4) + var(--safe-b));
+    background: linear-gradient(to top, var(--bg) 70%, transparent);
+}
+.btn-start-game { min-height: 3.5rem; font-size: 1.25rem; }
+.cta-row .btn-playful-primary { grid-column: auto; }
+
+/* ---------- 6. HALAMAN BERMAIN ---------- */
+#gameView.active, #knowledgeGameView.active, #advmathGameView.active {
+    display: flex; flex-direction: column; gap: var(--s-3); max-width: 35rem; margin: 0 auto;
+    min-height: calc(100vh - var(--s-4) - var(--s-6)); min-height: calc(100dvh - var(--s-4) - var(--s-6) - var(--safe-b) - var(--safe-t));
 }
 
-.game-card:hover {
-    border-color: var(--c-ink);
-    box-shadow: 4px 6px 0 var(--c-ink);
+.game-topbar { display: grid; grid-template-columns: auto 1fr auto auto; align-items: center; gap: var(--s-3); color: var(--on-bg); }
+.game-topbar .progress-info { display: grid; gap: var(--s-1); min-width: 0; }
+.game-topbar .progress-info > span { font-weight: 700; font-size: .875rem; background: var(--white); color: var(--ink); padding: 0 var(--s-2); border-radius: var(--r-pill); width: fit-content; }
+#stopwatch, #knowledgeTimer, .advmath-timer {
+    min-width: 5rem; text-align: center; padding: var(--s-2) var(--s-3); border: 3px solid var(--ink); border-radius: var(--r-pill);
+    background: var(--white); color: var(--ink); font-family: var(--font-display); font-weight: 800; font-size: 1.5rem; line-height: 1.1; font-variant-numeric: tabular-nums;
+}
+.is-last10 { background: var(--bad) !important; color: var(--ink); }
+.is-last10 { animation: pulseSoft 1s ease-in-out infinite; }
+@keyframes pulseSoft { 50% { transform: scale(1.04); } }
+.advmath-timer.is-penalty { background: var(--bad); }
+.advmath-penalty-row { min-height: 1.75rem; text-align: right; }
+.advmath-penalty-chip { display: inline-block; padding: 0 var(--s-3); border-radius: var(--r-pill); border: 2px solid var(--ink); background: var(--bad); color: var(--ink); font-weight: 800; font-size: .875rem; opacity: 0; transition: opacity .2s; }
+.advmath-penalty-chip.is-visible { opacity: 1; }
+
+.question-row { flex: 1 1 auto; display: grid; place-items: center; text-align: center; position: relative; min-height: 8rem; padding: var(--s-4) 0; }
+#question { font-family: var(--font-display); font-weight: 800; font-size: var(--t-question-num); line-height: 1; font-variant-numeric: tabular-nums; background: var(--white); color: var(--ink); border: 3px solid var(--ink); border-radius: var(--r-card); padding: var(--s-4) var(--s-6); max-width: 100%; }
+#question:empty { display: none; }
+#buttonHint { position: absolute; right: 0; top: 0; }
+.knowledge-question-card, .advmath-question-card {
+    font-family: var(--font-body); font-weight: 700; font-size: var(--t-question-text); line-height: 1.4; max-width: 36ch;
+    background: var(--white); color: var(--ink); border: 3px solid var(--ink); border-radius: var(--r-card); padding: var(--s-6) var(--s-4); width: 100%;
+}
+.knowledge-question-card:empty, .advmath-question-card:empty { display: none; }
+
+/* Keypad G1 */
+.keypad-wrapper { display: grid; gap: var(--s-3); padding-bottom: var(--safe-b); }
+.answer-input {
+    width: 100%; min-height: 3.5rem; text-align: center; border: 3px solid var(--ink); border-radius: var(--r-input);
+    background: var(--white); color: var(--ink); font-family: var(--font-display); font-weight: 800; font-size: 2rem; font-variant-numeric: tabular-nums; caret-color: var(--ink);
+}
+.answer-input::placeholder { font-family: var(--font-body); font-weight: 400; font-size: 1rem; color: var(--ink-soft); opacity: 1; }
+.answer-input.wiggle-animation { animation: wiggle .25s ease-in-out 2; border-color: var(--bad); background: var(--white); }
+@keyframes wiggle { 25% { transform: translateX(-4px); } 75% { transform: translateX(4px); } }
+.keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s-2); user-select: none; -webkit-user-select: none; }
+.keypad-btn {
+    min-height: 3.5rem; border: 3px solid var(--ink); border-radius: var(--r-input); background: var(--white); color: var(--ink);
+    font-family: var(--font-display); font-weight: 800; font-size: 1.75rem; cursor: pointer; user-select: none; -webkit-user-select: none;
+}
+.keypad-btn:active:not(:disabled) { transform: scale(.95); background: var(--tint-2); }
+.keypad-btn:disabled { opacity: .4; cursor: not-allowed; }
+.keypad-btn-delete { background: var(--paper); }
+.keypad-btn-submit { background: var(--accent); color: var(--on-accent); font-size: 1.25rem; }
+
+/* Pilihan ganda G2 / G3 */
+.knowledge-options-grid, .advmath-options-grid { display: grid; grid-template-columns: 1fr; gap: var(--s-3); }
+.knowledge-option-btn, .advmath-option-btn {
+    display: flex; flex-direction: column; justify-content: center; align-items: flex-start; gap: var(--s-1);
+    min-height: 3.5rem; padding: var(--s-3) var(--s-4); text-align: left; cursor: pointer;
+    border: 3px solid var(--ink); border-radius: var(--r-input); background: var(--white); color: var(--ink);
+    font-weight: 700; font-size: 1.0625rem; line-height: 1.3; position: relative;
+}
+.knowledge-option-btn:active:not(:disabled), .advmath-option-btn:active:not(:disabled) { transform: scale(.98); }
+.knowledge-option-btn:disabled, .advmath-option-btn:disabled { cursor: not-allowed; opacity: .6; }
+.knowledge-option-btn.is-correct, .advmath-option-btn.is-correct, .advmath-option-btn.is-reveal { background: var(--ok); opacity: 1; }
+.knowledge-option-btn.is-correct::after, .advmath-option-btn.is-correct::after, .advmath-option-btn.is-reveal::after { content: "✓"; position: absolute; right: var(--s-4); top: var(--s-3); font-weight: 800; font-size: 1.25rem; }
+.knowledge-option-btn.is-wrong, .advmath-option-btn.is-wrong { background: var(--bad); opacity: 1; cursor: pointer; }
+.advmath-option-btn.is-wrong { cursor: not-allowed; }
+.knowledge-option-btn.is-wrong .kn-opt-text::before, .advmath-option-btn.is-wrong::before { content: "✕ "; font-weight: 800; }
+.kn-opt-cue { font-size: .875rem; font-weight: 600; text-decoration: underline; }
+.kn-opt-explain { font-size: .9375rem; font-weight: 400; line-height: 1.45; background: var(--white); padding: var(--s-2) var(--s-3); border-radius: var(--s-3); border: 2px solid var(--ink); width: 100%; }
+.knowledge-option-btn[hidden] { display: none; }
+
+.knowledge-hint-button { width: 100%; min-height: var(--target); font-size: 1rem; background: var(--white); }
+.knowledge-recap { background: var(--white); color: var(--ink); border: 3px solid var(--ink); border-radius: var(--r-card); padding: 0 var(--s-4); }
+.knowledge-recap-title { min-height: var(--target); display: flex; align-items: center; justify-content: space-between; font-weight: 800; cursor: pointer; list-style: none; }
+.knowledge-recap-title::-webkit-details-marker { display: none; }
+.knowledge-recap-toggle::after { content: "＋"; }
+.knowledge-recap[open] .knowledge-recap-toggle::after { content: "−"; }
+.knowledge-recap-body { padding-bottom: var(--s-4); display: grid; gap: var(--s-2); font-size: .9375rem; }
+.knowledge-recap-label { color: var(--ink-soft); }
+
+/* Hint G3 */
+.advmath-hint-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s-2); }
+.advmath-hint-btn {
+    display: grid; gap: 2px; justify-items: center; align-content: center; min-height: 4rem; padding: var(--s-2);
+    border: 3px solid var(--ink); border-radius: var(--r-input); background: var(--white); color: var(--ink); cursor: pointer; text-align: center; font-size: .8125rem;
+}
+.advmath-hint-title { font-weight: 800; font-size: .9375rem; }
+.advmath-hint-cost { font-weight: 600; }
+.advmath-hint-status { font-size: .75rem; min-height: 1em; }
+.advmath-hint-btn.is-active { background: var(--warn); color: var(--ink); }
+.advmath-hint-btn.is-locked, .advmath-hint-btn.is-expired, .advmath-hint-btn:disabled { opacity: .5; cursor: not-allowed; }
+.advmath-hint-btn.is-expired { text-decoration: line-through; }
+.advmath-hint-btn.is-level-3:not(:disabled) { border-style: dashed; }
+.advmath-hint-note { font-size: .875rem; background: var(--white); color: var(--ink); padding: var(--s-2) var(--s-3); border-radius: var(--r-input); border: 2px solid var(--ink); }
+.advmath-burn-banner { display: grid; gap: var(--s-3); padding: var(--s-4); border-radius: var(--r-card); border: 3px solid var(--ink); background: var(--warn); color: var(--ink); text-align: center; font-weight: 700; }
+.advmath-hint-modal-timer { font-family: var(--font-display); font-weight: 800; font-variant-numeric: tabular-nums; margin-left: auto; }
+.advmath-hint-countdown { display: grid; gap: var(--s-2); margin-bottom: var(--s-4); font-weight: 700; }
+.advmath-hint-clue { font-size: 1.0625rem; line-height: 1.5; padding: var(--s-4); background: var(--tint-2); border: 2px solid var(--ink); border-radius: var(--r-input); }
+.advmath-hint-penalty-info, .advmath-hint-burn-note { margin-top: var(--s-3); font-size: .9375rem; }
+.advmath-hint-burn-note { color: var(--bad-text); font-weight: 700; }
+
+/* ---------- 7. STATE KHUSUS & DUEL ---------- */
+.duel-opponent-bar { display: flex; align-items: center; gap: var(--s-3); padding: var(--s-2) var(--s-3); border-radius: var(--r-input); background: var(--white); color: var(--ink); border: 2px solid var(--ink); }
+.duel-opponent-info { flex: 1; min-width: 0; display: grid; gap: var(--s-1); }
+.duel-opponent-name { font-weight: 700; font-size: .875rem; }
+.duel-opponent-count { font-weight: 800; font-size: .875rem; font-variant-numeric: tabular-nums; }
+.duel-opponent-fill { background: var(--tint-1); }
+.duel-disconnect-banner { padding: var(--s-3) var(--s-4); border-radius: var(--r-input); background: var(--warn); border: 3px solid var(--ink); color: var(--ink); font-weight: 700; }
+.duel-banner-link { border: 0; background: none; color: var(--ink); text-decoration: underline; font-weight: 800; padding: var(--s-2); min-height: var(--target); }
+.duel-room-code { font-family: var(--font-display); font-weight: 800; font-size: clamp(2.5rem, 12vw, 4rem); letter-spacing: .2em; margin: var(--s-3) 0; }
+.duel-waiting-text { display: flex; align-items: center; justify-content: center; gap: var(--s-3); margin-top: var(--s-4); font-weight: 700; }
+.duel-spinner { width: 1.25rem; height: 1.25rem; border-radius: 50%; border: 3px solid var(--ink); border-top-color: transparent; animation: spin .8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.duel-winner-banner { text-align: center; font-family: var(--font-display); font-weight: 800; font-size: 1.75rem; padding: var(--s-3); border-radius: var(--r-input); background: var(--paper); margin-bottom: var(--s-4); border: 3px solid var(--ink); }
+.duel-winner-banner.is-win { background: var(--ok); }
+.duel-winner-banner.is-lose { background: var(--warn); }
+.duel-result-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s-3); }
+.duel-result-card { text-align: center; padding: var(--s-3); border-radius: var(--r-input); border: 3px solid var(--ink); background: var(--white); display: grid; gap: var(--s-1); }
+.duel-result-card.is-winner { background: var(--tint-2); }
+.duel-result-avatar { font-size: 2rem; }
+.duel-result-name { font-weight: 800; overflow: hidden; text-overflow: ellipsis; }
+.duel-result-label { font-size: .8125rem; color: var(--ink-soft); }
+.duel-result-stat { font-weight: 700; font-variant-numeric: tabular-nums; font-size: .9375rem; }
+.rank-insight { margin-top: var(--s-4); padding: var(--s-4); border-radius: var(--r-input); background: var(--tint-2); border: 2px solid var(--ink); text-align: left; color: var(--ink); }
+.rank-insight-headline { font-family: var(--font-display); font-weight: 800; font-size: 1.25rem; }
+.rank-insight-details { margin: var(--s-2) 0 0; padding-left: 1.1rem; font-size: .9375rem; }
+
+/* Status simpan skor */
+.save-status { display: flex; align-items: center; gap: var(--s-2); font-weight: 700; font-size: .9375rem; margin-top: var(--s-3); }
+.save-status[data-state="saving"]::before { content: ""; width: 1rem; height: 1rem; border: 3px solid var(--ink); border-top-color: transparent; border-radius: 50%; animation: spin .8s linear infinite; }
+.save-status[data-state="ok"]::before { content: "✓"; color: var(--ok-text); font-weight: 800; }
+.save-status[data-state="fail"]::before { content: "✕"; color: var(--bad-text); font-weight: 800; }
+
+/* Countdown */
+.countdown-overlay { display: none; position: fixed; inset: 0; z-index: 2200; align-items: center; justify-content: center; background: var(--bg); color: var(--on-bg); }
+.countdown-overlay.is-visible { display: flex; }
+.countdown-content { text-align: center; padding: var(--s-4); }
+.countdown-mascot { display: none; width: clamp(7rem, 30vw, 10rem); margin: 0 auto var(--s-4); padding: 8%; background: var(--tint-2); border: 3px solid var(--ink); border-radius: 50%; }
+body[data-game="mult"] .cm-g1, body[data-game="knowledge"] .cm-g2, body[data-game="advanced"] .cm-g3 { display: block; }
+.countdown-number { font-family: var(--font-display); font-weight: 800; font-size: clamp(2.5rem, 12vw, 5rem); line-height: 1; }
+.countdown-number.countdown-pop { animation: countdownPop .6s ease-out; }
+@keyframes countdownPop { 0% { transform: scale(.7); opacity: 0; } 60% { transform: scale(1.08); opacity: 1; } 100% { transform: scale(1); } }
+.countdown-label { margin-top: var(--s-3); font-size: 1.125rem; font-weight: 700; }
+
+.confetti-container { position: fixed; inset: 0; pointer-events: none; z-index: 2100; overflow: hidden; }
+.confetti-piece { position: absolute; top: -12px; width: 8px; height: 14px; border-radius: 2px; animation-name: confettiFall; animation-timing-function: cubic-bezier(.35, 0, .65, 1); animation-fill-mode: forwards; }
+@keyframes confettiFall { from { transform: translate(0, 0) rotate(0); opacity: 1; } to { transform: translate(var(--drift), 112vh) rotate(var(--rotate)); opacity: .85; } }
+
+/* Coach mark (sekali) */
+.coach-mark { position: fixed; left: 50%; top: calc(4.75rem + var(--safe-t)); transform: translateX(-50%); z-index: 1500; width: min(92vw, 22rem); padding: var(--s-4); border-radius: var(--r-card); border: 3px solid var(--ink); background: var(--accent); color: var(--on-accent); font-weight: 700; display: grid; gap: var(--s-3); }
+.coach-mark button { justify-self: end; }
+
+/* Petunjuk shortcut hanya untuk pointer presisi */
+.kbd-hint { display: none; }
+
+/* ---------- 8. RESPONSIF ---------- */
+@media (max-width: 359.98px) {
+    :root { --s-4: .75rem; }
+    .header-mascot { width: 4rem; }
+    .game-topbar { grid-template-columns: auto 1fr auto; }
+    .keypad-btn { font-size: 1.5rem; }
 }
 
-.game-card-multiply {
-    --c-bg: #D8FF3E;
-    --c-ink: #252525;
-    --c-ink-soft: #3B3B3B;
-    --c-1: #00B86B;
-    --c-2: #FFF0CF;
-    --c-3: #252525;
-    font-family: 'Nunito', var(--font-stack-fallback);
+@media (min-width: 600px) {
+    .game-grid { grid-template-columns: 1fr 1fr; }
+    .knowledge-options-grid, .advmath-options-grid { grid-template-columns: 1fr 1fr; }
+    .game-card-icon { width: 6.5rem; height: 6.5rem; }
+    .gc-art { min-height: 9rem; }
+    .cta-row { position: static; background: none; margin: 0; padding: 0 0 var(--s-4); }
+    .playful-modal .modal-footer > * { flex: 0 1 auto; }
 }
 
-.game-card-knowledge {
-    --c-bg: #1749F5;
-    --c-ink: #FFFDF7;
-    --c-ink-soft: #DCE6FF;
-    --c-1: #29B8FF;
-    --c-2: #FFB000;
-    --c-3: #FFFDF7;
-    font-family: 'Rubik', var(--font-stack-fallback);
-}
-
-.game-card-advmath {
-    --c-bg: #B8A2FF;
-    --c-ink: #26213B;
-    --c-ink-soft: #3D3560;
-    --c-1: #FF70BD;
-    --c-2: #FFB000;
-    --c-3: #26213B;
-    font-family: 'Lilita One', var(--font-stack-fallback);
-    font-synthesis: none;
-}
-
-.game-card-soon-4 {
-    --c-bg: #FFD92F;
-    --c-ink: #2B2508;
-    --c-ink-soft: #3F3711;
-    --c-1: #FF8A24;
-    --c-2: #168A4A;
-    --c-3: #FFF1A6;
-    font-family: 'Fredoka', var(--font-stack-fallback);
-}
-
-.game-card-soon-5 {
-    --c-bg: #FFF9EE;
-    --c-ink: #1B1B1B;
-    --c-ink-soft: #3A3A3A;
-    --c-1: #FF5A1F;
-    --c-2: #168B52;
-    --c-3: #1688E8;
-    font-family: 'Bricolage Grotesque', var(--font-stack-fallback);
-}
-
-.game-card-advmath *,
-.game-card-advmath .game-card-title {
-    font-weight: 400;
-}
-
-/* dua kata sejalan: bayangan keras saat hover, tanpa blur */
-.game-card-title {
-    color: var(--c-ink);
-}
-
-.game-card-subtitle {
-    color: var(--c-ink-soft);
-}
-
-.game-card-icon {
-    width: 82px;
-    height: 82px;
-    background: none;
-    border: 0;
-    border-radius: 0;
-    overflow: visible;
-}
-
-.game-card-active .game-card-icon {
-    width: 92px;
-    height: 92px;
-}
-
-.gc-tag {
-    background: #FFFDF7;
-    border: 2px solid #1B1B1B;
-    color: #1B1B1B;
-}
-
-.game-card-arrow {
-    background: #1B1B1B;
-    color: #FFFDF7;
-}
-
-.game-card-badge {
-    background: #FFFDF7;
-    border: 2px dashed #1B1B1B;
-    color: #1B1B1B;
-}
-
-.game-card.is-coming-soon,
-.game-card-soon {
-    border-style: dashed;
-}
-
-.gc-blob { background: var(--c-1); opacity: 0.9; }
-.gc-blob-2 { background: var(--c-2); opacity: 0.9; }
-.gc-ring { border-color: var(--c-3); opacity: 0.55; }
-.gc-dots { background-image: radial-gradient(var(--c-ink) 1.8px, transparent 2.2px); opacity: 0.35; }
-.gc-stripes { background: repeating-linear-gradient(135deg, var(--c-2) 0 6px, transparent 6px 12px); opacity: 1; }
-.gc-glyph { color: var(--c-ink); opacity: 0.28; }
-
-@media (min-width: 768px) {
-    .game-card-icon {
-        width: 104px;
-        height: 104px;
+@media (min-width: 900px) {
+    #app { padding-top: var(--s-4); }
+    #dashboardView.active, #knowledgeDashboardView.active, #advmathDashboardView.active {
+        display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); column-gap: var(--s-8); align-items: start;
+        grid-template-areas: "back panel" "head panel" "rules panel" "cta panel" ". panel";
     }
-
-    .game-card-active .game-card-icon {
-        width: 112px;
-        height: 112px;
-    }
+    .view.active > .breadcrumb-back { grid-area: back; justify-self: start; }
+    .view.active > .dashboard-header { grid-area: head; }
+    .view.active > .score-rules { grid-area: rules; }
+    .view.active > .leaderboard-panel { grid-area: panel; }
+    .view.active > .cta-row { grid-area: cta; }
+    .game-grid { grid-template-columns: repeat(3, 1fr); }
+    .game-card-title { font-size: 1.5rem; }
 }
 
-@media (max-width: 340px) {
-    .game-card-icon,
-    .game-card-active .game-card-icon {
-        width: 64px;
-        height: 64px;
-    }
+@media (min-width: 1280px) {
+    #app { max-width: 60rem; }
 }
 
-/* =====================================================================
-   TEMA GAME 4 & 5 (DISIMPAN SEBAGAI REFERENSI)
-   Belum ada halaman game; palet & font mereka saat ini hanya dipakai
-   tombol di hub (variabel --c-* di atas). Saat game dibangun, pindahkan
-   ke blok body[data-theme] dan tambahkan ke VIEW_THEMES di script.js.
-
-   Game 4 Sunny Recharge : dasar #FFD92F; #FF8A24, #168A4A, #FFF1A6; font Fredoka
-   Game 5 Happy Weird    : dasar #FFF9EE; #FF5A1F, #168B52, #1688E8; font Bricolage Grotesque
-===================================================================== */
-
-/* lingkaran dekorasi pada tombol aktif dibuat kecil dan di sudut kanan atas,
-   supaya tidak berada di belakang judul */
-.game-card-active .gc-blob {
-    width: 92px;
-    height: 92px;
-    right: -34px;
-    top: -34px;
+/* Ponsel landscape: halaman bermain 2 kolom */
+@media (max-height: 500px) and (orientation: landscape) {
+    #gameView.active, #knowledgeGameView.active, #advmathGameView.active { max-width: none; display: grid; grid-template-columns: 1fr 1fr; align-content: start; gap: var(--s-2) var(--s-4); min-height: 0; }
+    #gameView.active > .game-topbar, #knowledgeGameView.active > .game-topbar, #advmathGameView.active > .game-topbar { grid-column: 1 / -1; }
+    .question-row { grid-column: 1; min-height: 0; padding: 0; }
+    .keypad-wrapper, .knowledge-options-grid, .advmath-options-grid { grid-column: 2; }
+    #question { font-size: 3rem; padding: var(--s-2) var(--s-4); }
+    .keypad-btn, .answer-input { min-height: 3rem; }
+    .game-card-icon { width: 4rem; height: 4rem; }
+    .cta-row { position: static; }
+    .playful-modal { max-height: 100dvh; }
+    .modal-dialog { margin: var(--s-2) auto; }
+    .modal-dialog-centered { align-items: center; }
+    .modal.fade .modal-dialog { transform: none; }
+    .playful-modal { border-radius: var(--r-card); border-bottom: 3px solid var(--ink); }
 }
 
-.podium-base span {
-    opacity: 1;
+/* Hover hanya untuk mouse */
+@media (hover: hover) and (pointer: fine) {
+    .btn-playful:hover:not(:disabled), .icon-button:hover, .breadcrumb-back:hover, .count-option-button:hover, .avatar-option:hover { background: var(--tint-2); }
+    .btn-playful-primary:hover:not(:disabled) { background: var(--tint-1); }
+    button.game-card:hover { transform: translateY(-3px); }
+    .keypad-btn:hover:not(:disabled), .knowledge-option-btn:hover:not(:disabled), .advmath-option-btn:hover:not(:disabled) { background: var(--tint-2); }
+    .kbd-hint { display: inline-flex; min-width: 1.5rem; height: 1.5rem; padding: 0 var(--s-1); justify-content: center; align-items: center; border: 2px solid var(--ink); border-radius: var(--s-2); font-size: .75rem; font-weight: 800; background: var(--paper); color: var(--ink); }
+    .knowledge-option-btn[data-key]::before, .advmath-option-btn[data-key]::before { content: attr(data-key); position: absolute; right: var(--s-3); bottom: var(--s-2); font-size: .75rem; font-weight: 800; border: 2px solid var(--ink); border-radius: var(--s-2); padding: 0 .35rem; background: var(--paper); }
+}
+@media (pointer: coarse) {
+    .icon-button, .breadcrumb-back, .leaderboard-tab, .avatar-option { min-height: var(--target); min-width: var(--target); }
+    .keypad-btn { min-height: 3.5rem; }
 }
 
-.game-card-badge {
-    white-space: nowrap;
-    padding: 5px 9px;
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; scroll-behavior: auto !important; }
+    .confetti-container { display: none; }
+    .modal.fade .modal-dialog { transition: none; }
+}
+
+@media (prefers-contrast: more) {
+    :root { --ink-soft: var(--ink); --line: var(--ink); }
+    .btn-playful, .icon-button, .game-card, .leaderboard-panel, .score-rules { border-width: 4px; }
+}
+
+@media (max-height: 700px) and (orientation: portrait) {
+    .advmath-hint-note { display: none; }
+    .question-row { min-height: 5rem; padding: var(--s-2) 0; }
+    .knowledge-question-card, .advmath-question-card { padding: var(--s-4); }
 }
