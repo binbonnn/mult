@@ -519,7 +519,7 @@ function isLastSavedRecord(record) {
 
 function renderPodium(records) {
     const podiumEl = document.getElementById('podium');
-    const displayOrder = [2, 1, 0]; // tampil kiri ke kanan: peringkat 3, 2, 1 (sesuai desain Figma)
+    const displayOrder = [1, 0, 2]; // tampil kiri ke kanan: peringkat 2, 1, 3 (podium klasik)
 
     podiumEl.innerHTML = displayOrder.map(rankIndex => {
         const place = rankIndex + 1;
@@ -1977,7 +1977,7 @@ function isKnowledgeLastSavedSolo(record) {
 
 function renderKnowledgeSoloPodium(records) {
     const podiumEl = document.getElementById('knowledgePodium');
-    const displayOrder = [2, 1, 0]; // tampil kiri ke kanan: peringkat 3, 2, 1 (sesuai desain Figma)
+    const displayOrder = [1, 0, 2]; // tampil kiri ke kanan: peringkat 2, 1, 3 (podium klasik)
 
     podiumEl.innerHTML = displayOrder.map(rankIndex => {
         const place = rankIndex + 1;
@@ -2040,7 +2040,7 @@ function renderKnowledgeSoloList(records) {
 
 function renderKnowledgeDuelWinsPodium(records) {
     const podiumEl = document.getElementById('knowledgePodium');
-    const displayOrder = [2, 1, 0]; // tampil kiri ke kanan: peringkat 3, 2, 1 (sesuai desain Figma)
+    const displayOrder = [1, 0, 2]; // tampil kiri ke kanan: peringkat 2, 1, 3 (podium klasik)
 
     podiumEl.innerHTML = displayOrder.map(rankIndex => {
         const place = rankIndex + 1;
@@ -3361,7 +3361,7 @@ function advmathMetaText(record) {
 
 function renderAdvmathSoloPodium(records) {
     const podiumEl = document.getElementById('advmathPodium');
-    const displayOrder = [2, 1, 0]; // tampil kiri ke kanan: peringkat 3, 2, 1 (sesuai desain Figma)
+    const displayOrder = [1, 0, 2]; // tampil kiri ke kanan: peringkat 2, 1, 3 (podium klasik)
 
     podiumEl.innerHTML = displayOrder.map(rankIndex => {
         const place = rankIndex + 1;
@@ -3426,7 +3426,7 @@ function renderAdvmathSoloList(records) {
 
 function renderAdvmathDuelWinsPodium(records) {
     const podiumEl = document.getElementById('advmathPodium');
-    const displayOrder = [2, 1, 0]; // tampil kiri ke kanan: peringkat 3, 2, 1 (sesuai desain Figma)
+    const displayOrder = [1, 0, 2]; // tampil kiri ke kanan: peringkat 2, 1, 3 (podium klasik)
 
     podiumEl.innerHTML = displayOrder.map(rankIndex => {
         const place = rankIndex + 1;
