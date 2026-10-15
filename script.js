@@ -742,13 +742,11 @@ function checkAnswer() {
     if (userAnswer !== a * b) {
         mistakes++;
         playWrongSound();
-        showToast('danger', 'Salah! 😅');
         answerInput.classList.add('wiggle-animation');
         answerInput.value = '';
         setTimeout(() => answerInput.classList.remove('wiggle-animation'), 400);
     } else {
         playCorrectSound();
-        showToast('success', 'Benar! 🎉');
         correctAnswers++;
         currentQuestionIndex++;
         answerInput.value = '';
@@ -2302,7 +2300,6 @@ function handleKnowledgeOptionClick(idx) {
         knowledgeScoreTenths += gained;
         knowledgeCorrectCount++;
         knowledgeLastResolved = { q, status: 'correct' };
-        showToast('success', `Benar! ${formatKnowledgeGain(gained)} poin 🎉`);
         document.getElementById('knowledgeProgressLabel').textContent = `Skor: ${formatKnowledgeScore(tenthsToScore(knowledgeScoreTenths))}`;
         btns.forEach(b => { b.disabled = true; });
         if (knowledgeDuelState) reportKnowledgeDuelProgress();
@@ -2321,7 +2318,6 @@ function handleKnowledgeOptionClick(idx) {
         knowledgeBurnedCount++;
         knowledgeScoreTenths += KNOWLEDGE_POINTS_BURNED;
         knowledgeLastResolved = { q, status: 'burned' };
-        showToast('danger', `Soal hangus! ${formatKnowledgeGain(KNOWLEDGE_POINTS_BURNED)} poin 💀`, 1800);
         document.getElementById('knowledgeProgressLabel').textContent = `Skor: ${formatKnowledgeScore(tenthsToScore(knowledgeScoreTenths))}`;
         btns.forEach(b => { b.disabled = true; });
         if (knowledgeDuelState) reportKnowledgeDuelProgress();
@@ -3704,7 +3700,6 @@ function handleAdvmathOptionClick(idx) {
         btn.classList.add('is-correct');
         btns.forEach(b => { b.disabled = true; });
         playCorrectSound();
-        showToast('success', 'Benar! 🎉');
         advmathCorrectCount++;
         const isLast = advmathSeqIndex >= advmathCount - 1;
         if (isLast) lockAdvmathFinalTime(); // waktu berhenti tepat saat soal terakhir dijawab benar
@@ -3726,10 +3721,7 @@ function handleAdvmathOptionClick(idx) {
     applyAdvmathPenalty(penalty);
 
     if (advmathQ.wrong >= ADVMATH_MAX_WRONG) {
-        showToast('danger', `Salah ke-${advmathQ.wrong}! +${penalty} detik · Soal hangus 💀`, 2200);
         burnAdvmathQuestion();
-    } else {
-        showToast('danger', `Salah ke-${advmathQ.wrong}! +${penalty} detik ⏱️`, 1800);
     }
 }
 
