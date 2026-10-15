@@ -2356,7 +2356,6 @@ document.getElementById('knowledgeHintButton').addEventListener('click', () => {
         if (i !== keepIndex) btns[i].style.display = 'none';
     });
 
-    showToast('success', '💡 Hint dipakai! Tinggal 2 opsi yang bisa dipilih (maks. +0,3 poin).');
 });
 
 /* ---- Insight peringkat (analog buildRankInsight milik game Perkalian, tapi "lebih tinggi = lebih baik") ---- */
@@ -3872,7 +3871,6 @@ async function openAdvmathHint(level) {
     if (h.deadline) {
         // Sudah pernah dibuka: tidak ada hukuman baru & countdown TIDAK di-reset
         if (now >= h.deadline) {
-            showToast('danger', `Hint ${level} sudah kedaluwarsa 🔥`);
             return;
         }
         q.shownLevel = level;
@@ -3891,10 +3889,7 @@ async function openAdvmathHint(level) {
     applyAdvmathPenalty(cfg.penalty);
 
     if (level === 3) {
-        showToast('danger', `Hint 3: +${cfg.penalty} detik · Soal hangus 🔥`, 2200);
         burnAdvmathQuestion(); // memakai countdown Hint 3 (sedang ditampilkan) sebagai acuan waktu tunggu
-    } else {
-        showToast('success', `💡 Hint ${level} dibuka: +${cfg.penalty} detik`, 1600);
     }
     if (advmathDuelState) reportAdvmathDuelProgress(advmathSeqIndex);
     updateAdvmathHintUI();
