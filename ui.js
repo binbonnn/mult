@@ -19,30 +19,35 @@
         setTimeout(() => { live.textContent = text; }, 40);
     }
 
-    /* ---------- Maskot: ganti pose lewat nama file (assets/mascot/{karakter}-{pose}.svg) ---------- */
-    const CHAR = { mult: 'rano', knowledge: 'boli', advanced: 'luma' };
-    const POSE = { idle: 'bengong', thinking: 'bengong', happy: 'gembira_sekali', proud: 'juara_1', oops: 'sedih', sleepy: 'bengong', fly: 'terbang_semangat' };
-    const lobbyMascots = $$('.lobby-mascot');
-    let mascotTimer;
-    function setMascot(state, holdMs) {
-        const game = document.body.getAttribute('data-game');
-        const ch = CHAR[game];
-        const img = $('.lobby.active .lobby-mascot');
-        if (ch && img) {
-            img.src = `assets/mascot/${ch}-${POSE[state] || 'bengong'}.svg`;
-            img.setAttribute('data-state', state);
-        }
-        clearTimeout(mascotTimer);
-        if (holdMs && state !== 'idle') mascotTimer = setTimeout(() => setMascot('idle'), holdMs);
-    }
 
-    /* ---------- Toast -> live region + maskot ---------- */
+    /* ---------- Mode gelap: ikuti sistem, tombol menimpa dan diingat ---------- */
+    const root = document.documentElement;
+    const mq = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
+    const isDark = () => root.getAttribute('data-theme') ? root.getAttribute('data-theme') === 'dark' : !!(mq && mq.matches);
+    function syncTheme() {
+        const dark = isDark();
+        $$('.theme-toggle').forEach(b => {
+            b.setAttribute('aria-pressed', dark ? 'true' : 'false');
+            b.setAttribute('aria-label', dark ? 'Ganti ke mode terang' : 'Ganti ke mode gelap');
+            b.firstElementChild.textContent = dark ? '☀️' : '🌙';
+        });
+    }
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.theme-toggle')) return;
+        const next = isDark() ? 'light' : 'dark';
+        root.setAttribute('data-theme', next);
+        lsSet('theme', next);
+        syncTheme();
+        announce(next === 'dark' ? 'Mode gelap aktif' : 'Mode terang aktif');
+    });
+    if (mq && mq.addEventListener) mq.addEventListener('change', syncTheme);
+    syncTheme();
+
+    /* ---------- Toast -> live region ---------- */
     new MutationObserver(muts => {
         muts.forEach(mu => mu.addedNodes.forEach(n => {
             if (n.nodeType === 1 && n.classList.contains('toast-alert')) {
                 announce(n.textContent);
-                if (n.classList.contains('toast-success')) setMascot('happy', 700);
-                else if (n.classList.contains('toast-danger')) setMascot('oops', 700);
             }
         }));
     }).observe(document.body, { childList: true });
@@ -173,41 +178,6 @@
             c.querySelector('button').addEventListener('click', close);
             setTimeout(close, 8000);
         }).observe(gv, { attributes: true, attributeFilter: ['class'] });
-    }
-
-    /* ---------- Hub: slide per game (titik, panah keyboard, geser jari) ---------- */
-    const slides = $$('.hub-slide');
-    const dots = $$('.hub-dot');
-    let cur = Math.min(slides.length - 1, Math.max(0, parseInt(lsGet('hubSlide') || '0', 10) || 0));
-    function goSlide(n, dir) {
-        n = (n + slides.length) % slides.length;
-        const from = n > cur ? 24 : -24;
-        slides.forEach((s, i) => {
-            s.classList.toggle('is-active', i === n);
-            if (i === n) s.style.setProperty('--slide-from', (dir === undefined ? from : dir * 24) + 'px');
-        });
-        dots.forEach((d, i) => d.setAttribute('aria-pressed', i === n ? 'true' : 'false'));
-        cur = n;
-        lsSet('hubSlide', String(n));
-        announce(slides[n].getAttribute('aria-label'));
-    }
-    if (slides.length) {
-        goSlide(cur, 0);
-        dots.forEach(d => d.addEventListener('click', () => goSlide(parseInt(d.dataset.go, 10))));
-        document.addEventListener('keydown', (e) => {
-            if (!isActive('hubView') || modalOpen() || e.ctrlKey || e.metaKey || e.altKey) return;
-            if (e.key === 'ArrowRight') { goSlide(cur + 1, 1); e.preventDefault(); }
-            else if (e.key === 'ArrowLeft') { goSlide(cur - 1, -1); e.preventDefault(); }
-        });
-        const stage = $('#hubStage');
-        let x0 = null, y0 = null;
-        stage.addEventListener('touchstart', (e) => { x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; }, { passive: true });
-        stage.addEventListener('touchend', (e) => {
-            if (x0 === null) return;
-            const dx = e.changedTouches[0].clientX - x0, dy = e.changedTouches[0].clientY - y0;
-            x0 = null;
-            if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) goSlide(cur + (dx < 0 ? 1 : -1), dx < 0 ? 1 : -1);
-        }, { passive: true });
     }
 
     /* ---------- Fokus: pindahkan ke judul layar baru agar pembaca layar tahu ---------- */
