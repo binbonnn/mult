@@ -7,10 +7,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,800&family=Figtree:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/css/bootstrap.min.css" rel="stylesheet"
         integrity="sha384-4bw+/aepP/YC94hEpVNVgiZdgIC5+VKNBQNGCHeKRQN+PtmoHDEXuppvnDJzQIu9" crossorigin="anonymous">
-    <link rel="stylesheet" href="style.css?v=20261016">
+    <link rel="stylesheet" href="style.css?v=20261017">
     <title>Game Hub</title>
 </head>
 
@@ -18,52 +18,7 @@
     <a class="skip-link" href="#app">Lompat ke isi</a>
     <div id="offlineBanner" class="offline-banner" role="status" hidden>Kamu sedang offline. Skor disimpan di perangkat ini dulu.</div>
     <div id="liveRegion" class="visually-hidden" role="status" aria-live="polite" aria-atomic="true"></div>
-
-    <!-- Maskot orisinal (SVG buatan sendiri, tanpa aset pihak ketiga). Dipakai lewat <use href="#mascot-gN"> -->
-    <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
-        <defs>
-            <!-- Maskot orisinal. Warna dari token (var), jadi ikut game aktif -->
-            <!-- Game 1: bentuk "x" bulat -->
-            <symbol id="mascot-g1" viewBox="0 0 120 120">
-                <rect x="8" y="43" width="104" height="34" rx="17" transform="rotate(45 60 60)" style="fill:var(--bg)" />
-                <rect x="8" y="43" width="104" height="34" rx="17" transform="rotate(-45 60 60)" style="fill:var(--bg)" />
-                <circle cx="60" cy="60" r="30" style="fill:var(--bg)" />
-                <circle cx="50" cy="56" r="5" style="fill:var(--ink)" />
-                <circle cx="70" cy="56" r="5" style="fill:var(--ink)" />
-                <path d="M50 70 Q60 79 70 70" fill="none" style="stroke:var(--ink)" stroke-width="4" stroke-linecap="round" />
-            </symbol>
-            <!-- Game 2: robot kapsul -->
-            <symbol id="mascot-g2" viewBox="0 0 120 120">
-                <line x1="60" y1="20" x2="60" y2="10" style="stroke:var(--bg)" stroke-width="5" stroke-linecap="round" />
-                <circle cx="60" cy="8" r="7" style="fill:var(--accent)" />
-                <rect x="20" y="20" width="80" height="92" rx="40" style="fill:var(--bg)" />
-                <circle cx="46" cy="58" r="6" style="fill:var(--white)" />
-                <circle cx="74" cy="58" r="6" style="fill:var(--white)" />
-                <path d="M48 78 Q60 88 72 78" fill="none" style="stroke:var(--white)" stroke-width="4" stroke-linecap="round" />
-            </symbol>
-            <!-- Game 3: blob -->
-            <symbol id="mascot-g3" viewBox="0 0 120 120">
-                <path d="M26 104 C16 60 32 16 62 18 C94 20 104 62 94 104 Q60 116 26 104 Z" style="fill:var(--bg)" />
-                <circle cx="48" cy="58" r="5" style="fill:var(--ink)" />
-                <circle cx="76" cy="58" r="5" style="fill:var(--ink)" />
-                <path d="M48 78 Q62 90 78 76" fill="none" style="stroke:var(--ink)" stroke-width="4" stroke-linecap="round" />
-                <circle cx="100" cy="22" r="7" style="fill:var(--accent)" />
-            </symbol>
-            <!-- Game 4 & 5 (hub saja) -->
-            <symbol id="mascot-g4" viewBox="0 0 120 120">
-                <circle cx="60" cy="60" r="44" style="fill:var(--ink)" />
-                <circle cx="46" cy="56" r="5" style="fill:var(--bg)" />
-                <circle cx="74" cy="56" r="5" style="fill:var(--bg)" />
-                <path d="M48 76 Q60 84 72 76" fill="none" style="stroke:var(--bg)" stroke-width="4" stroke-linecap="round" />
-            </symbol>
-            <symbol id="mascot-g5" viewBox="0 0 120 120">
-                <path d="M20 72 C14 42 40 18 66 26 C96 32 108 60 98 86 C90 108 52 114 34 100 C24 92 22 82 20 72 Z" style="fill:var(--ink)" />
-                <circle cx="48" cy="60" r="7" style="fill:var(--bg)" />
-                <circle cx="80" cy="54" r="4" style="fill:var(--bg)" />
-                <path d="M46 84 Q62 92 78 80" fill="none" style="stroke:var(--bg)" stroke-width="4" stroke-linecap="round" />
-            </symbol>
-        </defs>
-    </svg>
+    
 
 
 
@@ -71,67 +26,60 @@
 
         <!-- ================= HUB VIEW (landing page pilihan game) ================= -->
         <section id="hubView" class="view active">
-            <header class="dashboard-header hub-header">
-                <div class="dashboard-heading">
-                    <h1>Tiga game, satu rumah.</h1>
-                    <p class="subtitle">Pilih satu, main sendiri atau duel sama teman.</p>
-                </div>
-            </header>
-
-            <div class="game-grid">
-                <button type="button" class="game-card game-card-active game-card-multiply" data-game="mult" id="hubOpenMultiplyButton">
-                    <span class="gc-art" aria-hidden="true"><svg class="game-card-icon" viewBox="0 0 120 120"><use href="#mascot-g1"/></svg></span>
-                    <span class="game-card-body">
-                        <span class="game-card-title">Perkalian 1-10</span>
-                        <span class="game-card-subtitle">Hitung cepat, tanpa panik.</span>
-                        <span class="game-card-tags"><span class="gc-tag">Solo</span><span class="gc-tag">Duel 1v1</span></span>
-                        <span class="game-card-cta">Main <span aria-hidden="true">→</span></span>
-                    </span>
-                </button>
-                <button type="button" class="game-card game-card-active game-card-knowledge" data-game="knowledge" id="hubOpenKnowledgeButton">
-                    <span class="gc-art" aria-hidden="true"><svg class="game-card-icon" viewBox="0 0 120 120"><use href="#mascot-g2"/></svg></span>
-                    <span class="game-card-body">
-                        <span class="game-card-title">Pengetahuan Dasar</span>
-                        <span class="game-card-subtitle">60 detik. Seberapa banyak yang kamu tahu?</span>
-                        <span class="game-card-tags"><span class="gc-tag">Solo</span><span class="gc-tag">Duel 1v1</span></span>
-                        <span class="game-card-cta">Main <span aria-hidden="true">→</span></span>
-                    </span>
-                </button>
-                <button type="button" class="game-card game-card-active game-card-advmath" data-game="advanced" id="hubOpenAdvmathButton">
-                    <span class="gc-art" aria-hidden="true"><svg class="game-card-icon" viewBox="0 0 120 120"><use href="#mascot-g3"/></svg></span>
-                    <span class="game-card-body">
-                        <span class="game-card-title">Perkalian 1-10 Lanjutan</span>
-                        <span class="game-card-subtitle">Pelan-pelan, polanya ada kok.</span>
-                        <span class="game-card-tags"><span class="gc-tag">Solo</span><span class="gc-tag">Duel 1v1</span></span>
-                        <span class="game-card-cta">Main <span aria-hidden="true">→</span></span>
-                    </span>
-                </button>
-                <div class="game-card game-card-soon is-soon" data-game="soon-1" id="hubComingSoon1" aria-disabled="true">
-                    <span class="gc-art" aria-hidden="true"><svg class="game-card-icon" viewBox="0 0 120 120"><use href="#mascot-g4"/></svg></span>
-                    <span class="game-card-body">
-                        <span class="game-card-title">Game 4</span>
-                        <span class="game-card-subtitle">Lagi dibikin ✨</span>
-                        <span class="game-card-badge">Segera hadir</span>
-                    </span>
-                </div>
-                <div class="game-card game-card-soon is-soon" data-game="soon-2" id="hubComingSoon2" aria-disabled="true">
-                    <span class="gc-art" aria-hidden="true"><svg class="game-card-icon" viewBox="0 0 120 120"><use href="#mascot-g5"/></svg></span>
-                    <span class="game-card-body">
-                        <span class="game-card-title">Game 5</span>
-                        <span class="game-card-subtitle">Lagi dibikin ✨</span>
-                        <span class="game-card-badge">Segera hadir</span>
-                    </span>
-                </div>
+            <h1 class="visually-hidden">Game Hub: pilih game</h1>
+            <div class="hub-stage" id="hubStage">
+                <article class="hub-slide is-active" data-game="mult" data-index="0" aria-label="Game 1: Perkalian 1-10 Dasar">
+                    <p class="hub-tagline">Otak aktif, hati senang!</p>
+                    <button type="button" class="hub-play game-card-active" id="hubOpenMultiplyButton" aria-label="Play Perkalian 1-10 Dasar">Play</button>
+                    <img class="hub-mascot" src="assets/mascot/rano-pose_andalan.svg" alt="" width="800" height="800" fetchpriority="high">
+                    <h2 class="hub-title">Perkalian <span class="nw">1-10</span> Dasar</h2>
+                    <p class="hub-greeting">hello from me!<br>game apa yang<br>mau kamu<br>mainkan?</p>
+                </article>
+                <article class="hub-slide" data-game="knowledge" data-index="1" aria-label="Game 2: Pengetahuan Dasar">
+                    <p class="hub-tagline">Otak aktif, hati senang!</p>
+                    <button type="button" class="hub-play game-card-active" id="hubOpenKnowledgeButton" aria-label="Play Pengetahuan Dasar">Play</button>
+                    <img class="hub-mascot" src="assets/mascot/boli-pose_andalan.svg" alt="" width="800" height="800" loading="lazy">
+                    <h2 class="hub-title">Pengetahuan Dasar</h2>
+                    <p class="hub-greeting">hello from me!<br>game apa yang<br>mau kamu<br>mainkan?</p>
+                </article>
+                <article class="hub-slide" data-game="advanced" data-index="2" aria-label="Game 3: Perkalian 1-10 Lanjutan">
+                    <p class="hub-tagline">Otak aktif, hati senang!</p>
+                    <button type="button" class="hub-play game-card-active" id="hubOpenAdvmathButton" aria-label="Play Perkalian 1-10 Lanjutan">Play</button>
+                    <img class="hub-mascot" src="assets/mascot/luma-pose_andalan.svg" alt="" width="800" height="800" loading="lazy">
+                    <h2 class="hub-title">Perkalian <span class="nw">1-10</span> Lanjutan</h2>
+                    <p class="hub-greeting">hello from me!<br>game apa yang<br>mau kamu<br>mainkan?</p>
+                </article>
+                <article class="hub-slide" data-game="soon-1" data-index="3" aria-label="Game 4: Coming soon">
+                    <p class="hub-tagline">Otak aktif, hati senang!</p>
+                    <button type="button" class="hub-play game-card-soon" id="hubComingSoon1" aria-disabled="true" data-title="Game 4" aria-label="Play Coming soon">Play</button>
+                    <img class="hub-mascot" src="assets/mascot/pipi-pose_andalan.svg" alt="" width="800" height="800" loading="lazy">
+                    <h2 class="hub-title">Coming soon</h2>
+                    <p class="hub-greeting">hello from me!<br>game apa yang<br>mau kamu<br>mainkan?</p>
+                </article>
+                <article class="hub-slide" data-game="soon-2" data-index="4" aria-label="Game 5: Coming soon">
+                    <p class="hub-tagline">Otak aktif, hati senang!</p>
+                    <button type="button" class="hub-play game-card-soon" id="hubComingSoon2" aria-disabled="true" data-title="Game 5" aria-label="Play Coming soon">Play</button>
+                    <img class="hub-mascot" src="assets/mascot/taro-pose_andalan.svg" alt="" width="800" height="800" loading="lazy">
+                    <h2 class="hub-title">Coming soon</h2>
+                    <p class="hub-greeting">hello from kino!<br>game apa yang<br>mau kamu<br>mainkan?</p>
+                </article>
+                <nav class="hub-dots" aria-label="Pilih game">
+                    <button type="button" class="hub-dot" data-go="0" data-dot="1" aria-label="Game 1: Perkalian 1-10 Dasar" aria-pressed="true"><span></span></button>
+                    <button type="button" class="hub-dot" data-go="1" data-dot="2" aria-label="Game 2: Pengetahuan Dasar" aria-pressed="false"><span></span></button>
+                    <button type="button" class="hub-dot" data-go="2" data-dot="3" aria-label="Game 3: Perkalian 1-10 Lanjutan" aria-pressed="false"><span></span></button>
+                    <button type="button" class="hub-dot" data-go="3" data-dot="4" aria-label="Game 4: Game 4 (segera hadir)" aria-pressed="false"><span></span></button>
+                    <button type="button" class="hub-dot" data-go="4" data-dot="5" aria-label="Game 5: Game 5 (segera hadir)" aria-pressed="false"><span></span></button>
+                </nav>
             </div>
         </section>
         <!-- ================= HUB VIEW END ================= -->
 
         <!-- ================= DASHBOARD VIEW (Game Perkalian 1-10) ================= -->
-        <section id="dashboardView" class="view">
+        <section id="dashboardView" class="view lobby">
             <button type="button" class="breadcrumb-back" id="backToHubButton">← Semua game</button>
-            <header class="dashboard-header has-mascot">
+            <header class="dashboard-header has-mascot lobby-head">
                 <div class="dashboard-heading">
-                    <h1>Perkalian 1-10</h1>
+                    <h1>Perkalian <span class="nw">1-10</span> Dasar</h1>
                     <p class="subtitle">Hitung cepat, lalu lihat seberapa jauh skormu bisa naik.</p>
                 </div>
                 <div class="dashboard-header-actions">
@@ -139,7 +87,7 @@
                     <button type="button" class="icon-button" id="helpButton" aria-label="Cara bermain">?</button>
                 </div>
 
-            <svg class="header-mascot" viewBox="0 0 120 120" aria-hidden="true"><use href="#mascot-g1"/></svg>
+            <img class="lobby-mascot" src="assets/mascot/rano-bengong.svg" alt="" width="550" height="550">
             </header>
 
             <div class="leaderboard-panel">
@@ -230,9 +178,9 @@
         <!-- ================= GAME VIEW END ================= -->
 
         <!-- ================= KNOWLEDGE DASHBOARD VIEW (Game Pengetahuan Dasar) ================= -->
-        <section id="knowledgeDashboardView" class="view">
+        <section id="knowledgeDashboardView" class="view lobby">
             <button type="button" class="breadcrumb-back" id="knowledgeBackToHubButton">← Semua game</button>
-            <header class="dashboard-header has-mascot">
+            <header class="dashboard-header has-mascot lobby-head">
                 <div class="dashboard-heading">
                     <h1>Pengetahuan Dasar</h1>
                     <p class="subtitle">60 detik. Seberapa banyak yang kamu tahu?</p>
@@ -241,10 +189,10 @@
                     <button type="button" class="icon-button" id="knowledgeSoundToggleButton" aria-label="Matikan suara">🔊</button>
                     <button type="button" class="icon-button" id="knowledgeHelpButton" aria-label="Cara bermain">?</button>
                 </div>
-            <svg class="header-mascot" viewBox="0 0 120 120" aria-hidden="true"><use href="#mascot-g2"/></svg>
+            <img class="lobby-mascot" src="assets/mascot/boli-bengong.svg" alt="" width="550" height="550">
             </header>
 
-            <details class="score-rules" id="knowledgeScoreRules" open>
+            <details class="score-rules" id="knowledgeScoreRules">
                 <summary class="score-rules-title">Aturan skor <span class="score-rules-hint" aria-hidden="true"></span></summary>
                 <ul class="score-rules-grid">
                     <li class="score-rule is-gain"><span class="score-rule-points">+1</span><span class="score-rule-text">Benar di <b>klik ke-1</b></span></li>
@@ -335,21 +283,21 @@
         <!-- ================= KNOWLEDGE GAME VIEW END ================= -->
 
         <!-- ================= ADVMATH DASHBOARD VIEW (Game Perkalian 1-10 Lanjutan) ================= -->
-        <section id="advmathDashboardView" class="view">
+        <section id="advmathDashboardView" class="view lobby">
             <button type="button" class="breadcrumb-back" id="advmathBackToHubButton">← Semua game</button>
-            <header class="dashboard-header has-mascot">
+            <header class="dashboard-header has-mascot lobby-head">
                 <div class="dashboard-heading">
-                    <h1>Perkalian 1-10 Lanjutan</h1>
+                    <h1>Perkalian <span class="nw">1-10</span> Lanjutan</h1>
                     <p class="subtitle">Pelan-pelan, perhatikan polanya. Total waktu terpendek menang.</p>
                 </div>
                 <div class="dashboard-header-actions">
                     <button type="button" class="icon-button" id="advmathSoundToggleButton" aria-label="Matikan suara">🔊</button>
                     <button type="button" class="icon-button" id="advmathHelpButton" aria-label="Cara bermain">?</button>
                 </div>
-            <svg class="header-mascot" viewBox="0 0 120 120" aria-hidden="true"><use href="#mascot-g3"/></svg>
+            <img class="lobby-mascot" src="assets/mascot/luma-bengong.svg" alt="" width="550" height="550">
             </header>
 
-            <details class="score-rules" id="advmathScoreRules" open>
+            <details class="score-rules" id="advmathScoreRules">
                 <summary class="score-rules-title">Aturan waktu dan hukuman <span class="score-rules-hint" aria-hidden="true"></span></summary>
                 <p class="score-rules-sub">Peringkat ditentukan <b>total waktu</b> (waktu aktual + semua hukuman). Makin singkat, makin tinggi.</p>
                 <ul class="score-rules-grid">
@@ -462,9 +410,9 @@
             <!-- INI COUNTDOWN OVERLAY -->
             <div class="countdown-overlay" id="countdownOverlay" aria-live="assertive" role="status">
                 <div class="countdown-content">
-                    <svg class="countdown-mascot cm-g1" viewBox="0 0 120 120" aria-hidden="true"><use href="#mascot-g1"/></svg>
-                    <svg class="countdown-mascot cm-g2" viewBox="0 0 120 120" aria-hidden="true"><use href="#mascot-g2"/></svg>
-                    <svg class="countdown-mascot cm-g3" viewBox="0 0 120 120" aria-hidden="true"><use href="#mascot-g3"/></svg>
+                    <img class="countdown-mascot cm-g1" src="assets/mascot/rano-terbang_semangat.svg" alt="" width="200" height="200">
+                    <img class="countdown-mascot cm-g2" src="assets/mascot/boli-terbang_semangat.svg" alt="" width="200" height="200">
+                    <img class="countdown-mascot cm-g3" src="assets/mascot/luma-terbang_semangat.svg" alt="" width="200" height="200">
                     <div class="countdown-number" id="countdownNumber">3</div>
                     <div class="countdown-label" id="countdownLabel">Siap?</div>
                 </div>
@@ -547,6 +495,7 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body text-center">
+                    <img class="modal-mascot" src="assets/mascot/boli-juara_1.svg" alt="" width="160" height="160">
                     <div class="end-game-stat end-game-stat-main">Skor: <span id="knowledgeFinalScore">0,0</span></div>
                     <div class="end-game-stat">Jawaban benar: <span id="knowledgeFinalCorrect">0</span></div>
                     <div class="end-game-stat">Hint dipakai: <span id="knowledgeFinalHints">0</span></div>
@@ -829,6 +778,7 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body text-center">
+                    <img class="modal-mascot" src="assets/mascot/luma-juara_1.svg" alt="" width="160" height="160">
                     <div class="end-game-stat end-game-stat-main">Total waktu: <span id="advmathFinalTime">00:00</span> <small>(<span id="advmathEndCountLabel">20 soal</span>)</small></div>
                     <div class="end-game-stat">Waktu aktual: <span id="advmathFinalActual">00:00</span></div>
                     <div class="end-game-stat">Total hukuman: <span id="advmathFinalPenalty">+00:00</span></div>
@@ -1216,6 +1166,7 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body text-center">
+                    <img class="modal-mascot" src="assets/mascot/rano-juara_1.svg" alt="" width="160" height="160">
                     <div class="end-game-stat">Waktu: <span id="finalTime">00:00</span></div>
                     <div class="end-game-stat">Kesalahan: <span id="mistakesCount">0</span></div>
                     <div class="rank-insight" id="rankInsight" style="display:none;" aria-live="polite">
@@ -1441,15 +1392,15 @@
          Kalau belum dikonfigurasi, game otomatis memakai localStorage sebagai cadangan. -->
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-    <script src="firebase-config.js?v=20261016"></script>
+    <script src="firebase-config.js?v=20261017"></script>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/js/bootstrap.bundle.min.js"
         integrity="sha384-HwwvtgBNo3bZJJLYd8oVXjrBZt8cqVSpeBNS5n7C8IVInixGAoxmnlMuBnhbgrkm"
         crossorigin="anonymous"></script>
-    <script src="knowledge-questions.js?v=20261016"></script>
-    <script src="advmath-questions.js?v=20261016"></script>
-    <script src="script.js?v=20261016"></script>
-    <script src="ui.js?v=20261016"></script>
+    <script src="knowledge-questions.js?v=20261017"></script>
+    <script src="advmath-questions.js?v=20261017"></script>
+    <script src="script.js?v=20261017"></script>
+    <script src="ui.js?v=20261017"></script>
 
 </body>
 
