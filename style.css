@@ -2505,3 +2505,69 @@ button,
 @media (prefers-reduced-motion: reduce) {
     .kn-opt-explain { animation: none; }
 }
+
+/* ===== Game 2: info poin (+/−) & efek streak ===== */
+.knowledge-gain-row {
+    min-height: 30px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: -2px 4px 2px;
+}
+.knowledge-gain-chip {
+    font-weight: 800;
+    font-size: 14px;
+    line-height: 1.3;
+    text-align: center;
+    color: #fff;
+    border-radius: 999px;
+    padding: 2px 12px;
+    opacity: 0;
+    pointer-events: none;
+    max-width: 100%;
+}
+.knowledge-gain-chip.is-gain { background: var(--color-success-dark); }
+.knowledge-gain-chip.is-loss { background: var(--color-danger-dark); }
+.knowledge-gain-chip.is-bonus { background: #b45309; }
+.knowledge-gain-chip.is-break { background: #4b3a7a; }
+.knowledge-gain-chip.is-visible { animation: knowledge-gain-float 1.8s ease-out forwards; }
+@keyframes knowledge-gain-float {
+    0% { opacity: 0; transform: translateY(-6px); }
+    12% { opacity: 1; transform: translateY(0); }
+    75% { opacity: 1; }
+    100% { opacity: 0; transform: translateY(4px); }
+}
+
+/* Efek membara di tepi layar: tipis (5), sedang (10), tebal (15+) */
+.streak-fx {
+    position: fixed;
+    inset: 0;
+    z-index: 900;
+    pointer-events: none;
+    opacity: 0;
+}
+.streak-fx.is-lvl-1 { box-shadow: inset 0 0 40px 4px rgba(255, 140, 30, .85), inset 0 0 70px 0 rgba(255, 70, 20, .45); }
+.streak-fx.is-lvl-2 { box-shadow: inset 0 0 80px 18px rgba(255, 120, 20, .9), inset 0 0 150px 10px rgba(255, 50, 20, .6); }
+.streak-fx.is-lvl-3 { box-shadow: inset 0 0 130px 40px rgba(255, 100, 10, .95), inset 0 0 240px 30px rgba(230, 30, 20, .75), inset 0 0 40px 10px rgba(255, 220, 90, .6); }
+.streak-fx.is-on { animation: streak-ember 1.8s ease-out forwards, streak-flicker .22s steps(2) 8; }
+@keyframes streak-ember { 0% { opacity: 0; } 12% { opacity: 1; } 65% { opacity: .9; } 100% { opacity: 0; } }
+@keyframes streak-flicker { 50% { filter: brightness(1.35) saturate(1.2); } }
+
+#knowledgeGameView.is-streak-shake { animation: streak-shake .55s linear; }
+#knowledgeGameView.shake-1 { --shake: 3px; }
+#knowledgeGameView.shake-2 { --shake: 6px; }
+#knowledgeGameView.shake-3 { --shake: 10px; }
+@keyframes streak-shake {
+    0%, 100% { transform: translate(0, 0); }
+    15% { transform: translate(calc(var(--shake) * -1), calc(var(--shake) * .5)); }
+    30% { transform: translate(var(--shake), calc(var(--shake) * -.5)); }
+    45% { transform: translate(calc(var(--shake) * -.8), 0); }
+    60% { transform: translate(calc(var(--shake) * .8), calc(var(--shake) * .4)); }
+    80% { transform: translate(calc(var(--shake) * -.4), 0); }
+}
+@media (prefers-reduced-motion: reduce) {
+    #knowledgeGameView.is-streak-shake { animation: none; }
+    .streak-fx.is-on { animation: streak-ember-static 1.8s linear forwards; }
+    .knowledge-gain-chip.is-visible { animation: none; opacity: 1; }
+}
+@keyframes streak-ember-static { 0%, 80% { opacity: .8; } 100% { opacity: 0; } }
