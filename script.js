@@ -4211,6 +4211,16 @@ document.getElementById('advmathEndBackToDashboardButton').addEventListener('cli
     goToAdvmathDashboard(String(advmathCount));
 });
 
+/* Tombol X / tombol Esc pada pop up hasil game = sama dengan tombol "Dashboard" */
+[['endGameModal', 'endGameBackToDashboardButton'],
+ ['knowledgeEndModal', 'knowledgeEndBackToDashboardButton'],
+ ['advmathEndModal', 'advmathEndBackToDashboardButton']].forEach(([modalId, dashBtnId]) => {
+    const modalEl = document.getElementById(modalId);
+    const toDashboard = () => document.getElementById(dashBtnId).click();
+    modalEl.querySelector('.end-modal-close').addEventListener('click', toDashboard);
+    modalEl.addEventListener('keydown', (e) => { if (e.key === 'Escape') { e.preventDefault(); toDashboard(); } });
+});
+
 /* =====================================================================================
    DUEL 1v1 PERKALIAN 1-10 LANJUTAN
 ===================================================================================== */
