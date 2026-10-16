@@ -2571,3 +2571,151 @@ button,
     .knowledge-gain-chip.is-visible { animation: none; opacity: 1; }
 }
 @keyframes streak-ember-static { 0%, 80% { opacity: .8; } 100% { opacity: 0; } }
+
+/* =====================================================================
+   LAPTOP / DESKTOP / LAYAR BESAR (>= 1100px)
+   Semua aturan di bawah ini HANYA berlaku di lebar >= 1100px, jadi tampilan HP & tablet
+   tidak berubah. Dua lapis:
+   1) Skala: --z mengatur zoom antarmuka (dari lebar DAN tinggi viewport, diambil yang terkecil
+      supaya konten tidak keluar layar di laptop pendek).
+   2) Tata letak: lobi & halaman bermain jadi 2 kolom agar elemen yang berkaitan berdekatan.
+   ===================================================================== */
+:root { --zw: 1; --zh: 1; --z: 1; }
+@media (min-width: 1100px) { :root { --zw: 1.1; } }
+@media (min-width: 1400px) { :root { --zw: 1.25; } }
+@media (min-width: 1800px) { :root { --zw: 1.5; } }
+@media (min-width: 2200px) { :root { --zw: 1.75; } }
+@media (min-width: 2800px) { :root { --zw: 2; } }
+@media (min-width: 3400px) { :root { --zw: 2.4; } }
+@media (min-width: 1100px) and (min-height: 700px)  { :root { --zh: 1.1; } }
+@media (min-width: 1100px) and (min-height: 800px)  { :root { --zh: 1.2; } }
+@media (min-width: 1100px) and (min-height: 900px)  { :root { --zh: 1.35; } }
+@media (min-width: 1100px) and (min-height: 1000px) { :root { --zh: 1.5; } }
+@media (min-width: 1100px) and (min-height: 1150px) { :root { --zh: 1.75; } }
+@media (min-width: 1100px) and (min-height: 1300px) { :root { --zh: 2; } }
+@media (min-width: 1100px) and (min-height: 1600px) { :root { --zh: 2.4; } }
+@media (min-width: 1100px) { :root { --z: min(var(--zw), var(--zh)); } }
+
+@media (min-width: 1100px) {
+    .view {
+        zoom: var(--z);
+        max-width: 1240px;
+        min-height: calc(100vh / var(--z));
+        padding: 28px 40px 36px;
+    }
+    .modal-dialog { zoom: min(var(--z), 1.75); }
+    .countdown-content, .toast-alert { zoom: var(--z); }
+
+    /* ---------- HUB: 3 kartu game besar + 2 kartu "segera hadir" ---------- */
+    #hubView.active { justify-content: center; }
+    .hub-header { margin-bottom: 28px; }
+    .hub-header h1 { font-size: 40px; }
+    .hub-header .subtitle { font-size: 17px; }
+    .game-grid { grid-template-columns: repeat(6, 1fr); gap: 22px; }
+    .game-card-active {
+        grid-column: span 2;
+        flex-direction: column;
+        min-height: 250px;
+        padding: 30px 22px;
+        gap: 12px;
+        text-align: center;
+    }
+    .game-card-active .game-card-icon { font-size: 78px; }
+    .game-card-active .game-card-title { font-size: 24px; }
+    .game-card-active .game-card-subtitle { font-size: 14px; }
+    .game-card-soon { grid-column: span 3; min-height: 150px; padding: 22px; flex-direction: row; gap: 18px; justify-content: center; }
+    .game-card-soon .game-card-icon { font-size: 44px; }
+    .game-card-soon .game-card-title { font-size: 18px; }
+
+    /* ---------- LOBI (3 game): info & tombol main di kiri, papan peringkat di kanan ---------- */
+    #dashboardView.active, #knowledgeDashboardView.active, #advmathDashboardView.active {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1.08fr);
+        grid-template-rows: auto auto auto auto 1fr;
+        column-gap: 56px;
+        align-content: center;
+        align-items: start;
+        max-width: 1240px;
+    }
+    #dashboardView > .breadcrumb-back, #knowledgeDashboardView > .breadcrumb-back, #advmathDashboardView > .breadcrumb-back { grid-column: 1; grid-row: 1; justify-self: start; font-size: 14px; margin-bottom: 18px; }
+    #dashboardView > .dashboard-header, #knowledgeDashboardView > .dashboard-header, #advmathDashboardView > .dashboard-header { grid-column: 1; grid-row: 2; margin-bottom: 22px; }
+    #dashboardView > .score-rules, #knowledgeDashboardView > .score-rules, #advmathDashboardView > .score-rules { grid-column: 1; grid-row: 3; margin-bottom: 22px; }
+    #dashboardView > .cta-row, #knowledgeDashboardView > .cta-row, #advmathDashboardView > .cta-row { grid-column: 1; grid-row: 4; position: static; margin-top: 0; }
+    #dashboardView > .leaderboard-panel, #knowledgeDashboardView > .leaderboard-panel, #advmathDashboardView > .leaderboard-panel { grid-column: 2; grid-row: 1 / span 5; align-self: center; }
+    .dashboard-heading h1 { font-size: 40px; line-height: 1.15; }
+    .subtitle { font-size: 17px; }
+    .btn-start-game { font-size: 20px; padding: 18px 26px; flex: 1 1 0; }
+    .score-rules-title { font-size: 16px; }
+    .score-rule-text { font-size: 14px; }
+
+    .leaderboard-panel {
+        --avatar-size: 70px;
+        --avatar-size-first: 98px;
+        --podium-name-size: 17px;
+        --podium-score-size: 20px;
+        --podium-score-size-first: 28px;
+        --podium-meta-size: 13.5px;
+        --base-h-first: 92px;
+        --base-h-second: 68px;
+        --base-h-third: 50px;
+        --tab-size: 17px;
+        --row-name-size: 17px;
+        --row-score-size: 17px;
+        --row-meta-size: 13px;
+        --row-avatar-size: 46px;
+        padding: 28px 32px 30px;
+    }
+
+    /* ---------- HALAMAN BERMAIN: 2 kolom, pertanyaan & area jawab berdampingan ---------- */
+    #gameView.active, #knowledgeGameView.active, #advmathGameView.active {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        grid-auto-flow: dense;
+        column-gap: 48px;
+        row-gap: 14px;
+        align-content: center;
+        align-items: start;
+        max-width: 1240px;
+    }
+    #gameView > .game-topbar, #knowledgeGameView > .game-topbar, #advmathGameView > .game-topbar,
+    #gameView > .duel-opponent-bar, #knowledgeGameView > .duel-opponent-bar, #advmathGameView > .duel-opponent-bar,
+    #gameView > .duel-disconnect-banner, #knowledgeGameView > .duel-disconnect-banner, #advmathGameView > .duel-disconnect-banner,
+    .knowledge-gain-row, .advmath-penalty-row { grid-column: 1 / -1; }
+    .game-topbar { gap: 18px; margin-bottom: 4px; }
+    .game-topbar .icon-button { width: 52px; height: 52px; font-size: 22px; }
+    .progress-info span, #progressLabel, #knowledgeProgressLabel, #advmathProgressLabel { font-size: 16px; }
+    #stopwatch, #knowledgeTimer, #advmathTimer { font-size: 22px; padding: 8px 20px; min-width: 96px; }
+    .question-row { margin: 0; padding: 0; min-height: 0; align-self: stretch; }
+
+    /* G1: pertanyaan kiri, keypad kanan */
+    #gameView > .question-row { grid-column: 1; grid-row: 2; align-self: center; min-height: 360px; }
+    #gameView > .keypad-wrapper { grid-column: 2; grid-row: 2; margin-top: 0; align-self: center; }
+    #question { font-size: 84px; padding: 36px 56px; min-height: 160px; border-radius: 36px; }
+    #buttonHint { width: 52px; height: 52px; }
+    .answer-input { font-size: 30px; padding: 18px; margin-bottom: 14px; border-radius: 20px; }
+    .keypad { gap: 14px; }
+    .keypad-btn { min-height: 74px; font-size: 30px; border-radius: 20px; }
+
+    /* G2 & G3: pertanyaan (+ hint) kiri, pilihan jawaban ditumpuk di kanan */
+    #knowledgeGameView > .question-row, #advmathGameView > .question-row { grid-column: 1; min-height: 0; justify-content: stretch; }
+    .knowledge-question-card, .advmath-question-card { font-size: 28px; line-height: 1.45; padding: 38px 36px; max-width: none; width: 100%; border-radius: 32px; }
+    .knowledge-options-grid, .advmath-options-grid { grid-column: 2; grid-row: span 4; grid-template-columns: 1fr; gap: 14px; }
+    .knowledge-option-btn, .advmath-option-btn { font-size: 20px; padding: 20px 24px; min-height: 76px; border-radius: 22px; }
+    .kn-opt-explain { font-size: 15px; }
+    #knowledgeHintButton { grid-column: 1; font-size: 17px; padding: 14px 18px; }
+    .knowledge-recap { grid-column: 1; max-width: none; margin: 0; }
+    .advmath-hint-row { grid-column: 1; max-width: none; margin: 0; gap: 14px; }
+    .advmath-hint-note, .advmath-burn-banner { grid-column: 1; font-size: 14px; }
+    .knowledge-gain-chip, .advmath-penalty-chip { font-size: 16px; padding: 4px 16px; }
+    .knowledge-gain-row, .advmath-penalty-row { justify-content: flex-end; }
+}
+
+/* Layar sangat lebar (ultrawide): batasi lebar baca supaya elemen tidak berjauhan */
+@media (min-width: 2400px) and (min-aspect-ratio: 21/9) {
+    .view { max-width: 1240px; }
+}
+
+/* Desktop: aturan skor 2 kolom agar baris bonus tidak sempit */
+@media (min-width: 1100px) {
+    .score-rules-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
