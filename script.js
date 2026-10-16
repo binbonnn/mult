@@ -1789,6 +1789,66 @@ function knowledgePointsForCorrect(wrongClicksBefore, hintUsed) {
     return hintUsed ? Math.min(base, KNOWLEDGE_POINTS_CLICK_3) : base;
 }
 
+/* ---- Bonus streak (benar di klik pertama, tanpa Hint, berturut-turut) & info poin di layar ---- */
+let knowledgeStreak = 0;
+function knowledgeStreakBonusTenths(streak) {
+    if (streak <= 0 || streak % 5 !== 0) return 0;
+    return streak === 5 ? 30 : streak === 10 ? 70 : 100; // +3, +7, lalu +10 (maksimal) untuk 15, 20, 25, ...
+}
+function knowledgeStreakLevel(streak) { return streak >= 15 ? 3 : streak >= 10 ? 2 : 1; }
+function formatKnowledgePlain(tenths) {
+    return (Math.abs(Math.round(tenths)) / 10).toFixed(1).replace('.', ',').replace(/,0$/, '');
+}
+let knowledgeGainTimer = null;
+function showKnowledgeGain(tenths, bonusTenths) {
+    const chip = document.getElementById('knowledgeGainChip');
+    if (!chip) return;
+    chip.classList.remove('is-visible', 'is-gain', 'is-loss', 'is-bonus', 'is-break');
+    chip.textContent = tenths < 0
+        ? `\u2212${formatKnowledgePlain(tenths)} poin`
+        : `+${formatKnowledgePlain(tenths)} poin` + (bonusTenths ? ` tambah +${formatKnowledgePlain(bonusTenths)} bonus poin` : '');
+    chip.classList.add(tenths < 0 ? 'is-loss' : bonusTenths ? 'is-bonus' : 'is-gain');
+    void chip.offsetWidth;
+    chip.classList.add('is-visible');
+    clearTimeout(knowledgeGainTimer);
+    knowledgeGainTimer = setTimeout(clearKnowledgeGain, 1800);
+}
+function breakKnowledgeStreak() {
+    // Hanya diumumkan bila memang ada streak yang putus (streak >= 1)
+    if (knowledgeStreak <= 0) return;
+    knowledgeStreak = 0;
+    const chip = document.getElementById('knowledgeGainChip');
+    if (!chip) return;
+    chip.classList.remove('is-visible', 'is-gain', 'is-loss', 'is-bonus', 'is-break');
+    chip.textContent = 'Streak putus';
+    chip.classList.add('is-break');
+    void chip.offsetWidth;
+    chip.classList.add('is-visible');
+    clearTimeout(knowledgeGainTimer);
+    knowledgeGainTimer = setTimeout(clearKnowledgeGain, 1800);
+}
+function clearKnowledgeGain() {
+    const chip = document.getElementById('knowledgeGainChip');
+    if (chip) { chip.classList.remove('is-visible', 'is-gain', 'is-loss', 'is-bonus', 'is-break'); chip.textContent = ''; }
+}
+function triggerKnowledgeStreakFx(streak) {
+    const level = knowledgeStreakLevel(streak);
+    const fx = document.getElementById('knowledgeStreakFx');
+    const view = document.getElementById('knowledgeGameView');
+    if (fx) {
+        fx.classList.remove('is-on', 'is-lvl-1', 'is-lvl-2', 'is-lvl-3');
+        void fx.offsetWidth;
+        fx.classList.add('is-lvl-' + level, 'is-on');
+    }
+    if (view) {
+        view.classList.remove('is-streak-shake', 'shake-1', 'shake-2', 'shake-3');
+        void view.offsetWidth;
+        view.classList.add('is-streak-shake', 'shake-' + level);
+        setTimeout(() => view.classList.remove('is-streak-shake', 'shake-1', 'shake-2', 'shake-3'), 700);
+    }
+    try { if (navigator.vibrate) navigator.vibrate(level === 1 ? [80] : level === 2 ? [90, 40, 90] : [120, 40, 120, 40, 200]); } catch (e) { /* abaikan */ }
+}
+
 function tenthsToScore(tenths) {
     return Math.round(tenths) / 10;
 }
@@ -2129,6 +2189,8 @@ function prepareKnowledgeGameUI() {
     knowledgeLastSavedRecord = null;
     knowledgeCorrectCount = 0;
     knowledgeScoreTenths = 0;
+    knowledgeStreak = 0;
+    clearKnowledgeGain();
     knowledgeBurnedCount = 0;
     knowledgeHintsUsed = 0;
     knowledgeSeqIndex = 0;
@@ -2297,7 +2359,13 @@ function handleKnowledgeOptionClick(idx) {
         btn.classList.add('is-correct');
         playCorrectSound();
         const gained = knowledgePointsForCorrect(knowledgeWrongClicksThisQuestion, knowledgeHintUsedThisQuestion);
-        knowledgeScoreTenths += gained;
+        // Streak hanya bertambah bila benar di klik pertama dan tanpa Hint; selain itu streak putus
+        const cleanAnswer = knowledgeWrongClicksThisQuestion === 0 && !knowledgeHintUsedThisQuestion;
+        knowledgeStreak = cleanAnswer ? knowledgeStreak + 1 : 0;
+        const bonus = knowledgeStreakBonusTenths(knowledgeStreak);
+        knowledgeScoreTenths += gained + bonus;
+        showKnowledgeGain(gained, bonus);
+        if (bonus > 0) triggerKnowledgeStreakFx(knowledgeStreak);
         knowledgeCorrectCount++;
         knowledgeLastResolved = { q, status: 'correct' };
         document.getElementById('knowledgeProgressLabel').textContent = `Skor: ${formatKnowledgeScore(tenthsToScore(knowledgeScoreTenths))}`;
@@ -2310,6 +2378,9 @@ function handleKnowledgeOptionClick(idx) {
     markKnowledgeOptionWrong(btn, idx, q);
     playWrongSound();
     knowledgeWrongClicksThisQuestion++;
+    breakKnowledgeStreak();
+    // Sudah 2 opsi salah ditekan: hint tidak relevan lagi, nonaktifkan tombolnya
+    if (knowledgeWrongClicksThisQuestion >= 2) document.getElementById('knowledgeHintButton').disabled = true;
 
     // Hangus bila tidak ada lagi opsi salah yang masih bisa dipilih (tersisa jawaban benar saja)
     const selectableDistractors = btns.filter((b, i) =>
@@ -2317,6 +2388,7 @@ function handleKnowledgeOptionClick(idx) {
     if (selectableDistractors === 0) {
         knowledgeBurnedCount++;
         knowledgeScoreTenths += KNOWLEDGE_POINTS_BURNED;
+        showKnowledgeGain(KNOWLEDGE_POINTS_BURNED, 0);
         knowledgeLastResolved = { q, status: 'burned' };
         document.getElementById('knowledgeProgressLabel').textContent = `Skor: ${formatKnowledgeScore(tenthsToScore(knowledgeScoreTenths))}`;
         btns.forEach(b => { b.disabled = true; });
@@ -2334,7 +2406,7 @@ function advanceKnowledgeQuestion() {
 }
 
 document.getElementById('knowledgeHintButton').addEventListener('click', () => {
-    if (knowledgeHintUsedThisQuestion || !knowledgeGameInProgress) return;
+    if (knowledgeHintUsedThisQuestion || !knowledgeGameInProgress || knowledgeWrongClicksThisQuestion >= 2) return;
     const q = knowledgeSequence[knowledgeSeqIndex];
     const btns = Array.from(document.querySelectorAll('.knowledge-option-btn'));
 
@@ -2347,6 +2419,7 @@ document.getElementById('knowledgeHintButton').addEventListener('click', () => {
 
     knowledgeHintUsedThisQuestion = true;
     knowledgeHintsUsed++;
+    breakKnowledgeStreak(); // memakai Hint memutus streak
     document.getElementById('knowledgeHintButton').disabled = true;
 
     // Dari distraktor yang masih "hidup", sisakan 1 secara acak, sembunyikan sisanya.
