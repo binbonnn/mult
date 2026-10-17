@@ -408,6 +408,8 @@ function switchView(viewName) {
     knowledgeGameView.classList.toggle('active', viewName === 'knowledgeGame');
     advmathDashboardView.classList.toggle('active', viewName === 'advmathDashboard');
     advmathGameView.classList.toggle('active', viewName === 'advmathGame');
+    const memoViewEl = document.getElementById('memoView');
+    if (memoViewEl) memoViewEl.classList.toggle('active', viewName === 'memo');
 }
 
 function goToHub() {
