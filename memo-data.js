@@ -1,7 +1,7 @@
 /* =====================================================================
    MEMO MAYHEM — DATA LOKAL, PROFIL, PAPAN PERINGKAT, PENCAPAIAN, SUARA
-   Semua disimpan di localStorage (tanpa server). Aman bila data rusak
-   atau localStorage tidak tersedia.
+   Cache & cadangan di localStorage; profil online disinkronkan ke Firebase
+   lewat memo-cloud.js. Aman bila data rusak atau localStorage tidak tersedia.
 ===================================================================== */
 (function () {
     'use strict';
@@ -12,9 +12,10 @@
     function defaults() {
         return {
             v: SCHEMA,
-            profiles: [{ id: 'p1', name: 'Pemain 1', icon: '👽' }],
+            profiles: [{ id: 'p1', name: 'Pemain 1', icon: '👽', ach: {} }],
             active: 'p1',
             sessions: [],
+            outbox: [],
             boards: {},
             daily: {},
             endless: { best: null },
@@ -41,6 +42,8 @@
             out.settings = Object.assign(base.settings, d.settings || {});
             out.settings.last = Object.assign(base.settings.last, (d.settings || {}).last || {});
             out.counters = Object.assign(base.counters, d.counters || {});
+            if (!Array.isArray(out.outbox)) out.outbox = [];
+            out.profiles.forEach((p, i) => { if (!p.ach || typeof p.ach !== 'object') p.ach = (i === 0 && d.ach && typeof d.ach === 'object') ? d.ach : {}; });
             if (!out.profiles.some(p => p.id === out.active)) out.active = out.profiles[0].id;
             return out;
         } catch (e) {
@@ -58,13 +61,17 @@
     const activeProfile = () => data.profiles.find(p => p.id === data.active) || data.profiles[0];
     function addProfile(name, icon) {
         name = String(name || '').trim().slice(0, 14) || ('Pemain ' + (data.profiles.length + 1));
-        const p = { id: 'p' + uid(), name, icon: icon || '👽' };
+        const p = { id: 'p' + uid(), name, icon: icon || '👽', ach: {} };
         data.profiles.push(p); save(); return p;
+    }
+    function markOnline(id, info) {
+        const p = data.profiles.find(x => x.id === id); if (!p) return;
+        p.pid = info.pid; p.owner = info.owner; p.name = info.name; p.regAt = Date.now(); save();
     }
     function setActive(id) { if (data.profiles.some(p => p.id === id)) { data.active = id; save(); } }
     function updateProfile(id, patch) {
         const p = data.profiles.find(x => x.id === id); if (!p) return;
-        if (patch.name != null) p.name = String(patch.name).trim().slice(0, 14) || p.name;
+        if (patch.name != null && !p.pid) p.name = String(patch.name).trim().slice(0, 14) || p.name;
         if (patch.icon) p.icon = patch.icon;
         save();
     }
@@ -85,11 +92,12 @@
         { id: 'duelwin', icon: '⚔️', name: 'Pemenang Duel', desc: 'Menangkan satu duel lokal.', creature: '🦁', test: x => x.duelWin }
     ];
     const CREATURES = ['👽'].concat(ACH.map(a => a.creature).filter((v, i, a) => a.indexOf(v) === i));
-    const unlockedCreatures = () => ['👽'].concat(ACH.filter(a => data.ach[a.id]).map(a => a.creature)).filter((v, i, a) => a.indexOf(v) === i);
+    const achMap = pid => { const p = data.profiles.find(x => x.id === pid) || activeProfile(); return p.ach || (p.ach = {}); };
+    const unlockedCreatures = () => { const m = achMap(); return ['👽'].concat(ACH.filter(a => m[a.id]).map(a => a.creature)).filter((v, i, a) => a.indexOf(v) === i); };
 
-    function checkAch(ctx) {
-        const out = [];
-        ACH.forEach(a => { if (!data.ach[a.id] && a.test(ctx)) { data.ach[a.id] = Date.now(); out.push(a); } });
+    function checkAch(ctx, pid) {
+        const out = [], m = achMap(pid);
+        ACH.forEach(a => { if (!m[a.id] && a.test(ctx)) { m[a.id] = Date.now(); out.push(a); } });
         return out;
     }
 
@@ -100,6 +108,30 @@
         return s.type; // endless | boss
     }
     function board(key) { return data.boards[key] || []; }
+    const remoteKey = s => boardKey(s).replace(/\|/g, '_'); // kunci kategori di Firebase (tanpa karakter khusus)
+
+    /* ---------- Antrean sinkronisasi Firebase (outbox) ----------
+       Setiap sesi profil online masuk antrean dengan id unik; baru dihapus
+       dari antrean setelah server mengonfirmasi (lihat memo-cloud.js). */
+    function enqueue(s, extra) {
+        const pr = data.profiles.find(p => p.id === s.profileId);
+        if (!pr || !pr.pid || s.practice) return null;
+        extra = extra || {};
+        const bk = (s.type === 'standard' || s.type === 'daily' || s.type === 'endless' || s.type === 'boss') && !extra.noBoard ? remoteKey(s) : '';
+        const item = {
+            sid: 's' + Date.now().toString(36) + Math.random().toString(36).slice(2, 12), pid: pr.pid, t: Date.now(),
+            ach: extra.ach || {},
+            payload: {
+                type: s.type, mode: s.mode || '', diff: s.diff || '', plannedRounds: s.plannedRounds || 0, total: s.total, correct: s.correct, score: s.score,
+                accP: Math.round(s.accuracy * 1000), totalMs: s.totalMs || 0, bestCombo: s.bestCombo || 0, livesLost: s.livesLost || 0, maxSeqLen: s.maxSeqLen || 0,
+                done: !!s.done, failed: !!s.failed, won: !!extra.won, dateKey: s.dateKey || '', bk, modesSeen: s.modesSeen || []
+            }
+        };
+        data.outbox.push(item);
+        s.cloudSid = item.sid;
+        return item;
+    }
+    const achObj = list => { const o = {}; (list || []).forEach(a => { o[a.id] = Date.now(); }); return o; };
 
     /* ---------- Rekam sesi ---------- */
     function recordSession(s, opts) {
@@ -140,17 +172,23 @@
             }
         }
         let newAch = [];
-        if (!s.practice) newAch = checkAch({ s, data, duelWin: !!opts.duelWin });
+        if (!s.practice) newAch = checkAch({ s, data, duelWin: !!opts.duelWin }, s.profileId);
+        if (!opts.duel && !s.practice) enqueue(s, { ach: achObj(newAch) });
         save();
-        return { rank, isRecord, newAch };
+        return { rank, isRecord, newAch, sid: s.cloudSid || null };
     }
-    function recordDuel(d) {
+    function recordDuel(d, sess) {
         d.id = uid(); d.ts = Date.now();
         data.duels.unshift(d); if (data.duels.length > 100) data.duels.length = 100;
         let newAch = [];
         if (d.winner) {
             const ctxS = { done: true, type: 'duel', mode: d.mode, diff: d.diff, bestCombo: 0, accuracy: 0, total: 0, correct: 0, livesLost: 0, plannedRounds: d.rounds };
-            newAch = checkAch({ s: ctxS, data, duelWin: true });
+            newAch = checkAch({ s: ctxS, data, duelWin: true }, d.winner);
+        }
+        if (sess) {
+            [[d.p1, sess[0]], [d.p2, sess[1]]].forEach(([p, ss]) => {
+                if (ss) enqueue(ss, { won: d.winner === p.id, noBoard: true, ach: d.winner === p.id ? achObj(newAch) : {} });
+            });
         }
         save();
         return newAch;
@@ -217,7 +255,7 @@
 
     window.MemoData = {
         get data() { return data; }, get memoryOnly() { return memoryOnly; },
-        save, activeProfile, addProfile, setActive, updateProfile,
-        ACH, CREATURES, unlockedCreatures, boardKey, board, recordSession, recordDuel, profileStats, resetAll, sfx
+        save, activeProfile, addProfile, markOnline, setActive, updateProfile, remoteKey,
+        ACH, CREATURES, achMap, unlockedCreatures, boardKey, board, recordSession, recordDuel, profileStats, resetAll, sfx
     };
 })();
