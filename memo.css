@@ -519,3 +519,26 @@
     .mm-slot { width: 46px; height: 52px; }
     .mm-keys { gap: 6px; }
 }
+
+/* ===== Firebase: status server, daftar nama, peringkat online ===== */
+.mm-cloudline { text-align: center; font-size: 0.82rem; color: var(--mm-muted); margin: 0; }
+.mm-cloudline.is-on { color: var(--mm-good); }
+.mm-cloudline.is-err { color: var(--mm-warn); }
+.mm-cloudbanner { display: flex; align-items: center; gap: 12px; background: var(--mm-card); border: 1.5px dashed var(--mm-a); border-radius: 16px; padding: 12px 14px; }
+.mm-cloudbanner > div { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.mm-cloudbanner small { color: var(--mm-muted); line-height: 1.4; }
+.mm-cloud-ico { font-size: 0.9em; }
+.mm-field { display: flex; flex-direction: column; gap: 6px; font-weight: 700; text-align: left; }
+.mm-field input { background: var(--mm-card-2); border: 1.5px solid var(--mm-line); border-radius: 12px; color: var(--mm-text); padding: 12px 14px; font-size: 1rem; min-height: 46px; }
+.mm-field input:focus { outline: 2px solid var(--mm-a); outline-offset: 1px; }
+.mm-reg-msg { min-height: 1.4em; font-size: 0.9rem; margin: 0; }
+.mm-dialog .mm-reg-msg.is-ok { color: var(--mm-good); }
+.mm-dialog .mm-reg-msg.is-bad { color: var(--mm-bad); }
+.mm-dialog .mm-reg-msg.is-busy { color: var(--mm-muted); }
+.mm-sync { text-align: center; font-size: 0.92rem; border-radius: 12px; padding: 8px 12px; background: var(--mm-card-2); margin: 0; color: var(--mm-muted); }
+.mm-sync.is-ok { color: var(--mm-good); }
+.mm-sync.is-err { color: var(--mm-warn); }
+.mm-rank:has(> .mm-rank-btn) { display: block; padding: 0; }
+.mm-rank-btn { all: unset; box-sizing: border-box; display: grid; grid-template-columns: 34px 1fr auto auto; gap: 8px; align-items: center; width: 100%; padding: 10px 12px; min-height: 44px; cursor: pointer; border-radius: 12px; }
+.mm-rank-btn:focus-visible { outline: 2px solid var(--mm-a); }
+.mm-rank em { font-style: normal; color: var(--mm-a); font-size: 0.8em; }
