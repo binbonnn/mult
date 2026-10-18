@@ -17,6 +17,7 @@
         MM.closeOverlay();
         view.classList.toggle('mm-reduce', !!D.data.settings.reduceMotion);
         view.setAttribute('data-mm-screen', name);
+        if (window.HubNav) HubNav.memoScreen(name);
         root.innerHTML = '<div class="mm-screen mm-menu mm-s-' + name + '">' + html + '</div>';
         window.scrollTo(0, 0);
     }
@@ -338,6 +339,20 @@
         resultScreen(sess, results, cfg, status, rec);
     };
     MM.onExit = function () { if (UI.duelRun) UI.duelRun = null; home(); };
+
+    /* ---------- Antarmuka untuk navigasi Back tingkat hub (nav.js) ---------- */
+    MM.nav = { home, setup: setupScreen, stats: statsScreen, ach: achScreen, settings: settingsScreen, help: helpScreen };
+    MM.leave = function () { MM.abort(true); UI.duelRun = null; MM.closeOverlay(); };
+    MM.atRisk = function () {
+        const st = MM.state();
+        if (!['ready', 'completed', 'failed', 'abandoned'].includes(st)) return true;
+        return !!UI.duelRun && view.getAttribute('data-mm-screen') === 'handoff';
+    };
+    // Tampilkan konfirmasi keluar (sama seperti tombol keluar biasa). leaveFn dipanggil bila pemain memilih "Keluar".
+    MM.askLeave = function (leaveFn) {
+        if (!['ready', 'completed', 'failed', 'abandoned'].includes(MM.state())) { MM.requestExit(leaveFn); return; }
+        MM.confirmBox({ title: 'Batalkan duel?', text: 'Hasil duel ini tidak akan disimpan.', ok: 'Keluar', cancel: 'Tetap di sini', danger: true, onOk: () => { UI.duelRun = null; leaveFn(); } });
+    };
 
     function achBox(list) {
         return '<div class="mm-card mm-newach"><h3>🏆 Pencapaian baru!</h3>' + list.map(a => '<div class="mm-ach-row"><span class="mm-ach-ico">' + a.icon + '</span><div><b>' + esc(a.name) + '</b><small>' + esc(a.desc) + '</small></div><span class="mm-creature" title="Makhluk memori baru">' + a.creature + '</span></div>').join('') + '</div>';
