@@ -694,11 +694,13 @@
         closeOverlay(); E.paused = false; E.last = performance.now();
         setState(E.prevState || 'recalling');
     }
-    MM.exitSession = function () { E.token++; stopTicker(); E.phase = null; E.paused = false; E.st = 'abandoned'; E.st = 'ready'; document.removeEventListener('keydown', onKey); closeOverlay(); MM.onExit && MM.onExit(); };
-    MM.requestExit = function () {
-        if (E.st === 'ready') { MM.onExit && MM.onExit(); return; }
+    MM.exitSession = function (noHome) { E.token++; stopTicker(); E.phase = null; E.paused = false; E.st = 'abandoned'; E.st = 'ready'; document.removeEventListener('keydown', onKey); closeOverlay(); if (noHome !== true) MM.onExit && MM.onExit(); };
+    // leaveFn (opsional): dipakai navigasi Back perangkat agar "Keluar" kembali ke halaman sebelumnya, bukan Beranda.
+    MM.requestExit = function (leaveFn) {
+        const custom = typeof leaveFn === 'function' ? leaveFn : null;
+        if (E.st === 'ready') { if (custom) custom(); else MM.onExit && MM.onExit(); return; }
         if (!E.paused && ['briefing', 'observing', 'transitioning', 'recalling'].includes(E.st)) togglePause();
-        confirmBox({ title: 'Keluar dari sesi?', text: 'Progres sesi ini akan hilang dan tidak disimpan.', ok: 'Keluar', danger: true, onOk: () => MM.exitSession(), onCancel: () => { if (E.paused) togglePause(); } });
+        confirmBox({ title: 'Keluar dari sesi?', text: 'Progres sesi ini akan hilang dan tidak disimpan.', ok: 'Keluar', danger: true, onOk: () => (custom ? (MM.exitSession(true), custom()) : MM.exitSession()), onCancel: () => { if (E.paused) togglePause(); } });
     };
 
     /* ---------- Papan ketik ---------- */
@@ -725,6 +727,7 @@
     function renderPlayShell() {
         view.classList.toggle('mm-reduce', !!D.data.settings.reduceMotion);
         view.setAttribute('data-mm-screen', 'play');
+        if (window.HubNav) HubNav.memoScreen('play');
         root.innerHTML = '<div class="mm-screen mm-play" id="mmPlay">' +
             '<div class="mm-hud"><button class="icon-button" id="mmPause" aria-label="Jeda">⏸</button>' +
             '<div class="mm-hud-info"><div class="mm-hud-round" id="mmRoundLbl"></div><div class="mm-hud-mode" id="mmModeLbl"></div><div class="mm-progress"><i id="mmProgress"></i></div></div>' +
